@@ -31,11 +31,11 @@ pub fn cl_binary_ew<T, O>(
 ) -> custos::Result<()>
 where
     T: CDatatype,
-    O: Eval<T> + ToString,
+    O: ToString,
 {
     let src = format!(
         "
-        __kernel void binary_ew(const {ty}* lhs, const {ty}* rhs, {ty}* out) {{
+        __kernel void binary_ew(__global const {ty}* lhs, __global const {ty}* rhs, __global {ty}* out) {{
             size_t id = get_global_id(0);
             out[id] = {op};
         }}
@@ -45,4 +45,27 @@ where
     );
 
     enqueue_kernel(device, &src, [lhs.len(), 0, 0], None, &[lhs, rhs, out])
+}
+
+#[cfg(test)]
+mod tests {
+    use custos::{Buffer, Combiner, OpenCL};
+
+    use super::cl_binary_ew;
+
+    #[test]
+    fn test_binary_ew() -> custos::Result<()> {
+        let device = OpenCL::new(0)?;
+
+        let lhs = Buffer::from((&device, &[1, 5, 3, 2, 6]));
+        let rhs = Buffer::from((&device, &[-1, 2, 9, 1, -2]));
+
+        let mut out = Buffer::new(&device, 5);
+
+        cl_binary_ew(&device, &lhs, &rhs, &mut out, |a, b| a.add(b))?;
+
+        assert_eq!(out.read(), vec![0, 7, 12, 3, 4]);
+
+        Ok(())
+    }
 }

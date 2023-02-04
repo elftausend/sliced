@@ -37,3 +37,22 @@ pub fn slice_binary_ew<O, T>(
         *out = f((*lhs).to_val(), (*rhs).to_val()).eval()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use custos::Combiner;
+
+    use super::slice_binary_ew;
+
+    #[test]
+    fn test_slice_binary() {
+        let lhs = &[6, 3, 7, 4, 3, 8, 10];
+        let rhs = &[-3, 3, 8, 31, 4, 3, 2];
+
+        let mut out = [0; 7];
+
+        slice_binary_ew(lhs, rhs, &mut out, |a, b| a.add(b));
+
+        assert_eq!(out, [3, 6, 15, 35, 7, 11, 12]);
+    }
+}
