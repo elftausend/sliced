@@ -6,4 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-custos = {path = "../custos", default-features=false, features=["opencl", "stack", "macro", "blas", "cpu"]}
+custos = {path = "../custos", default-features=false, features=["opencl", "stack", "macro", "blas", "cpu", "autograd"]}
+
+[features]
+default = ["stack", "cpu", "opencl"]
+autograd = []
+stack = []
+cpu = []
+opencl = []
+
+[dev-dependencies]
+sliced = { path = "../sliced" }

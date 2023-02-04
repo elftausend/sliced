@@ -1,4 +1,6 @@
-use custos::{prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, OpenCL, Resolve, ToMarker};
+use custos::{
+    prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, OpenCL, Resolve, Shape, ToMarker,
+};
 
 use crate::BinaryElementWise;
 
@@ -22,14 +24,15 @@ where
     }
 }
 
-pub fn cl_binary_ew<T, O>(
+pub fn cl_binary_ew<T, S, O>(
     device: &OpenCL,
-    lhs: &Buffer<T, OpenCL>,
-    rhs: &Buffer<T, OpenCL>,
-    out: &mut Buffer<T, OpenCL>,
+    lhs: &Buffer<T, OpenCL, S>,
+    rhs: &Buffer<T, OpenCL, S>,
+    out: &mut Buffer<T, OpenCL, S>,
     f: impl Fn(Resolve<T>, Resolve<T>) -> O,
 ) -> custos::Result<()>
 where
+    S: Shape,
     T: CDatatype,
     O: ToString,
 {

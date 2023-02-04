@@ -1,9 +1,13 @@
 use std::ops::{AddAssign, Mul};
 
-use custos::{Buffer, Eval, MainMemory, Resolve, Shape, ToVal, CPU};
+use custos::{impl_stack, Buffer, Eval, MainMemory, Resolve, Shape, ToVal, CPU};
 
 use crate::BinaryGrad;
 
+#[cfg(feature = "stack")]
+use custos::Stack;
+
+#[impl_stack]
 impl<T, S, D> BinaryGrad<T, S, D> for CPU
 where
     T: Copy + AddAssign + Mul<Output = T>,

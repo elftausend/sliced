@@ -1,10 +1,14 @@
-use custos::{Buffer, Device, Eval, MainMemory, Resolve, Shape, ToVal, CPU};
+use custos::{impl_stack, Buffer, Device, Eval, MainMemory, Resolve, Shape, ToVal, CPU};
 
 use crate::BinaryElementWise;
 
+#[cfg(feature = "stack")]
+use custos::Stack;
+
+#[impl_stack]
 impl<T, S, D> BinaryElementWise<T, S, D> for CPU
 where
-    T: Copy,
+    T: Copy + Default,
     S: Shape,
     D: MainMemory,
 {
