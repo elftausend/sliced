@@ -1,4 +1,4 @@
-use adal::Square;
+use sliced::Square;
 use custos::{Buffer, CPU};
 
 #[test]
@@ -16,7 +16,7 @@ fn test_square() {
     assert_eq!(grad.read(), [2, 4, 6, 8, 10]);
 }
 
-#[cfg(feature="opencl")]
+#[cfg(feature = "opencl")]
 #[test]
 fn test_square_cl() -> custos::Result<()> {
     use custos::OpenCL;

@@ -1,4 +1,4 @@
-use adal::BinaryOps;
+use sliced::BinaryOps;
 use custos::{Buffer, CPU};
 
 #[test]
@@ -20,13 +20,13 @@ fn test_add() {
     assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
 }
 
-#[cfg(feature="opencl")]
+#[cfg(feature = "opencl")]
 #[test]
 fn test_add_cl() -> custos::Result<()> {
     use custos::OpenCL;
 
     let device = OpenCL::new(0)?;
-    
+
     let lhs = Buffer::from((&device, [1, 2, 3, 4, 5]));
     let rhs = Buffer::from((&device, [6, 7, 8, 9, 10]));
 

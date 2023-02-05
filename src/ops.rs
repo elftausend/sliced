@@ -1,13 +1,11 @@
 use std::{
     fmt::Display,
-    hash::Hash,
     ops::{Add, Mul},
 };
 
 use custos::{
     prelude::{One, Two},
-    Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeReturn, Shape, UnaryElementWise,
-    UnaryGrad,
+    Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeReturn, Shape, UnaryGrad,
 };
 
 use crate::{BinaryElementWise, BinaryGrad};
@@ -34,19 +32,6 @@ where
         });
 
         out
-        /*
-        //let out = self.(lhs, rhs, |a, b| a.add(b));
-
-        let ids = (buf.id(), out.id());
-        self.tape_mut().add_grad_fn(move |grads, device| {
-            let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
-                grads.get_triple::<T, S>(device, ids);
-
-            device.add_binary_grad(&lhs, &rhs, &mut lhs_grad, &mut rhs_grad, &out_grad, |_, _| T::one(), |_, _| T::one());
-        });
-
-        out
-        */
     }
 }
 

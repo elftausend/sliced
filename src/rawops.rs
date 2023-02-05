@@ -5,6 +5,9 @@ mod cpu;
 #[cfg(feature = "opencl")]
 mod opencl;
 
+#[cfg(feature = "opencl")]
+pub use opencl::*;
+
 pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
     fn binary_ew<O>(
         &self,
@@ -44,4 +47,17 @@ pub trait BinaryEWWithGrad<T, S: Shape = (), D: Device = Self>: Device {
         FO: Eval<T> + ToString,
         LO: Eval<T> + ToString,
         RO: Eval<T> + ToString;
+}
+
+pub trait Gemm<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
+    Device
+{
+    fn gemm(
+        &self,
+        m: usize,
+        k: usize,
+        n: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+    ) -> Buffer<T, Self, OS>;
 }

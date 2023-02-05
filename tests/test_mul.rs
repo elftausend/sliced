@@ -1,4 +1,4 @@
-use adal::BinaryOps;
+use sliced::BinaryOps;
 use custos::{Buffer, CPU};
 
 #[test]
@@ -20,7 +20,7 @@ fn test_mul() {
     assert_eq!(grad.read(), [1, 2, 3, 4, 5]);
 }
 
-#[cfg(feature="opencl")]
+#[cfg(feature = "opencl")]
 #[test]
 fn test_mul_cl() -> custos::Result<()> {
     use custos::OpenCL;

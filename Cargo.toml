@@ -1,5 +1,5 @@
 [package]
-name = "adal"
+name = "sliced"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,11 +9,12 @@ edition = "2021"
 custos = {path = "../custos", default-features=false, features=["opencl", "stack", "macro", "blas", "cpu", "autograd"]}
 
 [features]
-default = ["stack", "cpu", "opencl"]
+default = ["stack", "cpu", "opencl", "blas"]
 autograd = []
 stack = []
 cpu = []
 opencl = []
+blas = []
 
 [dev-dependencies]
-sliced = { path = "../sliced" }
+rawsliced = { path = "../rawsliced" }
