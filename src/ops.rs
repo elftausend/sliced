@@ -9,7 +9,7 @@ use custos::{
     WriteBuf,
 };
 
-use crate::{BinaryElementWise, BinaryGrad, Gemm, GemmGrad, Transpose};
+use crate::{BinaryElementWise, BinaryGrad, Gemm, GemmGrad, Transpose, RowOp, RowOpGrad};
 
 pub trait Square<T, S = ()>: Device
 where
@@ -158,5 +158,69 @@ where
         });
 
         out
+    }
+}
+
+pub trait RowOpWithGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+    fn add_row(
+        &self,
+        rows: usize,
+        cols: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+    ) -> Buffer<T, D, LS>;
+
+    fn add_row_mut(
+        &self,
+        rows: usize,
+        cols: usize,
+        lhs: &mut Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+    );
+}
+
+impl<T, LS, RS, D> RowOpWithGrad<T, LS, RS, D> for D
+where
+    LS: Shape,
+    RS: Shape,
+    D: RowOp<T, LS, RS> + RowOpGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+{
+
+    fn add_row(
+        &self,
+        rows: usize,
+        cols: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+    ) -> Buffer<T, D, LS> 
+    {
+        let out = self.add_row(rows, cols, lhs, rhs);
+
+        let ids = (lhs.id(), rhs.id(), out.id());
+        self.tape_mut().add_grad_fn(move |grads, device| {
+            let (_, _, mut lhs_grad, mut rhs_grad, out_grad) =
+                grads.get_triple::<T, ()>(device, ids);
+            
+            device.add_row_grad(rows, cols, &mut lhs_grad, &mut rhs_grad, &out_grad);
+        });
+
+        out
+    }
+
+    fn add_row_mut(
+        &self,
+        rows: usize,
+        cols: usize,
+        lhs: &mut Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+    ) {
+        self.add_row_mut(rows, cols, lhs, rhs);
+
+        let ids = (rhs.id(), lhs.id());
+        // FIXME may not work
+        self.tape_mut().add_grad_fn(move |grads, device| {
+            let (_, mut rhs_grad, out_grad) = grads.get_double(device, ids);
+            device.add_row_mut_grad(rows, cols, &mut rhs_grad, &out_grad);
+        });
     }
 }

@@ -115,23 +115,19 @@ pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
 }
 
 pub trait RowOpGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
-    fn add_row(
+    fn add_row_grad(
         &self,
         rows: usize,
         cols: usize,
-        lhs: &Buffer<T, D, LS>,
-        rhs: &Buffer<T, D, RS>,
-        lhs_grad: &Buffer<T, D, LS>,
-        rhs_grad: &Buffer<T, D, RS>,
-        out_grad: &Buffer<T, D, LS>
-    ) -> Buffer<T, Self, LS>;
-    fn add_row_mut(
+        lhs_grad: &mut Buffer<T, D, LS>,
+        rhs_grad: &mut Buffer<T, D, RS>,
+        out_grad: &Buffer<T, D, LS>,
+    );
+    fn add_row_mut_grad(
         &self,
         rows: usize,
         cols: usize,
-        lhs: &mut Buffer<T, D, LS>,
-        rhs: &Buffer<T, D, RS>,
-        rhs_grad: &Buffer<T, D, RS>,
-        out_grad: &Buffer<T, D, LS>
+        rhs_grad: &mut Buffer<T, D, RS>,
+        out_grad: &Buffer<T, D, LS>,
     );
 }
