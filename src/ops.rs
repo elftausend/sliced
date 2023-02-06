@@ -6,9 +6,10 @@ use std::{
 use custos::{
     prelude::{One, Two},
     Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeReturn, Shape, UnaryGrad,
+    WriteBuf,
 };
 
-use crate::{BinaryElementWise, BinaryGrad, Gemm, GemmGrad};
+use crate::{BinaryElementWise, BinaryGrad, Gemm, GemmGrad, Transpose};
 
 pub trait Square<T, S = ()>: Device
 where
@@ -94,6 +95,30 @@ where
     }
 }
 
+pub trait TransposeWithGrad<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
+    fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, D, OS>;
+}
+
+impl<T, IS, OS, D> TransposeWithGrad<T, IS, OS> for D
+where
+    T: Clone,
+    IS: Shape,
+    OS: Shape,
+    D: Transpose<T, IS, OS> + MayTapeReturn + for<'b> Alloc<'b, T> + WriteBuf<T>,
+{
+    fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
+        let out = self.transpose(rows, cols, x);
+
+        let ids = (x.id(), out.id());
+        self.tape_mut().add_grad_fn(move |grads, device| {
+            let (_, mut lhs_grad, out_grad) = grads.get_double::<T, ()>(device, ids);
+
+            lhs_grad.write_buf(&out_grad);
+        });
+        out
+    }
+}
+
 pub trait GemmWithGrad<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
     Device
 {
@@ -121,15 +146,14 @@ where
         n: usize,
         lhs: &Buffer<T, Self, LS>,
         rhs: &Buffer<T, Self, RS>,
-    ) -> Buffer<T, Self, OS> 
-    {
+    ) -> Buffer<T, Self, OS> {
         let out = self.gemm(m, k, n, lhs, rhs);
-        
+
         let ids = (lhs.id(), rhs.id(), out.id());
         self.tape_mut().add_grad_fn(move |grads, device| {
             let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
                 grads.get_triple::<T, ()>(device, ids);
-            
+
             device.gemm_grad(m, k, n, &lhs, &rhs, &mut lhs_grad, &mut rhs_grad, &out_grad);
         });
 

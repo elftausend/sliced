@@ -20,14 +20,14 @@ fn test_gemm_cpu() {
     ]));
 
     // 2 x 3
-    let rhs = Buffer::from((&device, [
-        1., 2., 3.,
-        4., 5., 6.
-    ]));
+    let rhs = Buffer::from((&device, [1., 2., 3., 4., 5., 6.]));
 
     let out: Buffer = device.gemm(m, k, n, &lhs, &rhs);
-    assert_eq!(&*out, [9.0, 12.0, 15.0, 19.0, 26.0, 33.0, 24.0, 33.0, 42.0, 26.0, 37.0, 48.0]);
-    
+    assert_eq!(
+        &*out,
+        [9.0, 12.0, 15.0, 19.0, 26.0, 33.0, 24.0, 33.0, 42.0, 26.0, 37.0, 48.0]
+    );
+
     out.backward();
 
     let lhs_grad = lhs.grad();
@@ -35,5 +35,4 @@ fn test_gemm_cpu() {
 
     let rhs_grad = rhs.grad();
     assert_eq!(&*rhs_grad, [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]);
-
 }

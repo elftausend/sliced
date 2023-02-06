@@ -1,4 +1,4 @@
-use custos::{prelude::CLBuffer, CDatatype, OpenCL, Device};
+use custos::{prelude::CLBuffer, CDatatype, Device, OpenCL};
 
 use crate::Transpose;
 

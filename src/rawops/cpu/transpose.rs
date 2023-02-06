@@ -48,10 +48,7 @@ mod tests {
         let device = CPU::new();
 
         // 2 x 3
-        let x = Buffer::from((&device, 
-            [1, 2, 3, 
-            4, 5, 6]
-        ));
+        let x = Buffer::from((&device, [1, 2, 3, 4, 5, 6]));
 
         let out: Buffer<i32, CPU> = device.transpose(2, 3, &x);
         assert_eq!(&*out, [1, 4, 2, 5, 3, 6]);

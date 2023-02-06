@@ -94,10 +94,44 @@ pub trait Transpose2<
     D: Device = Self,
 >: Device
 {
-    fn transpose(
+    fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
+}
+
+pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+    fn add_row(
         &self,
         rows: usize,
         cols: usize,
-        x: &Buffer<T, D, IS>,
-    ) -> Buffer<T, Self, OS>;
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+    ) -> Buffer<T, Self, LS>;
+    fn add_row_mut(
+        &self,
+        rows: usize,
+        cols: usize,
+        lhs: &mut Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+    );
+}
+
+pub trait RowOpGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+    fn add_row(
+        &self,
+        rows: usize,
+        cols: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+        lhs_grad: &Buffer<T, D, LS>,
+        rhs_grad: &Buffer<T, D, RS>,
+        out_grad: &Buffer<T, D, LS>
+    ) -> Buffer<T, Self, LS>;
+    fn add_row_mut(
+        &self,
+        rows: usize,
+        cols: usize,
+        lhs: &mut Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+        rhs_grad: &Buffer<T, D, RS>,
+        out_grad: &Buffer<T, D, LS>
+    );
 }
