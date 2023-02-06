@@ -1,5 +1,5 @@
 use custos::{Buffer, CPU};
-use sliced::BinaryOps;
+use sliced::BinaryOpsMayGrad;
 
 #[test]
 fn test_add() {

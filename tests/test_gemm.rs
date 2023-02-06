@@ -2,7 +2,7 @@
 #[test]
 fn test_gemm_cpu() {
     use custos::{Buffer, CPU};
-    use sliced::GemmWithGrad;
+    use sliced::GemmMayGrad;
 
     let device = CPU::new();
 

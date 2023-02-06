@@ -131,3 +131,7 @@ pub trait RowOpGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device
         out_grad: &Buffer<T, D, LS>,
     );
 }
+
+pub trait RandOp<T, S: Shape = (), D: Device = Self>: Device {
+    fn rand(&self, x: &mut Buffer<T, D, S>, lo: T, hi: T);
+}

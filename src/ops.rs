@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, Mul},
+    ops::{Add, Mul, Neg, Sub},
 };
 
 use custos::{
@@ -9,9 +9,9 @@ use custos::{
     WriteBuf,
 };
 
-use crate::{BinaryElementWise, BinaryGrad, Gemm, GemmGrad, Transpose, RowOp, RowOpGrad};
+use crate::{BinaryElementWise, BinaryGrad, Gemm, GemmGrad, RowOp, RowOpGrad, Transpose};
 
-pub trait Square<T, S = ()>: Device
+pub trait SquareMayGrad<T, S = ()>: Device
 where
     S: Shape,
 {
@@ -36,18 +36,26 @@ where
     }
 }
 
-impl<T, S: Shape, D: Device> Square<T, S> for D {}
+impl<T, S: Shape, D: Device> SquareMayGrad<T, S> for D {}
 
-pub trait BinaryOps<T, S: Shape = (), D: Device = Self>: Device {
+pub trait BinaryOpsMayGrad<T, S: Shape = (), D: Device = Self>: Device {
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
+    fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
 }
 
-impl<T, S, D> BinaryOps<T, S, D> for D
+impl<T, S, D> BinaryOpsMayGrad<T, S, D> for D
 where
     S: Shape + 'static,
     D: BinaryElementWise<T, S, D> + BinaryGrad<T, (), D> + MayTapeReturn + for<'b> Alloc<'b, T>,
-    T: Mul<Output = T> + Add<Output = T> + Display + One + Eval<T> + 'static,
+    T: Mul<Output = T>
+        + Sub<Output = T>
+        + Add<Output = T>
+        + Neg<Output = T>
+        + Display
+        + One
+        + Eval<T>
+        + 'static,
 {
     #[inline]
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
@@ -66,6 +74,28 @@ where
                 &out_grad,
                 |_, _| T::one(),
                 |_, _| T::one(),
+            );
+        });
+
+        out
+    }
+
+    fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
+        let out = self.binary_ew(lhs, rhs, |a, b| a.sub(b));
+
+        let ids = (lhs.id(), rhs.id(), out.id());
+        self.tape_mut().add_grad_fn(move |grads, device| {
+            let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
+                grads.get_triple::<T, ()>(device, ids);
+
+            device.add_binary_grad(
+                &lhs,
+                &rhs,
+                &mut lhs_grad,
+                &mut rhs_grad,
+                &out_grad,
+                |_, _| T::one(),
+                |_, _| -T::one(),
             );
         });
 
@@ -95,11 +125,11 @@ where
     }
 }
 
-pub trait TransposeWithGrad<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
+pub trait TransposeMayGrad<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, D, OS>;
 }
 
-impl<T, IS, OS, D> TransposeWithGrad<T, IS, OS> for D
+impl<T, IS, OS, D> TransposeMayGrad<T, IS, OS> for D
 where
     T: Clone,
     IS: Shape,
@@ -119,7 +149,7 @@ where
     }
 }
 
-pub trait GemmWithGrad<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
+pub trait GemmMayGrad<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
     Device
 {
     fn gemm(
@@ -132,7 +162,7 @@ pub trait GemmWithGrad<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Dev
     ) -> Buffer<T, D, OS>;
 }
 
-impl<T, LS, RS, OS, D> GemmWithGrad<T, LS, RS, OS> for D
+impl<T, LS, RS, OS, D> GemmMayGrad<T, LS, RS, OS> for D
 where
     LS: Shape,
     RS: Shape,
@@ -161,7 +191,7 @@ where
     }
 }
 
-pub trait RowOpWithGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+pub trait RowOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     fn add_row(
         &self,
         rows: usize,
@@ -179,28 +209,26 @@ pub trait RowOpWithGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: De
     );
 }
 
-impl<T, LS, RS, D> RowOpWithGrad<T, LS, RS, D> for D
+impl<T, LS, RS, D> RowOpMayGrad<T, LS, RS, D> for D
 where
     LS: Shape,
     RS: Shape,
     D: RowOp<T, LS, RS> + RowOpGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
 {
-
     fn add_row(
         &self,
         rows: usize,
         cols: usize,
         lhs: &Buffer<T, D, LS>,
         rhs: &Buffer<T, D, RS>,
-    ) -> Buffer<T, D, LS> 
-    {
+    ) -> Buffer<T, D, LS> {
         let out = self.add_row(rows, cols, lhs, rhs);
 
         let ids = (lhs.id(), rhs.id(), out.id());
         self.tape_mut().add_grad_fn(move |grads, device| {
             let (_, _, mut lhs_grad, mut rhs_grad, out_grad) =
                 grads.get_triple::<T, ()>(device, ids);
-            
+
             device.add_row_grad(rows, cols, &mut lhs_grad, &mut rhs_grad, &out_grad);
         });
 

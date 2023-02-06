@@ -7,14 +7,16 @@ edition = "2021"
 
 [dependencies]
 custos = {path = "../custos", default-features=false, features=["opencl", "stack", "macro", "blas", "cpu", "autograd"]}
+fastrand = "1.8.0"
 
 [features]
-default = ["stack", "cpu", "opencl", "blas"]
+default = ["stack", "cpu", "opencl", "blas", "matrix"]
 autograd = []
 stack = []
 cpu = []
 opencl = []
 blas = []
+matrix = []
 
 [dev-dependencies]
 rawsliced = { path = "../rawsliced" }
