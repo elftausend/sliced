@@ -1,4 +1,4 @@
-use custos::{Buffer, Device, Eval, MayDim2, Resolve, Shape, Transposed};
+use custos::{Buffer, Device, Eval, MayDim2, Resolve, Shape};
 
 mod cpu;
 
@@ -90,6 +90,7 @@ pub trait Transpose2<
     const ROWS: usize = 0,
     const COLS: usize = 0,
     IS: MayDim2<ROWS, COLS> = (),
+    OS: MayDim2<COLS, ROWS> = (),
     D: Device = Self,
 >: Device
 {
@@ -98,5 +99,5 @@ pub trait Transpose2<
         rows: usize,
         cols: usize,
         x: &Buffer<T, D, IS>,
-    ) -> Buffer<T, Self, Transposed<ROWS, COLS, IS>>;
+    ) -> Buffer<T, Self, OS>;
 }

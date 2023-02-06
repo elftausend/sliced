@@ -1,6 +1,6 @@
-use custos::{Buffer, Device, MainMemory, MayDim2, Shape, Transposed, CPU};
+use custos::{Buffer, Device, MainMemory, Shape, CPU};
 
-use crate::{Transpose, Transpose2};
+use crate::Transpose;
 
 pub fn slice_transpose<T: Clone>(rows: usize, cols: usize, a: &[T], b: &mut [T]) {
     for i in 0..rows {
@@ -22,33 +22,38 @@ impl<T: Clone, IS: Shape, OS: Shape, D: MainMemory> Transpose<T, IS, OS, D> for 
     }
 }
 
-impl<T: Clone, const ROWS: usize, const COLS: usize, IS: MayDim2<ROWS, COLS>, D: MainMemory>
-    Transpose2<T, ROWS, COLS, IS, D> for CPU
+/*impl<T: Clone, const ROWS: usize, const COLS: usize, IS: MayDim2<ROWS, COLS>, OS: MayDim2<COLS, ROWS>, D: MainMemory>
+    Transpose2<T, ROWS, COLS, IS, OS, D> for CPU
 {
     fn transpose(
         &self,
         rows: usize,
         cols: usize,
         x: &Buffer<T, D, IS>,
-    ) -> Buffer<T, Self, Transposed<ROWS, COLS, IS>> {
-        let mut out: Buffer<T, CPU, Transposed<ROWS, COLS, IS>> = self.retrieve(x.len());
+    ) -> Buffer<T, Self, OS> {
+        let mut out = self.retrieve(x.len());
         slice_transpose(rows, cols, &x, &mut out);
         out
     }
-}
+}*/
 
 #[cfg(test)]
 mod tests {
-    use custos::{Buffer, Transposed, CPU};
+    use custos::{Buffer, CPU};
 
-    use crate::Transpose2;
+    use crate::Transpose;
 
     #[test]
     fn test_transpose() {
         let device = CPU::new();
 
-        let x = Buffer::from((&device, [1, 2, 3, 4, 5, 6]));
+        // 2 x 3
+        let x = Buffer::from((&device, 
+            [1, 2, 3, 
+            4, 5, 6]
+        ));
 
-        let out: Buffer<i32, CPU, Transposed> = device.transpose(2, 3, &x);
+        let out: Buffer<i32, CPU> = device.transpose(2, 3, &x);
+        assert_eq!(&*out, [1, 4, 2, 5, 3, 6]);
     }
 }
