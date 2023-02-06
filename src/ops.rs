@@ -8,7 +8,7 @@ use custos::{
     Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeReturn, Shape, UnaryGrad,
 };
 
-use crate::{BinaryElementWise, BinaryGrad};
+use crate::{BinaryElementWise, BinaryGrad, Gemm, GemmGrad};
 
 pub trait Square<T, S = ()>: Device
 where
@@ -45,7 +45,7 @@ pub trait BinaryOps<T, S: Shape = (), D: Device = Self>: Device {
 impl<T, S, D> BinaryOps<T, S, D> for D
 where
     S: Shape + 'static,
-    D: BinaryElementWise<T, S, D> + BinaryGrad<T, S, D> + MayTapeReturn + for<'b> Alloc<'b, T, S>,
+    D: BinaryElementWise<T, S, D> + BinaryGrad<T, (), D> + MayTapeReturn + for<'b> Alloc<'b, T>,
     T: Mul<Output = T> + Add<Output = T> + Display + One + Eval<T> + 'static,
 {
     #[inline]
@@ -55,7 +55,7 @@ where
         let ids = (lhs.id(), rhs.id(), out.id());
         self.tape_mut().add_grad_fn(move |grads, device| {
             let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
-                grads.get_triple::<T, S>(device, ids);
+                grads.get_triple::<T, ()>(device, ids);
 
             device.add_binary_grad(
                 &lhs,
@@ -77,7 +77,7 @@ where
         let ids = (lhs.id(), rhs.id(), out.id());
         self.tape_mut().add_grad_fn(move |grads, device| {
             let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
-                grads.get_triple::<T, S>(device, ids);
+                grads.get_triple::<T, ()>(device, ids);
 
             device.add_binary_grad(
                 &lhs,
@@ -88,6 +88,49 @@ where
                 |_, rhs| rhs,
                 |lhs, _| lhs,
             );
+        });
+
+        out
+    }
+}
+
+pub trait GemmWithGrad<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
+    Device
+{
+    fn gemm(
+        &self,
+        m: usize,
+        k: usize,
+        n: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+    ) -> Buffer<T, D, OS>;
+}
+
+impl<T, LS, RS, OS, D> GemmWithGrad<T, LS, RS, OS> for D
+where
+    LS: Shape,
+    RS: Shape,
+    OS: Shape,
+    D: Gemm<T, LS, RS, OS> + GemmGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+{
+    fn gemm(
+        &self,
+        m: usize,
+        k: usize,
+        n: usize,
+        lhs: &Buffer<T, Self, LS>,
+        rhs: &Buffer<T, Self, RS>,
+    ) -> Buffer<T, Self, OS> 
+    {
+        let out = self.gemm(m, k, n, lhs, rhs);
+        
+        let ids = (lhs.id(), rhs.id(), out.id());
+        self.tape_mut().add_grad_fn(move |grads, device| {
+            let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
+                grads.get_triple::<T, ()>(device, ids);
+            
+            device.gemm_grad(m, k, n, &lhs, &rhs, &mut lhs_grad, &mut rhs_grad, &out_grad);
         });
 
         out

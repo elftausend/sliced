@@ -1,5 +1,5 @@
-use sliced::Square;
 use custos::{Buffer, CPU};
+use sliced::Square;
 
 #[test]
 fn test_square() {

@@ -1,5 +1,5 @@
-use sliced::BinaryOps;
 use custos::{Buffer, CPU};
+use sliced::BinaryOps;
 
 #[test]
 fn test_add() {

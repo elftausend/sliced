@@ -1,8 +1,8 @@
-use custos::{MainMemory, Shape, CPU, impl_stack, Device, GenericBlas, Buffer};
+use custos::{impl_stack, Buffer, Device, GenericBlas, MainMemory, Shape, CPU};
 
 use crate::Gemm;
 
-#[cfg(feature="stack")]
+#[cfg(feature = "stack")]
 use custos::Stack;
 
 #[cfg(feature = "blas")]
@@ -23,8 +23,7 @@ where
         n: usize,
         lhs: &Buffer<T, D, LS>,
         rhs: &Buffer<T, D, RS>,
-    ) -> Buffer<T, Self, OS> 
-    {
+    ) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(m * n);
         T::gemm(m, n, k, lhs, rhs, &mut out);
         out
@@ -74,8 +73,7 @@ where
         n: usize,
         lhs: &custos::Buffer<T, D, LS>,
         rhs: &custos::Buffer<T, D, RS>,
-    ) -> custos::Buffer<T, Self, OS> 
-    {
+    ) -> custos::Buffer<T, Self, OS> {
         let mut out = self.retrieve(m * n, (lhs.node.idx, rhs.node.idx));
         crate::raw_ops::naive_gemm(m, k, n, lhs, rhs, &mut out);
         (out, m, n).into()
