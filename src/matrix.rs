@@ -97,14 +97,18 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     pub fn relu(&self) -> Matrix<'a, T, D, S>
     where
         T: Number + 'static,
-        D: UnaryElementWiseMayGrad<T, D, S> + ApplyFunction<T, S>,
+        D: UnaryElementWiseMayGrad<T, D, S>
+            + ApplyFunction<T, S>
+            + MayTapeReturn
+            + UnaryGrad<T, S>
+            + for<'b> Alloc<'b, T, S>,
     {
         let out = self.device().apply_fn(self, |x| x.geq(T::zero()).mul(x));
 
         #[cfg(feature = "autograd")]
         {
             let ids = (self.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
+            self.device().tape_mut().add_grad_fn(move |grads, device| {
                 let (lhs, mut lhs_grad, out_grad) = grads.get_double::<T, S>(device, ids);
                 device.add_unary_grad(&lhs, &mut lhs_grad, &out_grad, |x| x.geq(T::zero()));
             });
@@ -145,6 +149,18 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 }
 
+impl<T, D: IsShapeIndep, S: Shape> Matrix<'_, T, D, S> {
+    #[inline]
+    pub fn as_dims<'b, O: Shape>(&self) -> &Matrix<'b, T, D, O> {
+        unsafe { &*(self as *const Self).cast() }
+    }
+
+    #[inline]
+    pub fn as_dims_mut<'b, O: Shape>(&mut self) -> &mut Matrix<'b, T, D, O> {
+        unsafe { &mut *(self as *mut Self).cast() }
+    }
+}
+
 impl<'a, T, D: Device, S: Shape> core::ops::Deref for Matrix<'a, T, D, S> {
     type Target = Buffer<'a, T, D, S>;
 
@@ -168,7 +184,7 @@ impl<'a, T, D: Device, S: Shape> From<(Buffer<'a, T, D, S>, usize, usize)> for M
     }
 }
 
-impl<'a, T: Copy, D: Alloc<'a, T> + IsShapeIndep, const N: usize>
+impl<'a, T: Copy, D: Alloc<'a, T>, const N: usize>
     From<(&'a D, usize, usize, [T; N])> for Matrix<'a, T, D>
 {
     fn from((device, rows, cols, slice): (&'a D, usize, usize, [T; N])) -> Self {
@@ -177,7 +193,7 @@ impl<'a, T: Copy, D: Alloc<'a, T> + IsShapeIndep, const N: usize>
     }
 }
 
-impl<'a, T: Copy, D: Alloc<'a, T> + IsShapeIndep, const N: usize>
+impl<'a, T: Copy, D: Alloc<'a, T>, const N: usize>
     From<(&'a D, usize, usize, &[T; N])> for Matrix<'a, T, D>
 {
     fn from((device, rows, cols, slice): (&'a D, usize, usize, &[T; N])) -> Self {
@@ -190,7 +206,7 @@ impl<'a, T: Copy, D: Alloc<'a, T> + IsShapeIndep, const N: usize>
 #[cfg(not(feature = "no-std"))]
 // FIXME: In this case, GraphReturn acts as an "IsDynamic" trait, as GraphReturn is not implemented for Stack
 // not anymore - but the message stays the same
-impl<'a, T: Copy, D: Alloc<'a, T> + IsShapeIndep> From<(&'a D, usize, usize, Vec<T>)>
+impl<'a, T: Copy, D: Alloc<'a, T>> From<(&'a D, usize, usize, Vec<T>)>
     for Matrix<'a, T, D>
 {
     fn from((device, rows, cols, data): (&'a D, usize, usize, Vec<T>)) -> Self {

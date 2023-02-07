@@ -21,7 +21,6 @@ impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I
     {
         let mut weights = Matrix::new(device, I, O);
         device.rand(&mut weights, -T::one() / T::two(), T::one() / T::two());
-        //let mut weights = Matrix::from((device, I, O, vec![T::one(); I*O]));
 
         Linear {
             weights,
@@ -104,8 +103,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
     }
 }
 
-#[test]
-fn test_nn() {
+
+fn main() {
     let device = CPU::new();
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
@@ -117,7 +116,7 @@ fn test_nn() {
     let start = Instant::now();
 
     for _ in range(1000) {
-        device.tape.borrow_mut().grads.cache.nodes.clear();
+        device.tape.borrow_mut().grads.cache.nodes.clear();        
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
         // sgd.zero_grad(lin3.params());
@@ -141,9 +140,9 @@ fn test_nn() {
     let out = lin1.forward(&x).relu();
     let out = lin2.forward(&out).relu();
     let out = lin3.forward(&out);
-    println!("out: {:?}", out.read());
+    //println!("out: {:?}", out.read());
 
     let mut plot = Plot::new((x.read(), y.read()));
-    //plot.add((x.read(), out.read(), "-r"));
-//    plot.show()
+    plot.add((x.read(), out.read(), "-r"));
+    plot.show()
 }
