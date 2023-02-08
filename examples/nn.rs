@@ -1,6 +1,6 @@
 use custos::{
     prelude::{Float, Number, One},
-    range, Alloc, Buffer, Device, IsShapeIndep, MainMemory, MayTapeReturn, WriteBuf, CPU, ClearBuf,
+    range, Alloc, Buffer, ClearBuf, Device, IsShapeIndep, MainMemory, MayTapeReturn, WriteBuf, CPU,
 };
 use graplot::Plot;
 use sliced::{Gemm, GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
@@ -47,11 +47,13 @@ impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I
     }
 }
 
+
 pub fn create_sine<'a, D: Alloc<'a, f32> + IsShapeIndep>(
     device: &'a D,
     min: usize,
     max: usize,
 ) -> (Matrix<f32, D>, Matrix<f32, D>) {
+
     let mut x: Vec<f32> = Vec::new();
     for add in min..max {
         x.push(add as f32 / 1000.);
@@ -103,7 +105,6 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
     }
 }
 
-
 fn main() {
     let device = CPU::new();
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
@@ -116,7 +117,7 @@ fn main() {
     let start = Instant::now();
 
     for _ in range(1000) {
-        device.tape.borrow_mut().grads.cache.nodes.clear();        
+        device.tape.borrow_mut().grads.cache.nodes.clear();
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
         // sgd.zero_grad(lin3.params());

@@ -1,6 +1,6 @@
 use custos::{
     prelude::{Float, Number, One},
-    range, Alloc, Buffer, Device, IsShapeIndep, MainMemory, MayTapeReturn, WriteBuf, CPU, ClearBuf,
+    range, Alloc, Buffer, ClearBuf, Device, IsShapeIndep, MainMemory, MayTapeReturn, WriteBuf, CPU,
 };
 use graplot::Plot;
 use sliced::{Gemm, GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
@@ -145,5 +145,5 @@ fn test_nn() {
 
     let mut plot = Plot::new((x.read(), y.read()));
     //plot.add((x.read(), out.read(), "-r"));
-//    plot.show()
+    //    plot.show()
 }

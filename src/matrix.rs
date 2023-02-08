@@ -6,7 +6,7 @@ use custos::{
     UnaryElementWiseMayGrad, UnaryGrad, CPU,
 };
 
-use crate::{BinaryOpsMayGrad, GemmMayGrad, RandOp, RowOpMayGrad, SquareMayGrad, TransposeMayGrad};
+use crate::{BinaryOpsMayGrad, GemmMayGrad, RandOp, RowOpMayGrad, SquareMayGrad, TransposeMayGrad, PowMayGrad};
 
 pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
     data: Buffer<'a, T, D, S>,
@@ -136,6 +136,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         self.device().rand(self, lo, hi);
     }
 
+    #[inline]
     pub fn squared(&self) -> Matrix<'a, T, D, S>
     where
         T: Display + Mul<Output = T> + Copy + Two,
@@ -143,9 +144,17 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + ApplyFunction<T, S>
             + UnaryGrad<T, S>
             + for<'b> Alloc<'b, T, S>
-            + MayTapeReturn,
+            + MayTapeReturn
     {
         (self.device().square(self), self.rows, self.cols).into()
+    }
+
+    #[inline]
+    pub fn pow(&self, rhs: T) -> Matrix<'a, T, D, S> 
+    where
+        D: PowMayGrad<T, S>
+    {
+        (self.device().pow(self, rhs), self.rows, self.cols).into()
     }
 }
 
@@ -184,18 +193,20 @@ impl<'a, T, D: Device, S: Shape> From<(Buffer<'a, T, D, S>, usize, usize)> for M
     }
 }
 
-impl<'a, T: Copy, D: Alloc<'a, T>, const N: usize>
-    From<(&'a D, usize, usize, [T; N])> for Matrix<'a, T, D>
+impl<'a, T: Copy, D: Alloc<'a, T>, const N: usize> From<(&'a D, usize, usize, [T; N])>
+    for Matrix<'a, T, D>
 {
+    #[inline]
     fn from((device, rows, cols, slice): (&'a D, usize, usize, [T; N])) -> Self {
         let data = Buffer::from((device, slice));
         Matrix { data, rows, cols }
     }
 }
 
-impl<'a, T: Copy, D: Alloc<'a, T>, const N: usize>
-    From<(&'a D, usize, usize, &[T; N])> for Matrix<'a, T, D>
+impl<'a, T: Copy, D: Alloc<'a, T>, const N: usize> From<(&'a D, usize, usize, &[T; N])>
+    for Matrix<'a, T, D>
 {
+    #[inline]
     fn from((device, rows, cols, slice): (&'a D, usize, usize, &[T; N])) -> Self {
         let data = Buffer::from((device, slice));
         Matrix { data, rows, cols }
@@ -206,9 +217,7 @@ impl<'a, T: Copy, D: Alloc<'a, T>, const N: usize>
 #[cfg(not(feature = "no-std"))]
 // FIXME: In this case, GraphReturn acts as an "IsDynamic" trait, as GraphReturn is not implemented for Stack
 // not anymore - but the message stays the same
-impl<'a, T: Copy, D: Alloc<'a, T>> From<(&'a D, usize, usize, Vec<T>)>
-    for Matrix<'a, T, D>
-{
+impl<'a, T: Copy, D: Alloc<'a, T>> From<(&'a D, usize, usize, Vec<T>)> for Matrix<'a, T, D> {
     fn from((device, rows, cols, data): (&'a D, usize, usize, Vec<T>)) -> Self {
         let data = Buffer::from((device, data));
         Matrix { data, rows, cols }

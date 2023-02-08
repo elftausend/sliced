@@ -4,10 +4,9 @@ use std::{
 };
 
 use custos::{
-    prelude::{One, Two},
+    prelude::{Float, One, Two},
     Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeReturn, Shape, UnaryGrad,
-    WriteBuf,
-};
+    WriteBuf};
 
 use crate::{BinaryElementWise, BinaryGrad, Gemm, GemmGrad, RowOp, RowOpGrad, Transpose};
 
@@ -21,16 +20,47 @@ where
         Self: ApplyFunction<T, S, Self>
             + UnaryGrad<T, S, Self>
             + MayTapeReturn
-            + for<'b> Alloc<'b, T, S>,
+            + for<'b> Alloc<'b, T, S>
     {
         let out = self.apply_fn(x, |x| x.mul(x));
 
-        let ids = (x.id(), out.id());
-        self.tape_mut().add_grad_fn(move |grads, device| {
-            let (lhs, mut lhs_grad, out_grad) = grads.get_double::<T, S>(device, ids);
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (lhs, mut lhs_grad, out_grad) = grads.get_double::<T, S>(device, ids);
 
-            device.add_unary_grad(&lhs, &mut lhs_grad, &out_grad, |x| x.mul(T::two()));
-        });
+                device.add_unary_grad(&lhs, &mut lhs_grad, &out_grad, |x| x.mul(T::two()));
+            });
+        }
+        out
+    }
+}
+
+pub trait PowMayGrad<T, S: Shape = (), D: Device = Self>: Device {
+    fn pow(&self, x: &Buffer<T, D, S>, rhs: T) -> Buffer<T, D, S>;
+}
+
+impl<T, S, D> PowMayGrad<T, S, D> for D
+where
+    T: Display + Eval<T> + Mul<Output = T> + Float + 'static,
+    S: Shape + 'static,
+    D: ApplyFunction<T, S, Self> + UnaryGrad<T, S, Self> + MayTapeReturn + for<'b> Alloc<'b, T, S>,
+{
+    fn pow(&self, x: &Buffer<T, D, S>, rhs: T) -> Buffer<T, D, S> {
+        let out = self.apply_fn(x, |x| x.pow(rhs));
+
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (lhs, mut lhs_grad, out_grad) = grads.get_double::<T, S>(device, ids);
+
+                device.add_unary_grad(&lhs, &mut lhs_grad, &out_grad, |x| {
+                    x.pow(rhs - T::one()).mul(rhs)
+                })
+            });
+        }
 
         out
     }
@@ -61,43 +91,48 @@ where
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.binary_ew(lhs, rhs, |a, b| a.add(b));
 
-        let ids = (lhs.id(), rhs.id(), out.id());
-        self.tape_mut().add_grad_fn(move |grads, device| {
-            let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
-                grads.get_triple::<T, ()>(device, ids);
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (lhs.id(), rhs.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
+                    grads.get_triple::<T, ()>(device, ids);
 
-            device.add_binary_grad(
-                &lhs,
-                &rhs,
-                &mut lhs_grad,
-                &mut rhs_grad,
-                &out_grad,
-                |_, _| T::one(),
-                |_, _| T::one(),
-            );
-        });
-
+                device.add_binary_grad(
+                    &lhs,
+                    &rhs,
+                    &mut lhs_grad,
+                    &mut rhs_grad,
+                    &out_grad,
+                    |_, _| T::one(),
+                    |_, _| T::one(),
+                );
+            });
+        }
         out
     }
 
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.binary_ew(lhs, rhs, |a, b| a.sub(b));
 
-        let ids = (lhs.id(), rhs.id(), out.id());
-        self.tape_mut().add_grad_fn(move |grads, device| {
-            let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
-                grads.get_triple::<T, ()>(device, ids);
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (lhs.id(), rhs.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
+                    grads.get_triple::<T, ()>(device, ids);
 
-            device.add_binary_grad(
-                &lhs,
-                &rhs,
-                &mut lhs_grad,
-                &mut rhs_grad,
-                &out_grad,
-                |_, _| T::one(),
-                |_, _| -T::one(),
-            );
-        });
+                device.add_binary_grad(
+                    &lhs,
+                    &rhs,
+                    &mut lhs_grad,
+                    &mut rhs_grad,
+                    &out_grad,
+                    |_, _| T::one(),
+                    |_, _| -T::one(),
+                );
+            });
+        }
 
         out
     }
@@ -105,21 +140,24 @@ where
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.binary_ew(lhs, rhs, |a, b| a.mul(b));
 
-        let ids = (lhs.id(), rhs.id(), out.id());
-        self.tape_mut().add_grad_fn(move |grads, device| {
-            let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
-                grads.get_triple::<T, ()>(device, ids);
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (lhs.id(), rhs.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
+                    grads.get_triple::<T, ()>(device, ids);
 
-            device.add_binary_grad(
-                &lhs,
-                &rhs,
-                &mut lhs_grad,
-                &mut rhs_grad,
-                &out_grad,
-                |_, rhs| rhs,
-                |lhs, _| lhs,
-            );
-        });
+                device.add_binary_grad(
+                    &lhs,
+                    &rhs,
+                    &mut lhs_grad,
+                    &mut rhs_grad,
+                    &out_grad,
+                    |_, rhs| rhs,
+                    |lhs, _| lhs,
+                );
+            });
+        }
 
         out
     }
@@ -139,12 +177,15 @@ where
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.transpose(rows, cols, x);
 
-        let ids = (x.id(), out.id());
-        self.tape_mut().add_grad_fn(move |grads, device| {
-            let (_, mut lhs_grad, out_grad) = grads.get_double::<T, ()>(device, ids);
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (_, mut lhs_grad, out_grad) = grads.get_double::<T, ()>(device, ids);
 
-            lhs_grad.write_buf(&out_grad);
-        });
+                lhs_grad.write_buf(&out_grad);
+            });
+        }
         out
     }
 }
@@ -179,13 +220,16 @@ where
     ) -> Buffer<T, Self, OS> {
         let out = self.gemm(m, k, n, lhs, rhs);
 
-        let ids = (lhs.id(), rhs.id(), out.id());
-        self.tape_mut().add_grad_fn(move |grads, device| {
-            let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
-                grads.get_triple::<T, ()>(device, ids);
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (lhs.id(), rhs.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (lhs, rhs, mut lhs_grad, mut rhs_grad, out_grad) =
+                    grads.get_triple::<T, ()>(device, ids);
 
-            device.gemm_grad(m, k, n, &lhs, &rhs, &mut lhs_grad, &mut rhs_grad, &out_grad);
-        });
+                device.gemm_grad(m, k, n, &lhs, &rhs, &mut lhs_grad, &mut rhs_grad, &out_grad);
+            });
+        }
 
         out
     }
@@ -224,14 +268,16 @@ where
     ) -> Buffer<T, D, LS> {
         let out = self.add_row(rows, cols, lhs, rhs);
 
-        let ids = (lhs.id(), rhs.id(), out.id());
-        self.tape_mut().add_grad_fn(move |grads, device| {
-            let (_, _, mut lhs_grad, mut rhs_grad, out_grad) =
-                grads.get_triple::<T, ()>(device, ids);
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (lhs.id(), rhs.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (_, _, mut lhs_grad, mut rhs_grad, out_grad) =
+                    grads.get_triple::<T, ()>(device, ids);
 
-            device.add_row_grad(rows, cols, &mut lhs_grad, &mut rhs_grad, &out_grad);
-        });
-
+                device.add_row_grad(rows, cols, &mut lhs_grad, &mut rhs_grad, &out_grad);
+            });
+        }
         out
     }
 
@@ -244,11 +290,14 @@ where
     ) {
         self.add_row_mut(rows, cols, lhs, rhs);
 
-        let ids = (rhs.id(), lhs.id());
-        // FIXME may not work
-        self.tape_mut().add_grad_fn(move |grads, device| {
-            let (_, mut rhs_grad, out_grad) = grads.get_double(device, ids);
-            device.add_row_mut_grad(rows, cols, &mut rhs_grad, &out_grad);
-        });
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (rhs.id(), lhs.id());
+            // FIXME may not work
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (_, mut rhs_grad, out_grad) = grads.get_double(device, ids);
+                device.add_row_mut_grad(rows, cols, &mut rhs_grad, &out_grad);
+            });
+        }
     }
 }

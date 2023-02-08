@@ -60,7 +60,7 @@ fn test_2perf_min_this() {
     //let device = OpenCL::new(0).unwrap();
     let device = CPU::new();
 
-    let x = Buffer::from((&device, vec![1.3f32; 1293412]));
+    let x: Buffer = Buffer::from((&device, vec![1.3f32; 1293412]));
     let b = Buffer::from((&device, vec![2.1f32; 1293412]));
     let start = std::time::Instant::now();
 
