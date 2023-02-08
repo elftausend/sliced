@@ -135,3 +135,7 @@ pub trait RowOpGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device
 pub trait RandOp<T, S: Shape = (), D: Device = Self>: Device {
     fn rand(&self, x: &mut Buffer<T, D, S>, lo: T, hi: T);
 }
+
+pub trait Softmax<T, S: Shape = (), D: Device = Self>: Device {
+    fn softmax(&self, samples: usize, x: &Buffer<T, D, S>) -> Buffer<T, D, S>;
+}
