@@ -1,9 +1,11 @@
 use std::ops::{Add, AddAssign};
 
-use custos::{OpenCL, exec_on_cpu::cpu_exec_binary_may_unified, prelude::cpu_exec_binary_may_unified_mut};
+use custos::{
+    exec_on_cpu::cpu_exec_binary_may_unified, prelude::cpu_exec_binary_may_unified_mut, Buffer,
+    OpenCL,
+};
 
 use crate::RowOp;
-
 
 impl<T: Copy + Default + Add<Output = T> + AddAssign> RowOp<T> for OpenCL {
     #[inline]
@@ -11,11 +13,13 @@ impl<T: Copy + Default + Add<Output = T> + AddAssign> RowOp<T> for OpenCL {
         &self,
         rows: usize,
         cols: usize,
-        lhs: &custos::Buffer<T, Self>,
-        rhs: &custos::Buffer<T, Self>,
-    ) -> custos::Buffer<T, Self> 
-    {
-        cpu_exec_binary_may_unified(self, lhs, rhs, |cpu, lhs, rhs| cpu.add_row(rows, cols, lhs, rhs)).unwrap()
+        lhs: &Buffer<T, Self>,
+        rhs: &Buffer<T, Self>,
+    ) -> Buffer<T, Self> {
+        cpu_exec_binary_may_unified(self, lhs, rhs, |cpu, lhs, rhs| {
+            cpu.add_row(rows, cols, lhs, rhs)
+        })
+        .unwrap()
     }
 
     #[inline]
@@ -23,9 +27,12 @@ impl<T: Copy + Default + Add<Output = T> + AddAssign> RowOp<T> for OpenCL {
         &self,
         rows: usize,
         cols: usize,
-        lhs: &mut custos::Buffer<T, Self, ()>,
-        rhs: &custos::Buffer<T, Self, ()>,
+        lhs: &mut Buffer<T, Self, ()>,
+        rhs: &Buffer<T, Self, ()>,
     ) {
-        cpu_exec_binary_may_unified_mut(self, lhs, rhs, |cpu, lhs, rhs| cpu.add_row_mut(rows, cols, lhs, rhs)).unwrap()
+        cpu_exec_binary_may_unified_mut(self, lhs, rhs, |cpu, lhs, rhs| {
+            cpu.add_row_mut(rows, cols, lhs, rhs)
+        })
+        .unwrap()
     }
 }

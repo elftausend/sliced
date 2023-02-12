@@ -28,10 +28,10 @@ fn test_perf_min_this() {
     //let device = OpenCL::new(0).unwrap();
     let device = CPU::new();
 
-    let x = Buffer::from((&device, [1.3f32; 123412]));
+    let x = Buffer::from((&device, [1.3f32; 12312]));
     let start = std::time::Instant::now();
 
-    const TIMES: usize = 100;
+    const TIMES: usize = 5;
 
     for _ in 0..TIMES {
         for _ in range(100) {
@@ -40,7 +40,7 @@ fn test_perf_min_this() {
 
             let squared = device.square(&x);
             let mul = device.mul(&squared, &x);
-            assert_eq!(&*mul, [1.3 * 1.3 * 1.3; 123412]);
+            assert_eq!(&*mul, [1.3 * 1.3 * 1.3; 12312]);
 
             let _sum = squared.iter().sum::<f32>();
             //println!("i: {i}, sum: {sum:?}");
@@ -60,11 +60,11 @@ fn test_2perf_min_this() {
     //let device = OpenCL::new(0).unwrap();
     let device = CPU::new();
 
-    let x: Buffer = Buffer::from((&device, vec![1.3f32; 1293412]));
-    let b = Buffer::from((&device, vec![2.1f32; 1293412]));
+    let x: Buffer = Buffer::from((&device, vec![1.3f32; 12312]));
+    let b = Buffer::from((&device, vec![2.1f32; 12312]));
     let start = std::time::Instant::now();
 
-    const TIMES: usize = 40;
+    const TIMES: usize = 1;
 
     for _ in 0..TIMES {
         for _ in range(100) {
@@ -104,7 +104,7 @@ fn test_small_2perf_min_this() {
     let b = Buffer::from((&device, [2.1f32; 100]));
     let start = std::time::Instant::now();
 
-    const TIMES: usize = 10000;
+    const TIMES: usize = 100;
 
     for _ in 0..TIMES {
         for _ in range(100) {

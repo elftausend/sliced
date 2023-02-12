@@ -15,7 +15,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
         rhs: &CLBuffer<T>,
     ) -> CLBuffer<T> {
         let mut out = self.retrieve(m * n);
-        cl_gemm(self, m, k, n, rhs, lhs, &mut out).unwrap();
+        cl_gemm(self, m, k, n, lhs, rhs, &mut out).unwrap();
         out
     }
 }
@@ -32,7 +32,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
 ///     let rhs = Buffer::from((&device, [3i16, 2, 7, 1, 9, 20]));
 ///     let mut out = Buffer::new(&device, 4);
 ///     
-///     cl_gemm(&device, 2, 3, 2, &rhs, &lhs, &mut out)?;
+///     cl_gemm(&device, 2, 3, 2, &lhs, &rhs, &mut out)?;
 ///     assert_eq!(device.read(&out), vec![444, 480, 116, 118]);
 ///     Ok(())
 /// }
@@ -46,6 +46,8 @@ pub fn cl_gemm<'a, T: CDatatype>(
     rhs: &CLBuffer<T>,
     out: &mut CLBuffer<T>,
 ) -> Result<(), Error> {
+    let (m, n) = (n, m);
+
     let mut mw = 1;
     for x in &[16, 8, 4, 2, 1] {
         if m % x == 0 {
@@ -128,11 +130,11 @@ pub fn cl_gemm<'a, T: CDatatype>(
 
                 #pragma unroll
                 for (uint n=0; n<NW; ++n)
-                    C[(nc*NW + n)*MT + mt] = *( (floatMW*) CT[n]);
+                    C[(nc*NW + n)*MT + mt] += *( (floatMW*) CT[n]);
             }}");
 
     let gws = [f, s, 0];
 
-    enqueue_kernel(device, &src, gws, None, &[lhs, rhs, out])?;
+    enqueue_kernel(device, &src, gws, None, &[rhs, lhs, out])?;
     Ok(())
 }

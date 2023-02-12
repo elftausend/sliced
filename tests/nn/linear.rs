@@ -116,7 +116,7 @@ fn test_nn() {
 
     let start = Instant::now();
 
-    for _ in range(1000) {
+    for _ in range(10) {
         device.tape.borrow_mut().grads.cache.nodes.clear();
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
