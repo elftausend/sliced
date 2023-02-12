@@ -1,6 +1,7 @@
 use custos::{Buffer, CPU};
 use sliced::SquareMayGrad;
 
+#[cfg(feature = "cpu")]
 #[test]
 fn test_square() {
     let device = CPU::new();

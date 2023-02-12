@@ -22,6 +22,7 @@ impl<T: CDatatype> GemmGrad<T> for OpenCL {
             out_grad,
             &self.transpose(k, n, rhs),
             lhs_grad,
+            true // TODO usefull?
         )
         .unwrap();
         cl_gemm(
@@ -32,6 +33,7 @@ impl<T: CDatatype> GemmGrad<T> for OpenCL {
             &self.transpose(m, k, lhs),
             out_grad,
             rhs_grad,
+            true
         )
         .unwrap();
     }

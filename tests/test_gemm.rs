@@ -37,7 +37,6 @@ fn test_gemm_cpu() {
     assert_eq!(&*rhs_grad, [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]);
 }
 
-
 #[cfg(feature = "opencl")]
 #[test]
 fn test_gemm_cl() -> custos::Result<()> {
@@ -68,7 +67,6 @@ fn test_gemm_cl() -> custos::Result<()> {
         [9.0, 12.0, 15.0, 19.0, 26.0, 33.0, 24.0, 33.0, 42.0, 26.0, 37.0, 48.0]
     );
 
-    
     out.backward();
 
     let lhs_grad = lhs.grad();

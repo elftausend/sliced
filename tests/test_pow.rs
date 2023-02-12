@@ -1,6 +1,7 @@
 use custos::{Buffer, CPU};
 use sliced::PowMayGrad;
 
+#[cfg(feature = "cpu")]
 #[test]
 fn test_pow() {
     let device = CPU::new();

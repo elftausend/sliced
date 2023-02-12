@@ -1,6 +1,7 @@
 use custos::{Buffer, CPU};
 use sliced::BinaryOpsMayGrad;
 
+#[cfg(feature = "cpu")]
 #[test]
 fn test_add() {
     let device = CPU::new();

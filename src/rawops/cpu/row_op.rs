@@ -16,6 +16,7 @@ impl<T: Add<Output = T> + Copy + AddAssign, LS: Shape, RS: Shape> RowOp<T, LS, R
         row_op(self, rows, cols, lhs, rhs, |c, a, b| *c = a + b)
     }
 
+    #[inline]
     fn add_row_mut(
         &self,
         rows: usize,

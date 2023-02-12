@@ -14,12 +14,14 @@ pub struct Linear<'a, T, D: Device, const I: usize, const O: usize> {
     bias: Matrix<'a, T, D>,
 }
 
+// TODO create separate implementation for Stack device? (IsShapeIndep trait)
 impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I, O> {
     pub fn new(device: &'a D) -> Self
     where
-        D: RandOp<T> + Alloc<'a, T>,
+        D: RandOp<T> + Alloc<'a, T> + WriteBuf<T>,
     {
         let mut weights = Matrix::new(device, I, O);
+        //weights.write(&vec![T::one(); I * O]);
         device.rand(&mut weights, -T::one() / T::two(), T::one() / T::two());
 
         Linear {
@@ -36,6 +38,7 @@ impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I
         //inputs.gemm(&self.weights).add_row(&self.bias)
         let mut out = inputs.gemm(&self.weights);
         out.add_row_mut(&self.bias);
+        //let out = out.add_row(&self.bias);
         out
     }
 
@@ -105,6 +108,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
 
 fn main() {
     let device = CPU::new();
+    let mut device = custos::OpenCL::new(0).unwrap();
+
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
     let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);
@@ -114,7 +119,7 @@ fn main() {
 
     let start = Instant::now();
 
-    for _ in range(1000) {
+    for i in range(500) {
         device.tape.borrow_mut().grads.cache.nodes.clear();
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
@@ -124,10 +129,14 @@ fn main() {
         let out = lin2.forward(&out).relu();
         let out = lin3.forward(&out);
 
-        let loss = (&out - &y).squared();
+        let loss = (&out - &y).pow(2.);
         loss.backward();
 
-        //println!("lin1 dweights grad: {:?}", lin1.weights.grad());
+
+        //println!("out: {:?}", &out.read_to_vec()[out.len()-100..]);
+        //println!("lin1 dweights grad: {:?}", lin1.weights.grad().read_to_vec());
+
+        println!("i: {i}");
 
         sgd.step(lin1.params());
         sgd.step(lin2.params());
