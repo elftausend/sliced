@@ -6,7 +6,8 @@ use std::{
 use custos::{
     prelude::{Float, One, Two},
     Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeReturn, Shape, UnaryGrad,
-    WriteBuf};
+    WriteBuf,
+};
 
 use crate::{BinaryElementWise, BinaryGrad, Gemm, GemmGrad, RowOp, RowOpGrad, Transpose};
 
@@ -20,7 +21,7 @@ where
         Self: ApplyFunction<T, S, Self>
             + UnaryGrad<T, S, Self>
             + MayTapeReturn
-            + for<'b> Alloc<'b, T, S>
+            + for<'b> Alloc<'b, T, S>,
     {
         let out = self.apply_fn(x, |x| x.mul(x));
 

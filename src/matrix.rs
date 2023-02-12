@@ -1,3 +1,8 @@
+mod impl_from;
+
+#[cfg(feature = "static-api")]
+mod to_static_device;
+
 use std::{fmt::Display, ops::Mul};
 
 use custos::{
@@ -6,7 +11,10 @@ use custos::{
     UnaryElementWiseMayGrad, UnaryGrad, CPU,
 };
 
-use crate::{BinaryOpsMayGrad, GemmMayGrad, RandOp, RowOpMayGrad, SquareMayGrad, TransposeMayGrad, PowMayGrad};
+use crate::{
+    BinaryOpsMayGrad, GemmMayGrad, PowMayGrad, RandOp, RowOpMayGrad, SquareMayGrad,
+    TransposeMayGrad,
+};
 
 pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
     data: Buffer<'a, T, D, S>,
@@ -50,12 +58,11 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     where
         D: TransposeMayGrad<T, S, OS>,
     {
-        (
-            self.device().transpose(self.rows, self.cols, self),
-            self.cols,
-            self.rows,
-        )
-            .into()
+        Matrix {
+            data: self.device().transpose(self.rows, self.cols, self),
+            rows: self.cols,
+            cols: self.rows,
+        }
     }
 
     #[inline]
@@ -144,15 +151,15 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + ApplyFunction<T, S>
             + UnaryGrad<T, S>
             + for<'b> Alloc<'b, T, S>
-            + MayTapeReturn
+            + MayTapeReturn,
     {
         (self.device().square(self), self.rows, self.cols).into()
     }
 
     #[inline]
-    pub fn pow(&self, rhs: T) -> Matrix<'a, T, D, S> 
+    pub fn pow(&self, rhs: T) -> Matrix<'a, T, D, S>
     where
-        D: PowMayGrad<T, S>
+        D: PowMayGrad<T, S>,
     {
         (self.device().pow(self, rhs), self.rows, self.cols).into()
     }
@@ -183,44 +190,6 @@ impl<'a, T, D: Device, S: Shape> core::ops::DerefMut for Matrix<'a, T, D, S> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.as_buf_mut()
-    }
-}
-
-impl<'a, T, D: Device, S: Shape> From<(Buffer<'a, T, D, S>, usize, usize)> for Matrix<'a, T, D, S> {
-    #[inline]
-    fn from((data, rows, cols): (Buffer<'a, T, D, S>, usize, usize)) -> Self {
-        Matrix { data, rows, cols }
-    }
-}
-
-impl<'a, T: Copy, D: Alloc<'a, T>, const N: usize> From<(&'a D, usize, usize, [T; N])>
-    for Matrix<'a, T, D>
-{
-    #[inline]
-    fn from((device, rows, cols, slice): (&'a D, usize, usize, [T; N])) -> Self {
-        let data = Buffer::from((device, slice));
-        Matrix { data, rows, cols }
-    }
-}
-
-impl<'a, T: Copy, D: Alloc<'a, T>, const N: usize> From<(&'a D, usize, usize, &[T; N])>
-    for Matrix<'a, T, D>
-{
-    #[inline]
-    fn from((device, rows, cols, slice): (&'a D, usize, usize, &[T; N])) -> Self {
-        let data = Buffer::from((device, slice));
-        Matrix { data, rows, cols }
-    }
-}
-
-// no tuple for dims
-#[cfg(not(feature = "no-std"))]
-// FIXME: In this case, GraphReturn acts as an "IsDynamic" trait, as GraphReturn is not implemented for Stack
-// not anymore - but the message stays the same
-impl<'a, T: Copy, D: Alloc<'a, T>> From<(&'a D, usize, usize, Vec<T>)> for Matrix<'a, T, D> {
-    fn from((device, rows, cols, data): (&'a D, usize, usize, Vec<T>)) -> Self {
-        let data = Buffer::from((device, data));
-        Matrix { data, rows, cols }
     }
 }
 

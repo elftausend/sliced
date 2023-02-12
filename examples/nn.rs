@@ -47,13 +47,11 @@ impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I
     }
 }
 
-
 pub fn create_sine<'a, D: Alloc<'a, f32> + IsShapeIndep>(
     device: &'a D,
     min: usize,
     max: usize,
 ) -> (Matrix<f32, D>, Matrix<f32, D>) {
-
     let mut x: Vec<f32> = Vec::new();
     for add in min..max {
         x.push(add as f32 / 1000.);
