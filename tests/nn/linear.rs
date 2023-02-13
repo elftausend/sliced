@@ -1,13 +1,8 @@
 use custos::{
-    prelude::{Float, Number, One},
-    range, Alloc, Buffer, ClearBuf, Device, IsShapeIndep, MainMemory, MayTapeReturn, WriteBuf, CPU,
+    prelude::Float, Alloc, Buffer, Device, IsShapeIndep,
 };
-use graplot::Plot;
-use sliced::{Gemm, GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
-use std::{
-    ops::{Mul, SubAssign},
-    time::Instant,
-};
+
+use sliced::{GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
 
 pub struct Linear<'a, T, D: Device, const I: usize, const O: usize> {
     weights: Matrix<'a, T, D>,
@@ -81,6 +76,13 @@ pub struct SGD<T> {
     lr: T,
 }
 
+#[cfg(feature="autograd")]
+use custos::prelude::{One, MayTapeReturn, WriteBuf, ClearBuf, MainMemory};
+
+#[cfg(feature="autograd")]
+use core::ops::{Mul, SubAssign};
+
+#[cfg(feature="autograd")]
 impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
@@ -104,8 +106,13 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
     }
 }
 
+#[cfg(feature="autograd")]
 #[test]
 fn test_nn() {
+    use std::time::Instant;
+
+    use custos::{range, CPU};
+
     let device = CPU::new();
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
@@ -143,7 +150,7 @@ fn test_nn() {
     let out = lin3.forward(&out);
     println!("out: {:?}", out.read());
 
-    let mut plot = Plot::new((x.read(), y.read()));
+    let mut plot = graplot::Plot::new((x.read(), y.read()));
     //plot.add((x.read(), out.read(), "-r"));
     //    plot.show()
 }

@@ -25,14 +25,17 @@ fn test_row_op_cpu() {
         3, 3, 8, 1, 7,
         3, 6, 6, 6, 4
     ]);
+    
+    #[cfg(feature="autograd")]
+    {
+        out.backward();
 
-    out.backward();
+        let row_add_grad = row_add.grad();
+        assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
 
-    let row_add_grad = row_add.grad();
-    assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
-
-    let buf_grad = buf.grad();
-    assert_eq!(buf_grad.read(), [1; 3*5])
+        let buf_grad = buf.grad();
+        assert_eq!(buf_grad.read(), [1; 3*5])
+    }
 }
 
 #[cfg(feature="cpu")]
@@ -62,13 +65,16 @@ fn test_row_op_mut_cpu() {
         3, 6, 6, 6, 4
     ]);
 
-    buf.backward();
+    #[cfg(feature="autograd")]
+    {
+        buf.backward();
 
-    let row_add_grad = row_add.grad();
-    assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
+        let row_add_grad = row_add.grad();
+        assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
 
-    let buf_grad = buf.grad();
-    assert_eq!(buf_grad.read(), [1; 3*5])
+        let buf_grad = buf.grad();
+        assert_eq!(buf_grad.read(), [1; 3*5])
+    }
 }
 
 
@@ -139,13 +145,15 @@ fn test_row_op_mut_cl() -> custos::Result<()> {
         3, 6, 6, 6, 4
     ]);
 
-    buf.backward();
+    #[cfg(feature="autograd")]
+    {
+        buf.backward();
 
-    let row_add_grad = row_add.grad();
-    assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
+        let row_add_grad = row_add.grad();
+        assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
 
-    let buf_grad = buf.grad();
-    assert_eq!(buf_grad.read(), [1; 3*5]);
-
+        let buf_grad = buf.grad();
+        assert_eq!(buf_grad.read(), [1; 3*5]);
+    }
     Ok(())
 }

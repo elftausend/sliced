@@ -12,13 +12,16 @@ fn test_sub() {
     let out = device.sub(&lhs, &rhs);
     assert_eq!(out.read(), [-5, -5, -5, -5, -5]);
 
-    out.backward();
+    #[cfg(feature="autograd")]
+    {
+        out.backward();
 
-    let grad = lhs.grad();
-    assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
+        let grad = lhs.grad();
+        assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
 
-    let grad = rhs.grad();
-    assert_eq!(grad.read(), [-1, -1, -1, -1, -1]);
+        let grad = rhs.grad();
+        assert_eq!(grad.read(), [-1, -1, -1, -1, -1]);
+    }
 }
 
 #[cfg(feature = "opencl")]
@@ -34,13 +37,15 @@ fn test_sub_cl() -> custos::Result<()> {
     let out = device.sub(&lhs, &rhs);
     assert_eq!(out.read(), [-5, -5, -5, -5, -5]);
 
-    out.backward();
+    #[cfg(feature="autograd")]
+    {
+        out.backward();
 
-    let grad = lhs.grad();
-    assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
+        let grad = lhs.grad();
+        assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
 
-    let grad = rhs.grad();
-    assert_eq!(grad.read(), [-1, -1, -1, -1, -1]);
-
+        let grad = rhs.grad();
+        assert_eq!(grad.read(), [-1, -1, -1, -1, -1]);
+    }
     Ok(())
 }

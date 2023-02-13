@@ -1,8 +1,10 @@
-use custos::{range, Buffer, CPU};
-use sliced::Matrix;
 
+#[cfg(feature="autograd")]
 #[test]
 fn test_min_fn() {
+    use custos::{range, Buffer, CPU};
+    use sliced::Matrix;
+
     let device = CPU::new();
     let mut x = Matrix::from((&device, 1, 7, [10f32, -10., 10., -5., 6., 3., 1.]));
 

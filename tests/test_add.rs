@@ -12,13 +12,16 @@ fn test_add() {
     let out = device.add(&lhs, &rhs);
     assert_eq!(out.read(), [7, 9, 11, 13, 15]);
 
-    out.backward();
+    #[cfg(feature="autograd")]
+    {
+        out.backward();
 
-    let grad = lhs.grad();
-    assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
+        let grad = lhs.grad();
+        assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
 
-    let grad = rhs.grad();
-    assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
+        let grad = rhs.grad();
+        assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
+    }
 }
 
 #[cfg(feature = "opencl")]
@@ -34,13 +37,15 @@ fn test_add_cl() -> custos::Result<()> {
     let out = device.add(&lhs, &rhs);
     assert_eq!(out.read(), [7, 9, 11, 13, 15]);
 
-    out.backward();
+    #[cfg(feature="autograd")]
+    {
+        out.backward();
 
-    let grad = lhs.grad();
-    assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
+        let grad = lhs.grad();
+        assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
 
-    let grad = rhs.grad();
-    assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
-
+        let grad = rhs.grad();
+        assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
+    }
     Ok(())
 }

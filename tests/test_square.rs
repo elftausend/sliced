@@ -11,10 +11,13 @@ fn test_square() {
     let out = device.square(&buf);
     assert_eq!(out.read(), [1, 4, 9, 16, 25]);
 
-    out.backward();
+    #[cfg(feature="autograd")]
+    {
+        out.backward();
 
-    let grad = buf.grad();
-    assert_eq!(grad.read(), [2, 4, 6, 8, 10]);
+        let grad = buf.grad();
+        assert_eq!(grad.read(), [2, 4, 6, 8, 10]);
+    }
 }
 
 #[cfg(feature = "opencl")]
@@ -29,10 +32,12 @@ fn test_square_cl() -> custos::Result<()> {
     let out = device.square(&buf);
     assert_eq!(out.read(), [1, 4, 9, 16, 25]);
 
-    out.backward();
+    #[cfg(feature="autograd")]
+    {
+        out.backward();
 
-    let grad = buf.grad();
-    assert_eq!(grad.read(), [2, 4, 6, 8, 10]);
-
+        let grad = buf.grad();
+        assert_eq!(grad.read(), [2, 4, 6, 8, 10]);
+    }
     Ok(())
 }

@@ -12,13 +12,16 @@ fn test_mul() {
     let out = device.mul(&lhs, &rhs);
     assert_eq!(out.read(), [6, 14, 24, 36, 50]);
 
-    out.backward();
+    #[cfg(feature="autograd")]
+    {
+        out.backward();
 
-    let grad = lhs.grad();
-    assert_eq!(grad.read(), [6, 7, 8, 9, 10]);
+        let grad = lhs.grad();
+        assert_eq!(grad.read(), [6, 7, 8, 9, 10]);
 
-    let grad = rhs.grad();
-    assert_eq!(grad.read(), [1, 2, 3, 4, 5]);
+        let grad = rhs.grad();
+        assert_eq!(grad.read(), [1, 2, 3, 4, 5]);
+    }
 }
 
 #[cfg(feature = "opencl")]
@@ -34,13 +37,16 @@ fn test_mul_cl() -> custos::Result<()> {
     let out = device.mul(&lhs, &rhs);
     assert_eq!(out.read(), [6, 14, 24, 36, 50]);
 
-    out.backward();
+    #[cfg(feature="autograd")]
+    {
+        out.backward();
 
-    let grad = lhs.grad();
-    assert_eq!(grad.read(), [6, 7, 8, 9, 10]);
+        let grad = lhs.grad();
+        assert_eq!(grad.read(), [6, 7, 8, 9, 10]);
 
-    let grad = rhs.grad();
-    assert_eq!(grad.read(), [1, 2, 3, 4, 5]);
+        let grad = rhs.grad();
+        assert_eq!(grad.read(), [1, 2, 3, 4, 5]);
+    }
 
     Ok(())
 }

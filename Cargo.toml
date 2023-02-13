@@ -10,7 +10,8 @@ custos = {path = "../custos", default-features=false, features=["macro"]}
 fastrand = "1.8.0"
 
 [features]
-default = ["stack", "cpu", "opencl", "blas", "matrix", "autograd", "static-api"]
+# try stack feature
+default = ["stack", "cpu", "opencl", "blas", "matrix", "static-api"]
 autograd = ["custos/autograd"]
 static-api = ["custos/static-api"]
 stack = ["custos/stack"]
@@ -22,3 +23,11 @@ matrix = []
 [dev-dependencies]
 rawsliced = { path = "../rawsliced" }
 graplot = "0.1.22"
+
+[[test]]
+name = "test_combination"
+required-features = ["cpu", "autograd", "opencl"]
+
+#[[test]]
+#name = "nn/linear"
+#required-features = ["cpu", "autograd", "opencl"]

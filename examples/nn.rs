@@ -38,7 +38,6 @@ impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I
         //inputs.gemm(&self.weights).add_row(&self.bias)
         let mut out = inputs.gemm(&self.weights);
         out.add_row_mut(&self.bias);
-        //let out = out.add_row(&self.bias);
         out
     }
 
@@ -83,6 +82,7 @@ pub struct SGD<T> {
     lr: T,
 }
 
+#[cfg(feature="autograd")]
 impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
@@ -108,7 +108,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
 
 fn main() {
     let device = CPU::new();
-    let mut device = custos::OpenCL::new(0).unwrap();
+    //let mut device = custos::OpenCL::new(0).unwrap();
+    //device.set_unified_mem(false);
 
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
@@ -119,7 +120,8 @@ fn main() {
 
     let start = Instant::now();
 
-    for i in range(500) {
+    for i in range(18000) {
+        #[cfg(feature="autograd")]
         device.tape.borrow_mut().grads.cache.nodes.clear();
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
@@ -130,17 +132,19 @@ fn main() {
         let out = lin3.forward(&out);
 
         let loss = (&out - &y).pow(2.);
-        loss.backward();
-
-
-        //println!("out: {:?}", &out.read_to_vec()[out.len()-100..]);
-        //println!("lin1 dweights grad: {:?}", lin1.weights.grad().read_to_vec());
 
         println!("i: {i}");
 
-        sgd.step(lin1.params());
-        sgd.step(lin2.params());
-        sgd.step(lin3.params());
+        #[cfg(feature="autograd")]
+        {
+            loss.backward();
+
+            //println!("out: {:?}", &out.read_to_vec()[out.len()-100..]);
+            //println!("lin1 dweights grad: {:?}", lin1.weights.grad().read_to_vec());
+            sgd.step(lin1.params());
+            sgd.step(lin2.params());
+            sgd.step(lin3.params());
+        }
     }
 
     println!("elapsed: {:?}", start.elapsed());

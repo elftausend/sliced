@@ -10,12 +10,15 @@ fn test_relu_cpu() {
     let out = buf.relu();
 
     assert_eq!(out.read(), [0., 0., 2., 5., 0.,]);
+    
+    #[cfg(feature="autograd")]
+    {
+        out.backward();
 
-    out.backward();
+        let grad = buf.grad();
 
-    let grad = buf.grad();
-
-    assert_eq!(grad.read(), [0., 0., 1., 1., 0.,]);
+        assert_eq!(grad.read(), [0., 0., 1., 1., 0.,]);
+    }
 }
 
 #[cfg(feature = "opencl")]
@@ -31,11 +34,14 @@ fn test_relu_cl() -> custos::Result<()> {
 
     assert_eq!(out.read(), [0., 0., 2., 5., 0.,]);
 
-    out.backward();
+    #[cfg(feature="autograd")]
+    {
+        out.backward();
 
-    let grad = buf.grad();
+        let grad = buf.grad();
 
-    assert_eq!(grad.read(), [0., 0., 1., 1., 0.,]);
+        assert_eq!(grad.read(), [0., 0., 1., 1., 0.,]);
+    }
 
     Ok(())
 }
