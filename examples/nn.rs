@@ -82,7 +82,7 @@ pub struct SGD<T> {
     lr: T,
 }
 
-#[cfg(feature="autograd")]
+#[cfg(feature = "autograd")]
 impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
@@ -121,7 +121,7 @@ fn main() {
     let start = Instant::now();
 
     for i in range(18000) {
-        #[cfg(feature="autograd")]
+        #[cfg(feature = "autograd")]
         device.tape.borrow_mut().grads.cache.nodes.clear();
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
@@ -135,7 +135,7 @@ fn main() {
 
         println!("i: {i}");
 
-        #[cfg(feature="autograd")]
+        #[cfg(feature = "autograd")]
         {
             loss.backward();
 

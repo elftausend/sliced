@@ -12,7 +12,7 @@ fn test_sub() {
     let out = device.sub(&lhs, &rhs);
     assert_eq!(out.read(), [-5, -5, -5, -5, -5]);
 
-    #[cfg(feature="autograd")]
+    #[cfg(feature = "autograd")]
     {
         out.backward();
 
@@ -37,7 +37,7 @@ fn test_sub_cl() -> custos::Result<()> {
     let out = device.sub(&lhs, &rhs);
     assert_eq!(out.read(), [-5, -5, -5, -5, -5]);
 
-    #[cfg(feature="autograd")]
+    #[cfg(feature = "autograd")]
     {
         out.backward();
 

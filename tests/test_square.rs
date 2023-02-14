@@ -11,7 +11,7 @@ fn test_square() {
     let out = device.square(&buf);
     assert_eq!(out.read(), [1, 4, 9, 16, 25]);
 
-    #[cfg(feature="autograd")]
+    #[cfg(feature = "autograd")]
     {
         out.backward();
 
@@ -32,7 +32,7 @@ fn test_square_cl() -> custos::Result<()> {
     let out = device.square(&buf);
     assert_eq!(out.read(), [1, 4, 9, 16, 25]);
 
-    #[cfg(feature="autograd")]
+    #[cfg(feature = "autograd")]
     {
         out.backward();
 

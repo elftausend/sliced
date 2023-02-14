@@ -1,5 +1,4 @@
-
-#[cfg(feature="autograd")]
+#[cfg(feature = "autograd")]
 #[test]
 fn test_min_fn() {
     use custos::{range, Buffer, CPU};

@@ -12,7 +12,7 @@ fn test_mul() {
     let out = device.mul(&lhs, &rhs);
     assert_eq!(out.read(), [6, 14, 24, 36, 50]);
 
-    #[cfg(feature="autograd")]
+    #[cfg(feature = "autograd")]
     {
         out.backward();
 
@@ -37,7 +37,7 @@ fn test_mul_cl() -> custos::Result<()> {
     let out = device.mul(&lhs, &rhs);
     assert_eq!(out.read(), [6, 14, 24, 36, 50]);
 
-    #[cfg(feature="autograd")]
+    #[cfg(feature = "autograd")]
     {
         out.backward();
 

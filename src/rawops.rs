@@ -139,3 +139,5 @@ pub trait RandOp<T, S: Shape = (), D: Device = Self>: Device {
 pub trait Softmax<T, S: Shape = (), D: Device = Self>: Device {
     fn softmax(&self, samples: usize, x: &Buffer<T, D, S>) -> Buffer<T, D, S>;
 }
+
+//pub trait SumOp

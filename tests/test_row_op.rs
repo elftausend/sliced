@@ -1,8 +1,7 @@
-
-#[cfg(feature="cpu")]
+#[cfg(feature = "cpu")]
 #[test]
 fn test_row_op_cpu() {
-    use custos::{CPU, Buffer};
+    use custos::{Buffer, CPU};
     use sliced::RowOpMayGrad;
 
     let device = CPU::new();
@@ -25,8 +24,8 @@ fn test_row_op_cpu() {
         3, 3, 8, 1, 7,
         3, 6, 6, 6, 4
     ]);
-    
-    #[cfg(feature="autograd")]
+
+    #[cfg(feature = "autograd")]
     {
         out.backward();
 
@@ -34,14 +33,14 @@ fn test_row_op_cpu() {
         assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
 
         let buf_grad = buf.grad();
-        assert_eq!(buf_grad.read(), [1; 3*5])
+        assert_eq!(buf_grad.read(), [1; 3 * 5])
     }
 }
 
-#[cfg(feature="cpu")]
+#[cfg(feature = "cpu")]
 #[test]
 fn test_row_op_mut_cpu() {
-    use custos::{CPU, Buffer};
+    use custos::{Buffer, CPU};
     use sliced::RowOpMayGrad;
 
     let device = CPU::new();
@@ -65,7 +64,7 @@ fn test_row_op_mut_cpu() {
         3, 6, 6, 6, 4
     ]);
 
-    #[cfg(feature="autograd")]
+    #[cfg(feature = "autograd")]
     {
         buf.backward();
 
@@ -73,12 +72,11 @@ fn test_row_op_mut_cpu() {
         assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
 
         let buf_grad = buf.grad();
-        assert_eq!(buf_grad.read(), [1; 3*5])
+        assert_eq!(buf_grad.read(), [1; 3 * 5])
     }
 }
 
-
-/* 
+/*
 TODO: implement this
 #[cfg(feature="opencl")]
 #[test]
@@ -118,10 +116,10 @@ fn test_row_op_cl() -> custos::Result<()> {
     Ok(())
 }*/
 
-#[cfg(feature="opencl")]
+#[cfg(feature = "opencl")]
 #[test]
 fn test_row_op_mut_cl() -> custos::Result<()> {
-    use custos::{OpenCL, Buffer};
+    use custos::{Buffer, OpenCL};
     use sliced::RowOpMayGrad;
 
     let device = OpenCL::new(0)?;
@@ -145,7 +143,7 @@ fn test_row_op_mut_cl() -> custos::Result<()> {
         3, 6, 6, 6, 4
     ]);
 
-    #[cfg(feature="autograd")]
+    #[cfg(feature = "autograd")]
     {
         buf.backward();
 
@@ -153,7 +151,7 @@ fn test_row_op_mut_cl() -> custos::Result<()> {
         assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
 
         let buf_grad = buf.grad();
-        assert_eq!(buf_grad.read(), [1; 3*5]);
+        assert_eq!(buf_grad.read(), [1; 3 * 5]);
     }
     Ok(())
 }

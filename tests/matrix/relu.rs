@@ -10,8 +10,8 @@ fn test_relu_cpu() {
     let out = buf.relu();
 
     assert_eq!(out.read(), [0., 0., 2., 5., 0.,]);
-    
-    #[cfg(feature="autograd")]
+
+    #[cfg(feature = "autograd")]
     {
         out.backward();
 
@@ -34,7 +34,7 @@ fn test_relu_cl() -> custos::Result<()> {
 
     assert_eq!(out.read(), [0., 0., 2., 5., 0.,]);
 
-    #[cfg(feature="autograd")]
+    #[cfg(feature = "autograd")]
     {
         out.backward();
 

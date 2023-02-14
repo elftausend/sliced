@@ -12,7 +12,7 @@ fn test_add() {
     let out = device.add(&lhs, &rhs);
     assert_eq!(out.read(), [7, 9, 11, 13, 15]);
 
-    #[cfg(feature="autograd")]
+    #[cfg(feature = "autograd")]
     {
         out.backward();
 
@@ -37,7 +37,7 @@ fn test_add_cl() -> custos::Result<()> {
     let out = device.add(&lhs, &rhs);
     assert_eq!(out.read(), [7, 9, 11, 13, 15]);
 
-    #[cfg(feature="autograd")]
+    #[cfg(feature = "autograd")]
     {
         out.backward();
 

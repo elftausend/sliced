@@ -87,11 +87,7 @@ pub fn cl_gemm<'a, T: CDatatype>(
 
     let dt = T::as_c_type_str();
 
-    let add_to_out = if add_to_out {
-        "+"
-    } else {
-        ""
-    };
+    let add_to_out = if add_to_out { "+" } else { "" };
 
     let src = format!("
         #define K {k}

@@ -1,6 +1,4 @@
-use custos::{
-    prelude::Float, Alloc, Buffer, Device, IsShapeIndep,
-};
+use custos::{prelude::Float, Alloc, Buffer, Device, IsShapeIndep};
 
 use sliced::{GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
 
@@ -76,13 +74,13 @@ pub struct SGD<T> {
     lr: T,
 }
 
-#[cfg(feature="autograd")]
-use custos::prelude::{One, MayTapeReturn, WriteBuf, ClearBuf, MainMemory};
+#[cfg(feature = "autograd")]
+use custos::prelude::{ClearBuf, MainMemory, MayTapeReturn, One, WriteBuf};
 
-#[cfg(feature="autograd")]
+#[cfg(feature = "autograd")]
 use core::ops::{Mul, SubAssign};
 
-#[cfg(feature="autograd")]
+#[cfg(feature = "autograd")]
 impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
@@ -106,7 +104,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
     }
 }
 
-#[cfg(feature="autograd")]
+#[cfg(feature = "autograd")]
 #[test]
 fn test_nn() {
     use std::time::Instant;
