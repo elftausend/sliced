@@ -141,3 +141,14 @@ pub trait Softmax<T, S: Shape = (), D: Device = Self>: Device {
 }
 
 //pub trait SumOp
+pub trait Max<T, S: Shape = (), D: Device = Self>: Device {
+    fn max(&self, x: &Buffer<T, D, S>) -> T;
+}
+
+pub trait MaxRows<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
+    fn max_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
+}
+
+pub trait MaxCols<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
+    fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
+}
