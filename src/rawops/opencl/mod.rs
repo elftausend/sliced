@@ -6,8 +6,8 @@ mod max;
 mod rand;
 mod row_op;
 mod row_op_grad;
-mod transpose;
 mod sum;
+mod transpose;
 
 pub use binary_ew::*;
 pub use binary_grad::*;
@@ -17,5 +17,5 @@ pub use max::*;
 pub use rand::*;
 pub use row_op::*;
 pub use row_op_grad::*;
-pub use transpose::*;
 pub use sum::*;
+pub use transpose::*;

@@ -1,8 +1,8 @@
 use std::{iter::Sum, ops::AddAssign};
 
-use custos::{MainMemory, Shape, CPU, Buffer, Device};
+use custos::{Buffer, Device, MainMemory, Shape, CPU};
 
-use crate::{SumRows, SumCols};
+use crate::{SumCols, SumRows};
 
 impl<T, S, D> crate::Sum<T, S, D> for CPU
 where
