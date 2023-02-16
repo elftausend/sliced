@@ -1,6 +1,6 @@
 use custos::{Buffer, Device, MainMemory, Shape, CPU};
 
-use crate::{Max, MaxRows, MaxCols};
+use crate::{Max, MaxCols, MaxRows};
 
 impl<T, D, S> Max<T, S, D> for CPU
 where
@@ -24,7 +24,7 @@ where
     #[inline]
     fn max_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve::<_, OS>(cols);
-        
+
         // If all values in a column are negative, the corresponding maximum would be 0.
         out.copy_from_slice(&x[..cols]);
 
