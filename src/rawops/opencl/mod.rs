@@ -1,5 +1,6 @@
 mod binary_ew;
 mod binary_grad;
+mod col_op;
 mod gemm;
 mod gemm_grad;
 mod max;
@@ -11,6 +12,7 @@ mod transpose;
 
 pub use binary_ew::*;
 pub use binary_grad::*;
+pub use col_op::*;
 pub use gemm::*;
 pub use gemm_grad::*;
 pub use max::*;

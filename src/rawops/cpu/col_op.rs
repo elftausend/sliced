@@ -1,4 +1,24 @@
+use custos::{Buffer, Device, MainMemory, Shape, CPU};
 
+use crate::ColOp;
+
+impl<T: Copy, LS: Shape, RS: Shape, D: MainMemory> ColOp<T, LS, RS, D> for CPU {
+    #[inline]
+    fn col_op<F>(
+        &self,
+        cols: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+        f: F,
+    ) -> Buffer<T, Self, LS>
+    where
+        F: Fn(T, T) -> T,
+    {
+        let mut out = self.retrieve(lhs.len());
+        col_op(cols, lhs, rhs, &mut out, f);
+        out
+    }
+}
 
 pub fn col_op<T, F>(cols: usize, lhs: &[T], rhs: &[T], out: &mut [T], f: F)
 where

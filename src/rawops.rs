@@ -1,4 +1,9 @@
-use custos::{Buffer, Device, Eval, MayDim2, Resolve, Shape};
+use std::ops::{Div, Sub};
+
+use custos::{
+    prelude::Float, Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayDim2, MayTapeReturn,
+    Resolve, Shape, UnaryGrad,
+};
 
 mod cpu;
 
@@ -114,6 +119,44 @@ pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     );
 }
 
+pub trait ColOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+    fn col_op<F>(
+        &self,
+        cols: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+        f: F,
+    ) -> Buffer<T, Self, LS>
+    where
+        F: Fn(T, T) -> T + Copy;
+
+    #[inline]
+    fn sub_cols(
+        &self,
+        cols: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+    ) -> Buffer<T, Self, LS>
+    where
+        T: Sub<Output = T>,
+    {
+        self.col_op(cols, lhs, rhs, |lhs, rhs| lhs - rhs)
+    }
+
+    #[inline]
+    fn div_cols(
+        &self,
+        cols: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+    ) -> Buffer<T, Self, LS>
+    where
+        T: Div<Output = T>,
+    {
+        self.col_op(cols, lhs, rhs, |lhs, rhs| lhs / rhs)
+    }
+}
+
 pub trait RowOpGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     fn add_row_grad(
         &self,
@@ -137,7 +180,7 @@ pub trait RandOp<T, S: Shape = (), D: Device = Self>: Device {
 }
 
 pub trait Softmax<T, S: Shape = (), D: Device = Self>: Device {
-    fn softmax(&self, samples: usize, x: &Buffer<T, D, S>) -> Buffer<T, D, S>;
+    fn softmax(&self, samples: usize, sample_size: usize, x: &Buffer<T, D, S>) -> Buffer<T, D, S>;
 }
 
 //pub trait SumOp

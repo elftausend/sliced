@@ -302,3 +302,33 @@ where
         }
     }
 }
+
+pub trait Exp<T, S>
+where
+    Self: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+    T: Float,
+    S: Shape,
+{
+    fn exp(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S> {
+        let out = self.apply_fn(x, |x| x.exp());
+
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (lhs, mut lhs_grad, out_grad) = grads.get_double::<T, _>(device, ids);
+                device.add_unary_grad(&lhs, &mut lhs_grad, &out_grad, |x| x.exp());
+            });
+        }
+
+        out
+    }
+}
+
+impl<T, S, D> Exp<T, S> for D
+where
+    T: Float,
+    S: Shape,
+    D: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+{
+}

@@ -33,16 +33,14 @@ where
     }
 }
 
-impl<T, D, IS, OS> MaxCols<T, IS, OS, D> for CPU
+impl<T, D> MaxCols<T, (), (), D> for CPU
 where
     T: Ord + Copy,
     D: MainMemory,
-    IS: Shape,
-    OS: Shape,
 {
     #[inline]
-    fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve::<_, OS>(rows);
+    fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D>) -> Buffer<T> {
+        let mut out = self.retrieve::<_, ()>(rows);
         max_cols(cols, x, &mut out);
         out
     }
