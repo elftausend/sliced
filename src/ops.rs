@@ -303,7 +303,7 @@ where
     }
 }
 
-pub trait Exp<T, S>
+pub trait ExpMayGrad<T, S>
 where
     Self: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
     T: Float,
@@ -325,10 +325,25 @@ where
     }
 }
 
-impl<T, S, D> Exp<T, S> for D
+impl<T, S, D> ExpMayGrad<T, S> for D
 where
     T: Float,
     S: Shape,
     D: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+{
+}
+
+pub trait Exp<T: Float, S: Shape>: ApplyFunction<T, S> {
+    #[inline]
+    fn exp(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S> {
+        self.apply_fn(x, |x| x.exp())
+    }
+}
+
+impl<T, S, D> Exp<T, S> for D
+where
+    D: ApplyFunction<T, S>,
+    T: Float,
+    S: Shape,
 {
 }

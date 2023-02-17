@@ -2,15 +2,10 @@ use custos::{Buffer, Device, MainMemory, Shape, CPU};
 
 use crate::ColOp;
 
-impl<T: Copy, LS: Shape, RS: Shape, D: MainMemory> ColOp<T, LS, RS, D> for CPU {
+// TODO: shape?
+impl<T: Copy, D: MainMemory> ColOp<T, (), (), D> for CPU {
     #[inline]
-    fn col_op<F>(
-        &self,
-        cols: usize,
-        lhs: &Buffer<T, D, LS>,
-        rhs: &Buffer<T, D, RS>,
-        f: F,
-    ) -> Buffer<T, Self, LS>
+    fn col_op<F>(&self, cols: usize, lhs: &Buffer<T, D>, rhs: &Buffer<T, D>, f: F) -> Buffer<T>
     where
         F: Fn(T, T) -> T,
     {

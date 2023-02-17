@@ -1,14 +1,16 @@
 use std::ops::{Div, Sub};
 
-use custos::{
-    prelude::Float, Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayDim2, MayTapeReturn,
-    Resolve, Shape, UnaryGrad,
-};
+use custos::{Buffer, Device, Eval, MayDim2, Resolve, Shape};
 
 mod cpu;
 
 #[cfg(feature = "cpu")]
 pub use cpu::*;
+
+#[cfg(feature = "stack")]
+mod stack;
+#[cfg(feature = "stack")]
+pub use stack::*;
 
 #[cfg(feature = "opencl")]
 mod opencl;
@@ -180,7 +182,7 @@ pub trait RandOp<T, S: Shape = (), D: Device = Self>: Device {
 }
 
 pub trait Softmax<T, S: Shape = (), D: Device = Self>: Device {
-    fn softmax(&self, samples: usize, sample_size: usize, x: &Buffer<T, D, S>) -> Buffer<T, D, S>;
+    fn softmax(&self, samples: usize, features: usize, x: &Buffer<T, D, S>) -> Buffer<T, Self, S>;
 }
 
 //pub trait SumOp
