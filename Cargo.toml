@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 custos = {path = "../custos", default-features=false, features=["macro"]}
 fastrand = "1.8.0"
+purpur = "0.1.0"
 
 [features]
 default = ["blas", "stack", "cpu", "opencl", "autograd", "matrix"]

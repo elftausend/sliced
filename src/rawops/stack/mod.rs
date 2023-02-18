@@ -1,3 +1,3 @@
-mod softmax;
 mod max;
+mod softmax;
 mod sum;

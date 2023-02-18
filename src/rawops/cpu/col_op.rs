@@ -1,4 +1,4 @@
-use custos::{Buffer, Device, MainMemory, Shape, CPU};
+use custos::{Buffer, Device, MainMemory, CPU};
 
 use crate::ColOp;
 
