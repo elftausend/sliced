@@ -250,7 +250,7 @@ pub trait Onehot<T, IS: Shape = (), OS: Shape = ()>: Device {
 
 /// Calculates the diagflat of an 1D [`Buffer`] without gradients.
 pub trait Diagflat<T, IS: Shape = (), OS: Shape = ()>: Device {
-    /// Takes the values of [`Buffer`] `x` and puts it diagonally on the `Buffer` `out`.
+    /// Takes the values of [`Buffer`] `x` and puts them diagonally on the `Buffer` `out`.
     /// # Example
     /// ```
     /// use sliced::{Diagflat, Buffer, CPU};
