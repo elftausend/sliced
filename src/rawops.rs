@@ -254,11 +254,11 @@ pub trait Diagflat<T, IS: Shape = (), OS: Shape = ()>: Device {
     /// # Example
     /// ```
     /// use sliced::{Diagflat, Buffer, CPU};
-    /// 
+    ///
     /// let device = CPU::new();
     /// let x = Buffer::from((&device, [1, 2, 7, -1, -2]));
     /// let out = device.diagflat(&x);
-    /// 
+    ///
     /// assert_eq!(&*out, [
     ///     1, 0, 0, 0, 0,
     ///     0, 2, 0, 0, 0,
@@ -266,7 +266,7 @@ pub trait Diagflat<T, IS: Shape = (), OS: Shape = ()>: Device {
     ///     0, 0, 0, -1, 0,
     ///     0, 0, 0, 0, -2,
     /// ]);
-    /// 
+    ///
     /// ```
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
