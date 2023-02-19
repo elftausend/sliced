@@ -32,7 +32,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
 ///     let rhs = Buffer::from((&device, [3i16, 2, 7, 1, 9, 20]));
 ///     let mut out = Buffer::new(&device, 4);
 ///     
-///     cl_gemm(&device, 2, 3, 2, &lhs, &rhs, &mut out)?;
+///     cl_gemm(&device, 2, 3, 2, &lhs, &rhs, &mut out, false)?;
 ///     assert_eq!(device.read(&out), vec![444, 480, 116, 118]);
 ///     Ok(())
 /// }

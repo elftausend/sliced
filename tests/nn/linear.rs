@@ -57,6 +57,7 @@ pub fn create_sine<'a, D: Alloc<'a, f32> + IsShapeIndep>(
 
     let x = Matrix::from((device, max - min, 1, x));
     let y = Matrix::from((device, max - min, 1, y));
+
     (x, y)
 }
 

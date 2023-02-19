@@ -185,6 +185,17 @@ pub trait Softmax<T, S: Shape = (), D: Device = Self>: Device {
     fn softmax(&self, samples: usize, features: usize, x: &Buffer<T, D, S>) -> Buffer<T, Self, S>;
 }
 
+pub trait SoftmaxGrad<T, S: Shape = ()>: Device {
+    fn softmax_grad(
+        &self,
+        samples: usize,
+        feature: usize,
+        x: &Buffer<T, Self, S>,
+        x_grad: &Buffer<T, Self, S>,
+        out_grad: &Buffer<T, Self, S>,
+    );
+}
+
 //pub trait SumOp
 pub trait Max<T, S: Shape = (), D: Device = Self>: Device {
     fn max(&self, x: &Buffer<T, D, S>) -> T;
@@ -221,12 +232,12 @@ pub trait Onehot<T, IS: Shape = (), OS: Shape = ()>: Device {
     #[cfg_attr(not(feature = "cpu"), doc = "```ignore")]
     ///
     /// use sliced::{CPU, Onehot, Buffer};
-    /// 
+    ///
     /// let device = CPU::new();
-    /// 
+    ///
     /// let classes = Buffer::from((&device, [1, 0, 3, 2]));
     /// let onehot = device.onehot(&classes);
-    /// 
+    ///
     /// assert_eq!([
     ///     0, 1, 0, 0,
     ///     1, 0, 0, 0,
@@ -235,4 +246,27 @@ pub trait Onehot<T, IS: Shape = (), OS: Shape = ()>: Device {
     /// ], &*onehot);
     /// ```
     fn onehot(&self, classes: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
+}
+
+/// Calculates the diagflat of an 1D [`Buffer`] without gradients.
+pub trait Diagflat<T, IS: Shape = (), OS: Shape = ()>: Device {
+    /// Takes the values of [`Buffer`] `x` and puts it diagonally on the `Buffer` `out`.
+    /// # Example
+    /// ```
+    /// use sliced::{Diagflat, Buffer, CPU};
+    /// 
+    /// let device = CPU::new();
+    /// let x = Buffer::from((&device, [1, 2, 7, -1, -2]));
+    /// let out = device.diagflat(&x);
+    /// 
+    /// assert_eq!(&*out, [
+    ///     1, 0, 0, 0, 0,
+    ///     0, 2, 0, 0, 0,
+    ///     0, 0, 7, 0, 0,
+    ///     0, 0, 0, -1, 0,
+    ///     0, 0, 0, 0, -2,
+    /// ]);
+    /// 
+    /// ```
+    fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }

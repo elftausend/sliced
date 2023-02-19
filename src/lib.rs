@@ -9,7 +9,6 @@ pub use rawops::*;
 #[cfg(feature = "matrix")]
 pub use matrix::*;
 
-
 #[cfg(feature = "cpu")]
 pub use ::custos::CPU;
 
