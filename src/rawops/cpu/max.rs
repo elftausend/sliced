@@ -59,6 +59,23 @@ pub fn max_rows<T: Ord + Copy>(cols: usize, x: &[T], out: &mut [T]) {
     }
 }
 
+pub fn max_rows_grad<T>(cols: usize, out: &[T], x: &[T], x_grad: &mut [T], out_grad: &[T]) 
+where
+    T: PartialEq + Copy
+{
+    let rows = x.len() / cols;
+
+    for (col, out_val) in out.iter().enumerate() {
+        for row in 0..rows {
+            let grad_idx = row * cols + col;
+
+            if out_val == &x[grad_idx] {
+                x_grad[grad_idx] = out_grad[col];
+            }
+        }        
+    }
+}
+
 pub fn max_cols<T: Ord + Copy>(cols: usize, x: &[T], out: &mut [T]) {
     for (row, val) in x.chunks(cols).zip(out) {
         *val = max(row).expect("The slice should contain at least one value.");
@@ -77,7 +94,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{max_cols, max_cols_grad, max_rows};
+    use crate::{max_cols, max_cols_grad, max_rows, max_rows_grad};
 
     #[test]
     fn test_max_rows() {
@@ -136,6 +153,32 @@ mod tests {
             0, 0, 1, 0,
             0, 2, 0, 0,
             0, 0, 0, 3,
+        ];
+
+        assert_eq!(expected, x_grad);
+    }
+
+    #[test]
+    fn test_max_rows_grad() {
+        #[rustfmt::skip]
+        let x = [-3, 2, 3, 1,
+                            1, 5, -5, 4,
+                            -9, -2, -4, -1];
+
+        let mut out = [0; 4];
+        max_rows(4, &x, &mut out);
+
+        let mut x_grad = [0; 12];
+
+        let out_grad = [2, 3, 4, 1];
+
+        max_rows_grad(4, &out, &x, &mut x_grad, &out_grad);
+
+        #[rustfmt::skip]
+        let expected = [
+            0, 0, 4, 0,
+            2, 3, 0, 1,
+            0, 0, 0, 0,
         ];
 
         assert_eq!(expected, x_grad);
