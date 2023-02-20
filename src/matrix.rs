@@ -13,7 +13,7 @@ use custos::{
 
 use crate::{
     BinaryOpsMayGrad, GemmMayGrad, PowMayGrad, RandOp, RowOpMayGrad, SquareMayGrad,
-    TransposeMayGrad,
+    TransposeMayGrad, MaxRowsGrad, MaxRows, MaxRowsMayGrad,
 };
 
 pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
@@ -162,6 +162,14 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         D: PowMayGrad<T, S>,
     {
         (self.device().pow(self, rhs), self.rows, self.cols).into()
+    }
+
+    #[inline]
+    pub fn max_rows<OS: Shape>(&self) -> Matrix<'a, T, D, OS> 
+    where
+        D: MaxRowsMayGrad<T, S, OS>
+    {
+        (self.device().max_rows(self.cols, self), self.rows, self.cols).into()
     }
 }
 

@@ -9,7 +9,10 @@ use custos::{
     WriteBuf,
 };
 
-use crate::{BinaryElementWise, BinaryGrad, Gemm, GemmGrad, RowOp, RowOpGrad, Transpose};
+use crate::{
+    BinaryElementWise, BinaryGrad, Gemm, GemmGrad, MaxRows, MaxRowsGrad, RowOp, RowOpGrad,
+    Transpose, MaxCols, MaxColsGrad,
+};
 
 pub trait SquareMayGrad<T, S = ()>: Device
 where
@@ -346,4 +349,73 @@ where
     T: Float,
     S: Shape,
 {
+}
+
+pub trait MaxColsMayGrad<T, IS, OS>: Device
+where
+    IS: Shape,
+    OS: Shape,
+{
+    fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
+}
+
+impl<T, IS, OS, D> MaxColsMayGrad<T, IS, OS> for D
+where
+    IS: Shape,
+    OS: Shape,
+    D: MaxCols<T, IS, OS> + MayTapeReturn + for<'a> Alloc<'a, T> + MaxColsGrad<T>,
+{
+    fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
+        let out = self.max_cols(rows, cols, x);
+
+        #[cfg(feature = "autograd")]
+        {
+            let (xid, oid) = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let x = device.get_existing_buf::<T, ()>(xid);
+                let mut x_grad = grads.get_like_raw(device, xid);
+
+                let out = device.get_existing_buf::<T, ()>(oid);
+                let out_grad = grads.get_like_raw(device, oid);
+                device.max_cols_grad(cols, &out, &x, &mut x_grad, &out_grad);
+            })
+        }
+
+        out
+    }
+}
+
+
+pub trait MaxRowsMayGrad<T, IS, OS>: Device
+where
+    IS: Shape,
+    OS: Shape,
+{
+    fn max_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
+}
+
+impl<T, IS, OS, D> MaxRowsMayGrad<T, IS, OS> for D
+where
+    IS: Shape,
+    OS: Shape,
+    D: MaxRows<T, IS, OS> + MayTapeReturn + for<'a> Alloc<'a, T> + MaxRowsGrad<T>,
+{
+    fn max_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
+        let out = self.max_rows(cols, x);
+
+        #[cfg(feature = "autograd")]
+        {
+            let (xid, oid) = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let x = device.get_existing_buf::<T, ()>(xid);
+                let mut x_grad = grads.get_like_raw(device, xid);
+
+                let out = device.get_existing_buf::<T, ()>(oid);
+                let out_grad = grads.get_like_raw(device, oid);
+                device.max_rows_grad(cols, &out, &x, &mut x_grad, &out_grad);
+            })
+        }
+
+        out
+    }
 }

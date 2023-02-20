@@ -205,8 +205,30 @@ pub trait MaxRows<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
     fn max_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
 }
 
+pub trait MaxRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    fn max_rows_grad(
+        &self,
+        cols: usize,
+        out: &Buffer<T, Self, OS>,
+        x: &Buffer<T, Self, IS>,
+        x_grad: &mut Buffer<T, Self, IS>,
+        out_grad: &Buffer<T, Self, OS>,
+    );
+}
+
 pub trait MaxCols<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
+}
+
+pub trait MaxColsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    fn max_cols_grad(
+        &self,
+        cols: usize,
+        out: &Buffer<T, Self, OS>,
+        x: &Buffer<T, Self, IS>,
+        x_grad: &mut Buffer<T, Self, IS>,
+        out_grad: &Buffer<T, Self, OS>,
+    );
 }
 
 pub trait Sum<T, S: Shape = (), D: Device = Self>: Device {
