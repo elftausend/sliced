@@ -239,8 +239,26 @@ pub trait SumRows<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
     fn sum_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
 }
 
+pub trait SumRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    fn sum_rows_grad(
+        &self,
+        cols: usize,
+        x_grad: &mut Buffer<T, Self, IS>,
+        out_grad: &Buffer<T, Self, IS>,
+    );
+}
+
 pub trait SumCols<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
-    fn sum_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
+    fn sum_cols(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
+}
+
+pub trait SumColsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    fn sum_cols_grad(
+        &self,
+        cols: usize,
+        x_grad: &mut Buffer<T, Self, IS>,
+        out_grad: &Buffer<T, Self, IS>,
+    );
 }
 
 /// Provides the onehot encoding operation.

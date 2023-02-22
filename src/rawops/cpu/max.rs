@@ -1,6 +1,6 @@
 use custos::{prelude::One, Buffer, Device, MainMemory, Shape, CPU};
 
-use crate::{Max, MaxCols, MaxRows, MaxRowsGrad, MaxColsGrad};
+use crate::{Max, MaxCols, MaxColsGrad, MaxRows, MaxRowsGrad};
 
 impl<T, D, S> Max<T, S, D> for CPU
 where
@@ -42,8 +42,7 @@ impl<T: PartialEq + Copy> MaxRowsGrad<T> for CPU {
         x: &Buffer<T>,
         x_grad: &mut Buffer<T>,
         out_grad: &Buffer<T>,
-    ) 
-    {
+    ) {
         max_rows_grad(cols, out, x, x_grad, out_grad);
     }
 }
@@ -70,8 +69,7 @@ impl<T: PartialEq + Copy> MaxColsGrad<T> for CPU {
         x: &Buffer<T, Self, ()>,
         x_grad: &mut Buffer<T, Self, ()>,
         out_grad: &Buffer<T, Self, ()>,
-    ) 
-    {
+    ) {
         max_cols_grad(cols, out, x, x_grad, out_grad);
     }
 }

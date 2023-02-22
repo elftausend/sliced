@@ -1,10 +1,10 @@
 #[cfg(feature = "cpu")]
 #[test]
 fn test_max_cols_cpu() {
-    use sliced::{CPU, Buffer, MaxColsMayGrad, BinaryOpsMayGrad};
+    use sliced::{BinaryOpsMayGrad, Buffer, MaxColsMayGrad, CPU};
 
     let device = CPU::new();
-    let rhs = Buffer::from((&device, [1, 4, 2]));   
+    let rhs = Buffer::from((&device, [1, 4, 2]));
 
     #[rustfmt::skip]
     let lhs = Buffer::from((&device, 
@@ -18,9 +18,9 @@ fn test_max_cols_cpu() {
     assert_eq!(&*max_cols, [3, 5, -1]);
 
     let out = device.add(&max_cols, &rhs);
-    
+
     out.backward();
-    
+
     #[rustfmt::skip]
     let expected = [
         0, 0, 1, 0, 
@@ -28,5 +28,6 @@ fn test_max_cols_cpu() {
         0, 0, 0, 1
     ];
 
-    assert_eq!(&*out, expected);
+    assert_eq!(&*lhs.grad(), expected);
+    assert_eq!([1, 1, 1], &*rhs.grad());
 }

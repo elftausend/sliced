@@ -10,8 +10,8 @@ use custos::{
 };
 
 use crate::{
-    BinaryElementWise, BinaryGrad, Gemm, GemmGrad, MaxRows, MaxRowsGrad, RowOp, RowOpGrad,
-    Transpose, MaxCols, MaxColsGrad,
+    BinaryElementWise, BinaryGrad, Gemm, GemmGrad, MaxCols, MaxColsGrad, MaxRows, MaxRowsGrad,
+    RowOp, RowOpGrad, SumCols, SumColsGrad, SumRows, SumRowsGrad, Transpose,
 };
 
 pub trait SquareMayGrad<T, S = ()>: Device
@@ -385,7 +385,6 @@ where
     }
 }
 
-
 pub trait MaxRowsMayGrad<T, IS, OS>: Device
 where
     IS: Shape,
@@ -416,6 +415,70 @@ where
             })
         }
 
+        out
+    }
+}
+
+pub trait SumRowsMayGrad<T, IS, OS>: Device
+where
+    IS: Shape,
+    OS: Shape,
+{
+    fn sum_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
+}
+
+impl<T, IS, OS, D> SumRowsMayGrad<T, IS, OS> for D
+where
+    T: Copy,
+    IS: Shape,
+    OS: Shape,
+    D: MayTapeReturn + SumRows<T, IS, OS> + SumRowsGrad<T> + for<'a> Alloc<'a, T>,
+{
+    fn sum_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
+        let out = self.sum_rows(cols, x);
+
+        #[cfg(feature = "autograd")]
+        {
+            let (xid, oid) = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let mut x_grad = grads.get_like_raw(device, xid);
+                let out_grad = grads.get_like_raw(device, oid);
+
+                device.sum_rows_grad(cols, &mut x_grad, &out_grad);
+            })
+        }
+        out
+    }
+}
+
+pub trait SumColsMayGrad<T, IS, OS>: Device
+where
+    IS: Shape,
+    OS: Shape,
+{
+    fn sum_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
+}
+
+impl<T, IS, OS, D> SumColsMayGrad<T, IS, OS> for D
+where
+    T: Copy,
+    IS: Shape,
+    OS: Shape,
+    D: MayTapeReturn + SumCols<T, IS, OS> + SumColsGrad<T> + for<'a> Alloc<'a, T>,
+{
+    fn sum_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
+        let out = self.sum_cols(cols, x);
+
+        #[cfg(feature = "autograd")]
+        {
+            let (xid, oid) = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let mut x_grad = grads.get_like_raw(device, xid);
+                let out_grad = grads.get_like_raw(device, oid);
+
+                device.sum_cols_grad(cols, &mut x_grad, &out_grad);
+            })
+        }
         out
     }
 }

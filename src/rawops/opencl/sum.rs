@@ -31,7 +31,7 @@ where
     T: Default + Copy + Sum,
 {
     #[inline]
-    fn sum_cols(&self, rows: usize, cols: usize, x: &Buffer<T, Self>) -> Buffer<T, Self> {
-        cpu_exec_unary_may_unified(self, x, |cpu, x| cpu.sum_cols(rows, cols, x)).unwrap()
+    fn sum_cols(&self, cols: usize, x: &Buffer<T, Self>) -> Buffer<T, Self> {
+        cpu_exec_unary_may_unified(self, x, |cpu, x| cpu.sum_cols(cols, x)).unwrap()
     }
 }
