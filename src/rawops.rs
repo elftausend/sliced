@@ -44,7 +44,7 @@ pub trait BinaryGrad<T, S: Shape = (), D: Device = Self>: Device {
         RO: Eval<T> + ToString;
 }
 
-pub trait BinaryEWWithGrad<T, S: Shape = (), D: Device = Self>: Device {
+pub trait BinaryEWMayGrad<T, S: Shape = (), D: Device = Self>: Device {
     fn binary_ew_w_grad<FO, LO, RO>(
         &self,
         lhs: &Buffer<T, D, S>,
@@ -309,4 +309,34 @@ pub trait Diagflat<T, IS: Shape = (), OS: Shape = ()>: Device {
     ///
     /// ```
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
+}
+
+pub trait Mean<T, S: Shape>: Device {
+    fn mean(&self, x: &Buffer<T, Self, S>) -> T;
+}
+
+pub trait MeanRows<T, IS: Shape = (), OS: Shape = ()>: Device {
+    fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
+}
+
+pub trait MeanRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    fn mean_rows_grad(
+        &self,
+        cols: usize,
+        x_grad: &mut Buffer<T, Self, IS>,
+        out_grad: &Buffer<T, Self, OS>,
+    );
+}
+
+pub trait MeanCols<T, IS: Shape = (), OS: Shape = ()>: Device {
+    fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
+}
+
+pub trait MeanColsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    fn mean_cols_grad(
+        &self,
+        cols: usize,
+        x_grad: &mut Buffer<T, Self, IS>,
+        out_grad: &Buffer<T, Self, OS>,
+    );
 }

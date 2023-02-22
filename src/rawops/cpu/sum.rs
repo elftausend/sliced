@@ -92,7 +92,7 @@ pub fn sum_rows<T: AddAssign + Copy>(rows: usize, cols: usize, x: &[T], out: &mu
     }
 }
 
-/// Accumulates to out 
+/// Accumulates to out
 pub fn sum_rows2<T: AddAssign + Copy>(cols: usize, x: &[T], out: &mut [T]) {
     for row in x.chunks(cols) {
         for (val, out) in row.iter().zip(&mut *out) {

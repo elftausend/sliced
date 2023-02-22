@@ -11,7 +11,8 @@ use custos::{
 
 use crate::{
     BinaryElementWise, BinaryGrad, Gemm, GemmGrad, MaxCols, MaxColsGrad, MaxRows, MaxRowsGrad,
-    RowOp, RowOpGrad, SumCols, SumColsGrad, SumRows, SumRowsGrad, Transpose,
+    MeanCols, MeanColsGrad, MeanRows, MeanRowsGrad, RowOp, RowOpGrad, SumCols, SumColsGrad,
+    SumRows, SumRowsGrad, Transpose,
 };
 
 pub trait SquareMayGrad<T, S = ()>: Device
@@ -481,4 +482,72 @@ where
         }
         out
     }
+}
+
+pub trait MeanColsMayGrad<T, IS, OS>: Device
+where
+    IS: Shape,
+    OS: Shape,
+{
+    fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
+}
+
+impl<T, IS, OS, D> MeanColsMayGrad<T, IS, OS> for D
+where
+    T: Copy,
+    IS: Shape,
+    OS: Shape,
+    D: MayTapeReturn + MeanCols<T, IS, OS> + MeanColsGrad<T> + for<'a> Alloc<'a, T>,
+{
+    fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
+        let out = self.mean_cols(cols, x);
+
+        #[cfg(feature = "autograd")]
+        {
+            let (xid, oid) = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let mut x_grad = grads.get_like_raw(device, xid);
+                let out_grad = grads.get_like_raw(device, oid);
+
+                device.mean_cols_grad(cols, &mut x_grad, &out_grad);
+            })
+        }
+        out
+    }
+}
+
+pub trait MeanRowsMayGrad<T, IS, OS>: Device
+where
+    IS: Shape,
+    OS: Shape,
+{
+    fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
+}
+
+impl<T, IS, OS, D> MeanRowsMayGrad<T, IS, OS> for D
+where
+    T: Copy,
+    IS: Shape,
+    OS: Shape,
+    D: MayTapeReturn + MeanRows<T, IS, OS> + MeanRowsGrad<T> + for<'a> Alloc<'a, T>,
+{
+    fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
+        let out = self.mean_rows(cols, x);
+
+        #[cfg(feature = "autograd")]
+        {
+            let (xid, oid) = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let mut x_grad = grads.get_like_raw(device, xid);
+                let out_grad = grads.get_like_raw(device, oid);
+
+                device.mean_rows_grad(cols, &mut x_grad, &out_grad);
+            })
+        }
+        out
+    }
+}
+
+macro_rules! _impl_may_autograd_op {
+    ($trait_name:ident, $forward_trait:ident, $backward_trait:ident) => {};
 }
