@@ -13,6 +13,7 @@ mod softmax;
 mod softmax_grad;
 mod sum;
 mod transpose;
+mod mean;
 
 pub use binary_ew::*;
 pub use binary_grad::*;
@@ -25,3 +26,4 @@ pub use softmax::*;
 pub use softmax_grad::*;
 pub use sum::*;
 pub use transpose::*;
+pub use mean::*;

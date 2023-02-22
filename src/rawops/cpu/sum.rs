@@ -33,7 +33,7 @@ where
 
 impl<T, IS, OS> SumRowsGrad<T, IS, OS> for CPU
 where
-    T: Copy,
+    T: Copy + AddAssign,
     IS: Shape,
     OS: Shape,
 {
@@ -50,7 +50,7 @@ where
 
 impl<T, IS, OS> SumColsGrad<T, IS, OS> for CPU
 where
-    T: Copy,
+    T: Copy + AddAssign,
     IS: Shape,
     OS: Shape,
 {
@@ -92,6 +92,7 @@ pub fn sum_rows<T: AddAssign + Copy>(rows: usize, cols: usize, x: &[T], out: &mu
     }
 }
 
+/// Accumulates to out 
 pub fn sum_rows2<T: AddAssign + Copy>(cols: usize, x: &[T], out: &mut [T]) {
     for row in x.chunks(cols) {
         for (val, out) in row.iter().zip(&mut *out) {
@@ -100,9 +101,12 @@ pub fn sum_rows2<T: AddAssign + Copy>(cols: usize, x: &[T], out: &mut [T]) {
     }
 }
 
-pub fn sum_rows_grad<T: Copy>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
+pub fn sum_rows_grad<T: Copy + AddAssign>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
     for x_grad in x_grad.chunks_mut(cols) {
-        x_grad.copy_from_slice(out_grad)
+        for (x, out) in x_grad.iter_mut().zip(out_grad) {
+            *x += *out;
+        }
+        //x_grad.copy_from_slice(out_grad)
     }
 }
 
@@ -112,10 +116,10 @@ pub fn sum_cols<T: Sum<T> + Copy>(cols: usize, x: &[T], out: &mut [T]) {
     }
 }
 
-pub fn sum_cols_grad<T: Copy>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
+pub fn sum_cols_grad<T: Copy + AddAssign>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
     for (x_grad, out_grad) in x_grad.chunks_mut(cols).zip(out_grad) {
         for val in x_grad {
-            *val = *out_grad
+            *val += *out_grad
         }
     }
 }

@@ -1,3 +1,5 @@
+use std::ops::AddAssign;
+
 use custos::{Buffer, Device, CPU};
 
 use crate::Diagflat;
@@ -64,9 +66,9 @@ pub fn diagflat<T: Copy>(x: &[T], out: &mut [T]) {
 ///
 /// assert_eq!(x_grad, [4, 5, 3, -3])
 /// ```
-pub fn diagflat_grad<T: Copy>(x_grad: &mut [T], out_grad: &[T]) {
+pub fn diagflat_grad<T: Copy + AddAssign>(x_grad: &mut [T], out_grad: &[T]) {
     for idx in 0..x_grad.len() {
-        x_grad[idx] = out_grad[x_grad.len() * idx + idx];
+        x_grad[idx] += out_grad[x_grad.len() * idx + idx];
     }
 }
 

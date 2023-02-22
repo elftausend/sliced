@@ -1,3 +1,5 @@
+use std::ops::AddAssign;
+
 use custos::{prelude::One, Buffer, Device, MainMemory, Shape, CPU};
 
 use crate::{Max, MaxCols, MaxColsGrad, MaxRows, MaxRowsGrad};
@@ -33,7 +35,7 @@ where
     }
 }
 
-impl<T: PartialEq + Copy> MaxRowsGrad<T> for CPU {
+impl<T: PartialEq + Copy + AddAssign> MaxRowsGrad<T> for CPU {
     #[inline]
     fn max_rows_grad(
         &self,
@@ -60,15 +62,15 @@ where
     }
 }
 
-impl<T: PartialEq + Copy> MaxColsGrad<T> for CPU {
+impl<T: PartialEq + Copy + AddAssign> MaxColsGrad<T> for CPU {
     #[inline]
     fn max_cols_grad(
         &self,
         cols: usize,
-        out: &Buffer<T, Self, ()>,
-        x: &Buffer<T, Self, ()>,
-        x_grad: &mut Buffer<T, Self, ()>,
-        out_grad: &Buffer<T, Self, ()>,
+        out: &Buffer<T>,
+        x: &Buffer<T>,
+        x_grad: &mut Buffer<T>,
+        out_grad: &Buffer<T>,
     ) {
         max_cols_grad(cols, out, x, x_grad, out_grad);
     }
@@ -94,7 +96,7 @@ pub fn max_rows<T: Ord + Copy>(cols: usize, x: &[T], out: &mut [T]) {
 
 pub fn max_rows_grad<T>(cols: usize, out: &[T], x: &[T], x_grad: &mut [T], out_grad: &[T])
 where
-    T: PartialEq + Copy,
+    T: PartialEq + Copy + AddAssign,
 {
     let rows = x.len() / cols;
 
@@ -103,7 +105,7 @@ where
             let grad_idx = row * cols + col;
 
             if out_val == &x[grad_idx] {
-                x_grad[grad_idx] = out_grad[col];
+                x_grad[grad_idx] += out_grad[col];
             }
         }
     }
@@ -117,11 +119,11 @@ pub fn max_cols<T: Ord + Copy>(cols: usize, x: &[T], out: &mut [T]) {
 
 pub fn max_cols_grad<T>(cols: usize, out: &[T], x: &[T], x_grad: &mut [T], out_grad: &[T])
 where
-    T: PartialEq + Copy,
+    T: PartialEq + Copy + AddAssign,
 {
     for (idx, ((row, max), grad)) in x.chunks(cols).zip(out).zip(out_grad).enumerate() {
         let grad_idx = idx * cols + row.iter().position(|val| val == max).unwrap();
-        x_grad[grad_idx] = *grad
+        x_grad[grad_idx] += *grad
     }
 }
 
