@@ -3,17 +3,20 @@ mod impl_from;
 #[cfg(feature = "static-api")]
 mod to_static_device;
 
-use std::{fmt::Display, ops::Mul};
+use std::{
+    fmt::Display,
+    ops::Mul,
+};
 
 use custos::{
-    prelude::{Number, Two},
+    prelude::{Float, Number, Two},
     Alloc, ApplyFunction, Buffer, Combiner, Device, IsShapeIndep, MayTapeReturn, Shape,
     UnaryElementWiseMayGrad, UnaryGrad, CPU,
 };
 
 use crate::{
-    BinaryOpsMayGrad, GemmMayGrad, MaxRows, MaxRowsGrad, MaxRowsMayGrad, PowMayGrad, RandOp,
-    RowOpMayGrad, SquareMayGrad, TransposeMayGrad,
+    BinaryOpsMayGrad, GemmMayGrad, MaxRowsMayGrad, PowMayGrad, RandOp,
+    RowOpMayGrad, SquareMayGrad, SumColsMayGrad, TransposeMayGrad,
 };
 
 pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
@@ -175,6 +178,31 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             self.cols,
         )
             .into()
+    }
+
+    #[inline]
+    pub fn sum_cols<OS: Shape>(&self) -> Matrix<'a, T, D, OS>
+    where
+        D: SumColsMayGrad<T, S, OS>,
+    {
+        (self.device().sum_cols(self.cols, self), self.rows, 1).into()
+    }
+
+    #[inline]
+    pub fn l2_norm_cols<OS>(&self) -> Matrix<'a, T, D, OS>
+    where
+        T: Float + 'static,
+        OS: Shape + 'static,
+        D: ApplyFunction<T, OS>
+            + UnaryGrad<T, OS>
+            + ApplyFunction<T, S>
+            + UnaryGrad<T, S>
+            + for<'b> Alloc<'b, T, S>
+            + for<'b> Alloc<'b, T, OS>
+            + MayTapeReturn
+            + SumColsMayGrad<T, S, OS>,
+    {
+        self.squared().sum_cols().pow(T::one() / T::two())
     }
 }
 
