@@ -23,6 +23,6 @@ fn test_sum_rows() {
         1, 4, 2, 3,
     ];
 
-    assert_eq!(&*to_sum_rows.grad(), expected);
-    assert_eq!(&*rhs.grad(), [15, 7, 5, 5]);
+    assert_eq!(&**to_sum_rows.grad(), expected);
+    assert_eq!(&**rhs.grad(), [15, 7, 5, 5]);
 }

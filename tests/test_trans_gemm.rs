@@ -2,6 +2,7 @@ use custos::GenericBlas;
 use sliced::slice_transpose;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_left_trans_gemm() {
     // 2 x 4;
     #[rustfmt::skip]
@@ -35,6 +36,7 @@ fn test_left_trans_gemm() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_left_trans_gemm_large() {
     // 7 x 5
     #[rustfmt::skip]
@@ -67,6 +69,7 @@ fn test_left_trans_gemm_large() {
 }
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_right_trans_gemm() {
     // 4 x 3;
     #[rustfmt::skip]

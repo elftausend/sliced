@@ -6,12 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+#custos = { git = "https://github.com/elftausend/custos", branch = "autograd" }
+#custos = {git = "https://github.com/elftausend/custos", branch = "autograd", default-features=false, features=["macro"]}
 custos = {path = "../custos", default-features=false, features=["macro"]}
 fastrand = "1.8.0"
 purpur = "0.1.0"
 
 [features]
-default = ["blas", "stack", "cpu", "opencl", "autograd", "matrix"]
+default = ["blas", "stack", "cpu", "autograd", "matrix"]
 #default = ["stack", "cpu", "opencl", "blas", "matrix", "static-api"]
 autograd = ["custos/autograd"]
 static-api = ["custos/static-api"]

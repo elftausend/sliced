@@ -15,6 +15,6 @@ fn test_pow() {
     #[cfg(feature = "autograd")]
     {
         out.backward();
-        assert_eq!(&*x.grad(), [3., 12., 27., 48., 75.]);
+        assert_eq!(&**x.grad(), [3., 12., 27., 48., 75.]);
     }
 }

@@ -23,8 +23,8 @@ fn test_mean_rows_cpu() {
 
     assert_eq!(
         [-0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25],
-        &*to_mean_rows.grad()
+        &**to_mean_rows.grad()
     );
 
-    assert_eq!([1., 1., 1.], &*lhs.grad());
+    assert_eq!([1., 1., 1.], &**lhs.grad());
 }

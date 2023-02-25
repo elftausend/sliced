@@ -2,6 +2,7 @@ use custos::CPU;
 use sliced::Matrix;
 
 #[test]
+#[cfg_attr(miri, ignore)]
 fn test_ops() {
     let device = CPU::new();
 

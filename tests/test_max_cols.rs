@@ -28,6 +28,6 @@ fn test_max_cols_cpu() {
         0, 0, 0, 1
     ];
 
-    assert_eq!(&*lhs.grad(), expected);
-    assert_eq!([1, 1, 1], &*rhs.grad());
+    assert_eq!(&**lhs.grad(), expected);
+    assert_eq!([1, 1, 1], &**rhs.grad());
 }

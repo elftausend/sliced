@@ -83,13 +83,13 @@ pub struct SGD<T> {
 }
 
 #[cfg(feature = "autograd")]
-impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
+impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
         D: MayTapeReturn + WriteBuf<T> + for<'b> Alloc<'b, T> + ClearBuf<T>,
     {
         for param in params {
-            param.param.grad().clear();
+            param.param.grad_mut().clear();
         }
     }
 
@@ -98,7 +98,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign> SGD<T> {
         D: MainMemory + MayTapeReturn + WriteBuf<T> + for<'b> Alloc<'b, T>,
     {
         for param in params {
-            let grad = param.param.grad();
+            let grad = param.param.grad_unbound();
             for (value, grad) in param.param.iter_mut().zip(grad.iter()) {
                 *value -= *grad * self.lr
             }
@@ -122,7 +122,7 @@ fn main() {
 
     for i in range(18000) {
         #[cfg(feature = "autograd")]
-        device.tape.borrow_mut().grads.cache.nodes.clear();
+        device.tape.borrow_mut().grads.zero_grad();
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
         // sgd.zero_grad(lin3.params());

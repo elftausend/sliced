@@ -12,10 +12,10 @@ pub fn roughly_equals<T: Float>(lhs: &[T], rhs: &[T]) {
     }
 }
 
-#[cfg(feature="cpu")]
+#[cfg(feature = "cpu")]
 #[test]
 fn test_l2_norm_cols() {
-    use sliced::{CPU, Matrix};
+    use sliced::{Matrix, CPU};
 
     let device = CPU::new();
 
@@ -25,9 +25,7 @@ fn test_l2_norm_cols() {
 
     out.backward();
 
-    let expected_grad = [
-        0.1826, 0.3651, 0.5477, 0.7303
-    ];
+    let expected_grad = [0.1826, 0.3651, 0.5477, 0.7303];
 
     roughly_equals(&expected_grad, &*lhs.grad());
 }

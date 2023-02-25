@@ -1,4 +1,5 @@
 #[cfg(feature = "cpu")]
+#[cfg_attr(miri, ignore)]
 #[test]
 fn test_gemm_cpu() {
     use custos::{Buffer, CPU};
@@ -34,10 +35,10 @@ fn test_gemm_cpu() {
         out.backward();
 
         let lhs_grad = lhs.grad();
-        assert_eq!(&*lhs_grad, [6.0, 15.0, 6.0, 15.0, 6.0, 15.0, 6.0, 15.0]);
+        assert_eq!(&**lhs_grad, [6.0, 15.0, 6.0, 15.0, 6.0, 15.0, 6.0, 15.0]);
 
         let rhs_grad = rhs.grad();
-        assert_eq!(&*rhs_grad, [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]);
+        assert_eq!(&**rhs_grad, [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]);
     }
 }
 
@@ -76,10 +77,10 @@ fn test_gemm_cl() -> custos::Result<()> {
         out.backward();
 
         let lhs_grad = lhs.grad();
-        assert_eq!(&*lhs_grad, [6.0, 15.0, 6.0, 15.0, 6.0, 15.0, 6.0, 15.0]);
+        assert_eq!(&**lhs_grad, [6.0, 15.0, 6.0, 15.0, 6.0, 15.0, 6.0, 15.0]);
 
         let rhs_grad = rhs.grad();
-        assert_eq!(&*rhs_grad, [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]);
+        assert_eq!(&**rhs_grad, [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]);
     }
 
     Ok(())

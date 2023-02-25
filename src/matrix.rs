@@ -3,10 +3,7 @@ mod impl_from;
 #[cfg(feature = "static-api")]
 mod to_static_device;
 
-use std::{
-    fmt::Display,
-    ops::Mul,
-};
+use std::{fmt::Display, ops::Mul};
 
 use custos::{
     prelude::{Float, Number, Two},
@@ -15,8 +12,8 @@ use custos::{
 };
 
 use crate::{
-    BinaryOpsMayGrad, GemmMayGrad, MaxRowsMayGrad, PowMayGrad, RandOp,
-    RowOpMayGrad, SquareMayGrad, SumColsMayGrad, TransposeMayGrad,
+    BinaryOpsMayGrad, GemmMayGrad, MaxRowsMayGrad, PowMayGrad, RandOp, RowOpMayGrad, SquareMayGrad,
+    SumColsMayGrad, TransposeMayGrad,
 };
 
 pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
@@ -149,7 +146,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn squared(&self) -> Matrix<'a, T, D, S>
     where
-        T: Display + Mul<Output = T> + Copy + Two,
+        T: Display + Mul<Output = T> + Copy + Two + 'static,
         D: SquareMayGrad<T, S>
             + ApplyFunction<T, S>
             + UnaryGrad<T, S>
