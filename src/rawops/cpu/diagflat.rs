@@ -1,14 +1,23 @@
 use std::ops::AddAssign;
 
-use custos::{Buffer, Device, CPU};
+use custos::{Buffer, Device, CPU, Shape};
 
-use crate::Diagflat;
+use crate::{Diagflat, DiagflatGrad};
 
-impl<T: Copy> Diagflat<T> for CPU {
-    fn diagflat(&self, x: &Buffer<T>) -> Buffer<T> {
+// TODO stack impl
+impl<T: Copy, IS: Shape, OS: Shape> Diagflat<T, IS, OS> for CPU {
+    fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(x.len() * x.len());
         diagflat(x, &mut out);
         out
+    }
+}
+
+// TODO stack impl
+impl<T: Copy + AddAssign, IS: Shape, OS: Shape> DiagflatGrad<T, IS, OS> for CPU {
+    #[inline]
+    fn diagflat_grad(&self, x_grad: &mut Buffer<T, Self, IS>, out_grad: &Buffer<T, Self, OS>) {
+        diagflat_grad(x_grad, out_grad);
     }
 }
 

@@ -1,4 +1,5 @@
 mod impl_from;
+mod impl_from_const;
 
 #[cfg(feature = "static-api")]
 mod to_static_device;
@@ -13,7 +14,7 @@ use custos::{
 
 use crate::{
     BinaryOpsMayGrad, GemmMayGrad, MaxRowsMayGrad, PowMayGrad, RandOp, RowOpMayGrad, SquareMayGrad,
-    SumColsMayGrad, TransposeMayGrad,
+    SumColsMayGrad, TransposeMayGrad, DiagflatMayGrad,
 };
 
 pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
@@ -80,6 +81,20 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    // TODO Add trait
+    pub fn add(&self, rhs: &Matrix<'a, T, D, S>) -> Matrix<'a, T, D, S>
+    where
+        D: BinaryOpsMayGrad<T, S>,
+    {
+        (
+            self.device().add(self, rhs),
+            self.rows,
+            self.cols,
+        )
+            .into()
+    }
+
+    #[inline]
     pub fn add_row<RS: Shape>(&self, rhs: &Matrix<'a, T, D, RS>) -> Matrix<'a, T, D, S>
     where
         D: RowOpMayGrad<T, S, RS>,
@@ -116,7 +131,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         {
             let ids = (self.id(), out.id());
             self.device().tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, mut lhs_grad, out_grad) = grads.get_double::<T, S>(device, ids);
+                let (lhs, mut lhs_grad, out_grad) = grads.get_double(device, ids);
                 device.add_unary_grad(&lhs, &mut lhs_grad, &out_grad, |x| x.geq(T::zero()));
             });
         }
@@ -200,6 +215,14 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + SumColsMayGrad<T, S, OS>,
     {
         self.squared().sum_cols().pow(T::one() / T::two())
+    }
+
+    #[inline]
+    pub fn diagflat<OS: Shape>(&self) -> Matrix<T, D, OS> 
+    where
+        D: DiagflatMayGrad<T, S, OS>,
+    {
+        (self.device().diagflat(self), self.rows, self.rows).into()
     }
 }
 

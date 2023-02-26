@@ -311,6 +311,14 @@ pub trait Diagflat<T, IS: Shape = (), OS: Shape = ()>: Device {
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
+pub trait DiagflatGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    fn diagflat_grad(
+        &self,
+        x_grad: &mut Buffer<T, Self, IS>,
+        out_grad: &Buffer<T, Self, OS>,
+    );
+}
+
 pub trait Mean<T, S: Shape>: Device {
     fn mean(&self, x: &Buffer<T, Self, S>) -> T;
 }

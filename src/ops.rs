@@ -12,7 +12,7 @@ use custos::{
 use crate::{
     BinaryElementWise, BinaryGrad, Gemm, GemmGrad, MaxCols, MaxColsGrad, MaxRows, MaxRowsGrad,
     MeanCols, MeanColsGrad, MeanRows, MeanRowsGrad, RowOp, RowOpGrad, SumCols, SumColsGrad,
-    SumRows, SumRowsGrad, Transpose,
+    SumRows, SumRowsGrad, Transpose, Diagflat, DiagflatGrad,
 };
 
 pub trait SquareMayGrad<T, S = ()>: Device
@@ -34,7 +34,7 @@ where
         {
             let ids = (x.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, lhs_grad, out_grad) = grads.get_double::<T, S>(device, ids);
+                let (lhs, lhs_grad, out_grad) = grads.get_double(device, ids);
 
                 device.add_unary_grad(&lhs, lhs_grad, out_grad, |x| x.mul(T::two()));
             });
@@ -60,7 +60,7 @@ where
         {
             let ids = (x.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, lhs_grad, out_grad) = grads.get_double::<T, S>(device, ids);
+                let (lhs, lhs_grad, out_grad) = grads.get_double(device, ids);
 
                 device.add_unary_grad(&lhs, lhs_grad, out_grad, |x| {
                     x.pow(rhs - T::one()).mul(rhs)
@@ -187,7 +187,7 @@ where
         {
             let ids = (x.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, lhs_grad, out_grad) = grads.get_double::<T, ()>(device, ids);
+                let (_, lhs_grad, out_grad) = grads.get_double(device, ids);
 
                 lhs_grad.write_buf(out_grad);
             });
@@ -323,7 +323,7 @@ where
         {
             let ids = (x.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, lhs_grad, out_grad) = grads.get_double::<T, _>(device, ids);
+                let (lhs, lhs_grad, out_grad) = grads.get_double::<T, _, _>(device, ids);
                 device.add_unary_grad(&lhs, lhs_grad, out_grad, |x| x.exp());
             });
         }
@@ -536,6 +536,35 @@ where
             self.tape_mut().add_grad_fn(move |grads, device| {
                 let (_, x_grad, out_grad) = grads.get_double(device, ids);
                 device.mean_rows_grad(cols, x_grad, out_grad);
+            })
+        }
+        out
+    }
+}
+
+pub trait DiagflatMayGrad<T, IS, OS>: Device
+where
+    IS: Shape,
+    OS: Shape,
+{
+    fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
+}
+
+impl<T, IS: Shape, OS: Shape, D> DiagflatMayGrad<T, IS, OS> for D
+where
+    T: Copy + 'static,
+    D: Diagflat<T, IS, OS> + DiagflatGrad<T, IS, OS> + for<'a> Alloc<'a, T, IS> + for<'a> Alloc<'a, T, OS> + MayTapeReturn,
+{
+    #[inline]
+    fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
+        let out = self.diagflat(x);
+
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (_, x_grad, out_grad) = grads.get_double(device, ids);
+                device.diagflat_grad(x_grad, out_grad);
             })
         }
         out

@@ -1,4 +1,4 @@
-use custos::{Buffer, Device, MainMemory, Shape, CPU};
+use custos::{Buffer, Device, MainMemory, Shape, CPU, impl_stack};
 
 use crate::Transpose;
 
@@ -14,7 +14,11 @@ pub fn slice_transpose<T: Clone>(rows: usize, cols: usize, a: &[T], b: &mut [T])
     }
 }
 
-impl<T: Clone, IS: Shape, OS: Shape, D: MainMemory> Transpose<T, IS, OS, D> for CPU {
+#[cfg(feature = "stack")]
+use custos::Stack;
+
+#[impl_stack]
+impl<T: Copy + Default, IS: Shape, OS: Shape, D: MainMemory> Transpose<T, IS, OS, D> for CPU {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(x.len());
         slice_transpose(rows, cols, &x, &mut out);
