@@ -13,8 +13,8 @@ use custos::{
 };
 
 use crate::{
-    BinaryOpsMayGrad, GemmMayGrad, MaxRowsMayGrad, PowMayGrad, RandOp, RowOpMayGrad, SquareMayGrad,
-    SumColsMayGrad, TransposeMayGrad, DiagflatMayGrad,
+    BinaryOpsMayGrad, DiagflatMayGrad, GemmMayGrad, MaxRowsMayGrad, PowMayGrad, RandOp,
+    RowOpMayGrad, SquareMayGrad, SumColsMayGrad, TransposeMayGrad,
 };
 
 pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
@@ -86,12 +86,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     where
         D: BinaryOpsMayGrad<T, S>,
     {
-        (
-            self.device().add(self, rhs),
-            self.rows,
-            self.cols,
-        )
-            .into()
+        (self.device().add(self, rhs), self.rows, self.cols).into()
     }
 
     #[inline]
@@ -218,7 +213,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
-    pub fn diagflat<OS: Shape>(&self) -> Matrix<T, D, OS> 
+    pub fn diagflat<OS: Shape>(&self) -> Matrix<T, D, OS>
     where
         D: DiagflatMayGrad<T, S, OS>,
     {

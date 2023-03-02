@@ -1,6 +1,9 @@
-use std::ops::{Div, Sub};
+use std::{
+    fmt::Display,
+    ops::{Div, Sub},
+};
 
-use custos::{Buffer, Device, Eval, MayDim2, Resolve, Shape};
+use custos::{Buffer, Combiner, Device, Eval, MayDim2, Resolve, Shape};
 
 mod cpu;
 
@@ -27,6 +30,41 @@ pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
     ) -> Buffer<T, Self, S>
     where
         O: Eval<T> + ToString;
+
+    #[inline]
+    fn add<O>(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
+    where
+        T: Display + Eval<T> + core::ops::Add<T, Output = T>,
+        O: Eval<T> + ToString,
+    {
+        self.binary_ew(lhs, rhs, |lhs, rhs| lhs.add(rhs))
+    }
+
+    #[inline]
+    fn mul<O>(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
+    where
+        T: Display + Eval<T> + core::ops::Mul<T, Output = T>,
+        O: Eval<T> + ToString,
+    {
+        self.binary_ew(lhs, rhs, |lhs, rhs| lhs.mul(rhs))
+    }
+
+    #[inline]
+    fn div<O>(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
+    where
+        T: Display + Eval<T> + core::ops::Div<T, Output = T>,
+        O: Eval<T> + ToString,
+    {
+        self.binary_ew(lhs, rhs, |lhs, rhs| lhs.div(rhs))
+    }
+
+    #[inline]
+    fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
+    where
+        T: Display + Eval<T> + core::ops::Sub<T, Output = T>,
+    {
+        self.binary_ew(lhs, rhs, |lhs, rhs| lhs.sub(rhs))
+    }
 }
 
 pub trait BinaryGrad<T, S: Shape = (), D: Device = Self>: Device {
@@ -191,7 +229,8 @@ pub trait SoftmaxGrad<T, S: Shape = ()>: Device {
         samples: usize,
         features: usize,
         x: &Buffer<T, Self, S>,
-        x_grad: &Buffer<T, Self, S>,
+        x_grad: &mut Buffer<T, Self, S>,
+        out: &Buffer<T, Self, S>,
         out_grad: &Buffer<T, Self, S>,
     );
 }
@@ -297,7 +336,7 @@ pub trait Diagflat<T, IS: Shape = (), OS: Shape = ()>: Device {
     ///
     /// let device = CPU::new();
     /// let x = Buffer::from((&device, [1, 2, 7, -1, -2]));
-    /// let out = device.diagflat(&x);
+    /// let out: Buffer<i32> = device.diagflat(&x);
     ///
     /// assert_eq!(&*out, [
     ///     1, 0, 0, 0, 0,
@@ -312,11 +351,7 @@ pub trait Diagflat<T, IS: Shape = (), OS: Shape = ()>: Device {
 }
 
 pub trait DiagflatGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
-    fn diagflat_grad(
-        &self,
-        x_grad: &mut Buffer<T, Self, IS>,
-        out_grad: &Buffer<T, Self, OS>,
-    );
+    fn diagflat_grad(&self, x_grad: &mut Buffer<T, Self, IS>, out_grad: &Buffer<T, Self, OS>);
 }
 
 pub trait Mean<T, S: Shape>: Device {

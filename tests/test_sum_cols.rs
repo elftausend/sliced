@@ -14,17 +14,20 @@ fn test_sum_cols_cpu() {
     ]));
 
     let x: Buffer<_> = device.sum_cols(4, &to_sum_cols);
-    let out = device.mul(&x, &rhs);
+    let _out = device.mul(&x, &rhs);
 
-    out.backward();
+    #[cfg(feature = "autograd")]
+    {
+        _out.backward();
 
-    #[rustfmt::skip]
-    let expected = [
-        1,1,1,1,
-        4,4,4,4,
-        2,2,2,2,
-    ];
+        #[rustfmt::skip]
+        let expected = [
+            1,1,1,1,
+            4,4,4,4,
+            2,2,2,2,
+        ];
 
-    assert_eq!(&**to_sum_cols.grad(), expected);
-    assert_eq!([10, 11, 11], &**rhs.grad());
+        assert_eq!(&**to_sum_cols.grad(), expected);
+        assert_eq!([10, 11, 11], &**rhs.grad());
+    }
 }

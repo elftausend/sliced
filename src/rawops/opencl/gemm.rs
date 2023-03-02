@@ -14,7 +14,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
         lhs: &CLBuffer<T>,
         rhs: &CLBuffer<T>,
     ) -> CLBuffer<T> {
-        let mut out = self.retrieve(m * n);
+        let mut out = self.retrieve(m * n, (lhs, rhs));
         cl_gemm(self, m, k, n, lhs, rhs, &mut out, false).unwrap();
         out
     }
@@ -37,8 +37,8 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
 ///     Ok(())
 /// }
 /// ```
-pub fn cl_gemm<'a, T: CDatatype>(
-    device: &'a OpenCL,
+pub fn cl_gemm<T: CDatatype>(
+    device: &OpenCL,
     m: usize,
     k: usize,
     n: usize,

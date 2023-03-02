@@ -23,9 +23,12 @@ fn test_l2_norm_cols() {
     let out = lhs.l2_norm_cols::<()>();
     println!("out: {:?}", out.read());
 
-    out.backward();
+    #[cfg(feature = "autograd")]
+    {
+        out.backward();
 
-    let expected_grad = [0.1826, 0.3651, 0.5477, 0.7303];
+        let expected_grad = [0.1826, 0.3651, 0.5477, 0.7303];
 
-    roughly_equals(&expected_grad, &*lhs.grad());
+        roughly_equals(&expected_grad, &*lhs.grad());
+    }
 }

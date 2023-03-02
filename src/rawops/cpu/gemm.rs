@@ -24,7 +24,7 @@ where
         lhs: &Buffer<T, D, LS>,
         rhs: &Buffer<T, D, RS>,
     ) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve(m * n);
+        let mut out = self.retrieve(m * n, (lhs, rhs));
         T::gemm(m, n, k, lhs, rhs, &mut out);
         out
     }

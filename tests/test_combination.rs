@@ -15,7 +15,6 @@ fn test_comb() {
 
         squared.backward();
 
-    
         let mut x_grad = x.grad_mut_unbound();
         rawsliced::ew_assign_scalar(&mut x_grad, &0.1, |x, r| *x *= r);
         rawsliced::ew_assign_binary(&mut x, &x_grad, |x, y| *x -= y);
@@ -35,7 +34,6 @@ fn test_perf_min_this() {
 
     for _ in 0..TIMES {
         for _ in range(100) {
-
             let squared = device.square(&x);
             let mul = device.mul(&squared, &x);
             assert_eq!(&*mul, [1.3 * 1.3 * 1.3; 12312]);

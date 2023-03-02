@@ -13,16 +13,20 @@ fn test_sum_rows() {
     ]));
 
     let x: Buffer<_> = device.sum_rows(4, &to_sum_rows);
-    let out = device.mul(&x, &rhs);
-    out.backward();
+    let _out = device.mul(&x, &rhs);
 
-    #[rustfmt::skip]
-    let expected = [
-        1, 4, 2, 3,
-        1, 4, 2, 3,
-        1, 4, 2, 3,
-    ];
+    #[cfg(feature = "autograd")]
+    {
+        _out.backward();
 
-    assert_eq!(&**to_sum_rows.grad(), expected);
-    assert_eq!(&**rhs.grad(), [15, 7, 5, 5]);
+        #[rustfmt::skip]
+        let expected = [
+            1, 4, 2, 3,
+            1, 4, 2, 3,
+            1, 4, 2, 3,
+        ];
+
+        assert_eq!(&**to_sum_rows.grad(), expected);
+        assert_eq!(&**rhs.grad(), [15, 7, 5, 5]);
+    }
 }

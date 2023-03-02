@@ -4,7 +4,7 @@ use crate::Transpose;
 
 impl<T: CDatatype> Transpose<T> for OpenCL {
     fn transpose(&self, rows: usize, cols: usize, x: &CLBuffer<T>) -> CLBuffer<T> {
-        let mut out = self.retrieve(x.len());
+        let mut out = self.retrieve(x.len(), x);
         cl_transpose(self, x, &mut out, rows, cols).unwrap();
         out
     }

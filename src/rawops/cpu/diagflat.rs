@@ -1,13 +1,13 @@
 use std::ops::AddAssign;
 
-use custos::{Buffer, Device, CPU, Shape};
+use custos::{Buffer, Device, Shape, CPU};
 
 use crate::{Diagflat, DiagflatGrad};
 
 // TODO stack impl
 impl<T: Copy, IS: Shape, OS: Shape> Diagflat<T, IS, OS> for CPU {
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve(x.len() * x.len());
+        let mut out = self.retrieve(x.len() * x.len(), x);
         diagflat(x, &mut out);
         out
     }

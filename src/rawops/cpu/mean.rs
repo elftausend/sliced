@@ -12,7 +12,7 @@ impl<T: Number, IS: Shape> Mean<T, IS> for CPU {
 impl<T: Number, IS: Shape, OS: Shape> MeanRows<T, IS, OS> for CPU {
     #[inline]
     fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve(cols);
+        let mut out = self.retrieve(cols, x);
         mean_rows(cols, x, &mut out);
         out
     }
@@ -21,7 +21,7 @@ impl<T: Number, IS: Shape, OS: Shape> MeanRows<T, IS, OS> for CPU {
 impl<T: Number, IS: Shape, OS: Shape> MeanCols<T, IS, OS> for CPU {
     #[inline]
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve(x.len() / cols);
+        let mut out = self.retrieve(x.len() / cols, x);
         mean_cols(cols, x, &mut out);
         out
     }

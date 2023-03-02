@@ -10,9 +10,9 @@ use custos::{
 };
 
 use crate::{
-    BinaryElementWise, BinaryGrad, Gemm, GemmGrad, MaxCols, MaxColsGrad, MaxRows, MaxRowsGrad,
-    MeanCols, MeanColsGrad, MeanRows, MeanRowsGrad, RowOp, RowOpGrad, SumCols, SumColsGrad,
-    SumRows, SumRowsGrad, Transpose, Diagflat, DiagflatGrad,
+    BinaryElementWise, BinaryGrad, Diagflat, DiagflatGrad, Gemm, GemmGrad, MaxCols, MaxColsGrad,
+    MaxRows, MaxRowsGrad, MeanCols, MeanColsGrad, MeanRows, MeanRowsGrad, RowOp, RowOpGrad,
+    SumCols, SumColsGrad, SumRows, SumRowsGrad, Transpose,
 };
 
 pub trait SquareMayGrad<T, S = ()>: Device
@@ -62,9 +62,7 @@ where
             self.tape_mut().add_grad_fn(move |grads, device| {
                 let (lhs, lhs_grad, out_grad) = grads.get_double(device, ids);
 
-                device.add_unary_grad(&lhs, lhs_grad, out_grad, |x| {
-                    x.pow(rhs - T::one()).mul(rhs)
-                })
+                device.add_unary_grad(&lhs, lhs_grad, out_grad, |x| x.pow(rhs - T::one()).mul(rhs))
             });
         }
 
@@ -280,8 +278,7 @@ where
         {
             let ids = (lhs.id(), rhs.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, _, lhs_grad, rhs_grad, out_grad) =
-                    grads.get_triple::<T, ()>(device, ids);
+                let (_, _, lhs_grad, rhs_grad, out_grad) = grads.get_triple::<T, ()>(device, ids);
 
                 device.add_row_grad(rows, cols, lhs_grad, rhs_grad, out_grad);
             });
@@ -461,7 +458,7 @@ where
 
 impl<T, IS, OS, D> SumColsMayGrad<T, IS, OS> for D
 where
-    T: Copy+ 'static,
+    T: Copy + 'static,
     IS: Shape,
     OS: Shape,
     D: MayTapeReturn + SumCols<T, IS, OS> + SumColsGrad<T> + for<'a> Alloc<'a, T>,
@@ -553,7 +550,11 @@ where
 impl<T, IS: Shape, OS: Shape, D> DiagflatMayGrad<T, IS, OS> for D
 where
     T: Copy + 'static,
-    D: Diagflat<T, IS, OS> + DiagflatGrad<T, IS, OS> + for<'a> Alloc<'a, T, IS> + for<'a> Alloc<'a, T, OS> + MayTapeReturn,
+    D: Diagflat<T, IS, OS>
+        + DiagflatGrad<T, IS, OS>
+        + for<'a> Alloc<'a, T, IS>
+        + for<'a> Alloc<'a, T, OS>
+        + MayTapeReturn,
 {
     #[inline]
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {

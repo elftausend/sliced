@@ -16,16 +16,20 @@ fn test_max_rows_cpu() {
 
     let max_rows: Buffer<_, _> = device.max_rows(4, &lhs);
 
-    let out = device.mul(&max_rows, &rhs);
-    out.backward();
+    let _out = device.mul(&max_rows, &rhs);
 
-    #[rustfmt::skip]
-    let expected = [
-        0, 0, 4, 0, 
-        2, 3, 0, 1, 
-        0, 0, 0, 0
-    ];
+    #[cfg(feature = "autograd")]
+    {
+        _out.backward();
 
-    assert_eq!(&**lhs.grad(), expected);
-    assert_eq!(&**rhs.grad(), [1, 5, 3, 4]);
+        #[rustfmt::skip]
+        let expected = [
+            0, 0, 4, 0,
+            2, 3, 0, 1,
+            0, 0, 0, 0
+        ];
+
+        assert_eq!(&**lhs.grad(), expected);
+        assert_eq!(&**rhs.grad(), [1, 5, 3, 4]);
+    }
 }

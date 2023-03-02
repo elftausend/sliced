@@ -44,7 +44,7 @@ where
 {
     debug_assert_eq!(rhs.len(), cols);
 
-    let mut out = device.retrieve(lhs.len());
+    let mut out = device.retrieve(lhs.len(), (lhs, rhs));
     row_op_slice_mut(lhs, rows, cols, rhs, &mut out, f);
     out
 }

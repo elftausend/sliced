@@ -1,6 +1,7 @@
 use custos::{
     prelude::{Float, Number, One},
-    range, Alloc, Buffer, ClearBuf, Device, IsShapeIndep, MainMemory, MayTapeReturn, WriteBuf, CPU,
+    range, Alloc, Buffer, ClearBuf, Device, GraphOpt, GraphReturn, IsShapeIndep, MainMemory,
+    MayTapeReturn, WriteBuf, CPU,
 };
 use graplot::Plot;
 use sliced::{Gemm, GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
@@ -35,7 +36,6 @@ impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I
     where
         D: GemmMayGrad<T> + RowOpMayGrad<T>,
     {
-        //inputs.gemm(&self.weights).add_row(&self.bias)
         let mut out = inputs.gemm(&self.weights);
         out.add_row_mut(&self.bias);
         out
@@ -108,32 +108,59 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
 
 fn main() {
     let device = CPU::new();
-    //let mut device = custos::OpenCL::new(0).unwrap();
-    //device.set_unified_mem(false);
+    // let mut device = custos::OpenCL::new(0).unwrap();
+    // device.set_unified_mem(false);
 
-    let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
-    let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
-    let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);
+    // let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
+    // let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
+    // let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);
 
-    let (x, y) = create_sine(&device, 0, 1000);
+    let mut lin1 = Linear::<f32, _, 1, 512>::new(&device);
+    let mut lin2 = Linear::<f32, _, 512, 512>::new(&device);
+    let mut lin3 = Linear::<f32, _, 512, 512>::new(&device);
+    let mut lin4 = Linear::<f32, _, 512, 512>::new(&device);
+    let mut lin5 = Linear::<f32, _, 512, 512>::new(&device);
+    let mut lin6 = Linear::<f32, _, 512, 512>::new(&device);
+    let mut lin7 = Linear::<f32, _, 512, 512>::new(&device);
+    let mut lin8 = Linear::<f32, _, 512, 1>::new(&device);
+
+    let (x, y) = create_sine(&device, 0, 100000);
     let sgd = SGD { lr: 0.0001 };
 
     let start = Instant::now();
 
+    let mut already = false;
+
     for i in range(18000) {
         #[cfg(feature = "autograd")]
         device.tape.borrow_mut().grads.zero_grad();
+
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
         // sgd.zero_grad(lin3.params());
 
+        // let out = lin1.forward(&x).relu();
+        // let out = lin2.forward(&out).relu();
+        // let out = lin3.forward(&out);
+
         let out = lin1.forward(&x).relu();
         let out = lin2.forward(&out).relu();
-        let out = lin3.forward(&out);
+        let out = lin3.forward(&out).relu();
+        let out = lin4.forward(&out).relu();
+        let out = lin5.forward(&out).relu();
+        let out = lin6.forward(&out).relu();
+        let out = lin7.forward(&out).relu();
+        let out = lin8.forward(&out);
 
         let loss = (&out - &y).pow(2.);
 
         println!("i: {i}");
+
+        if !already {
+            println!("traces: {:?}", device.graph().cache_traces());
+            device.optimize().unwrap();
+            already = true;
+        }
 
         #[cfg(feature = "autograd")]
         {

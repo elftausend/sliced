@@ -22,7 +22,7 @@ where
     where
         O: Eval<T> + ToString,
     {
-        let mut out = self.retrieve(lhs.len());
+        let mut out = self.retrieve(lhs.len(), (lhs, rhs));
         slice_binary_ew(lhs, rhs, &mut out, f);
         out
     }

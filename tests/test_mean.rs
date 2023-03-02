@@ -17,14 +17,17 @@ fn test_mean_rows_cpu() {
 
     let mean_rows: Buffer = device.mean_rows(3, &to_mean_rows);
 
-    let out = device.sub(&lhs, &mean_rows);
+    let _out = device.sub(&lhs, &mean_rows);
 
-    out.backward();
+    #[cfg(feature = "autograd")]
+    {
+        _out.backward();
 
-    assert_eq!(
-        [-0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25],
-        &**to_mean_rows.grad()
-    );
+        assert_eq!(
+            [-0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25],
+            &**to_mean_rows.grad()
+        );
 
-    assert_eq!([1., 1., 1.], &**lhs.grad());
+        assert_eq!([1., 1., 1.], &**lhs.grad());
+    }
 }

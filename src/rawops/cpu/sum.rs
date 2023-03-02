@@ -25,7 +25,7 @@ where
 {
     #[inline]
     fn sum_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve(cols);
+        let mut out = self.retrieve(cols, x);
         sum_rows2(cols, x, &mut out);
         out
     }
@@ -75,7 +75,7 @@ where
     #[inline]
     fn sum_cols(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let rows = x.len() / cols;
-        let mut out = self.retrieve(rows);
+        let mut out = self.retrieve(rows, x);
         sum_cols(cols, x, &mut out);
         out
     }

@@ -9,7 +9,7 @@ impl<T: Copy, D: MainMemory> ColOp<T, (), (), D> for CPU {
     where
         F: Fn(T, T) -> T,
     {
-        let mut out = self.retrieve(lhs.len());
+        let mut out = self.retrieve(lhs.len(), (lhs, rhs));
         col_op(cols, lhs, rhs, &mut out, f);
         out
     }

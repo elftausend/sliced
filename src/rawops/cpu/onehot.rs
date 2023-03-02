@@ -6,7 +6,7 @@ impl<T: Ord + Number> Onehot<T> for CPU {
     fn onehot(&self, classes: &Buffer<T>) -> Buffer<T> {
         let highest_class = max(classes).unwrap().as_usize() + 1;
 
-        let mut out = self.retrieve(classes.len() * highest_class);
+        let mut out = self.retrieve(classes.len() * highest_class, classes);
         onehot(highest_class, classes, &mut out);
 
         out
