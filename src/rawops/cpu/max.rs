@@ -1,12 +1,12 @@
 use std::ops::AddAssign;
 
-use custos::{prelude::One, Buffer, Device, MainMemory, Shape, CPU};
+use custos::{prelude::{One, Number}, Buffer, Device, MainMemory, Shape, CPU};
 
 use crate::{Max, MaxCols, MaxColsGrad, MaxRows, MaxRowsGrad};
 
 impl<T, D, S> Max<T, S, D> for CPU
 where
-    T: Ord + Copy,
+    T: Number,
     D: MainMemory,
     S: Shape,
 {
@@ -18,7 +18,7 @@ where
 
 impl<T, D, IS, OS> MaxRows<T, IS, OS, D> for CPU
 where
-    T: Ord + Copy,
+    T: Number,
     D: MainMemory,
     IS: Shape,
     OS: Shape,
@@ -51,7 +51,7 @@ impl<T: PartialEq + Copy + AddAssign> MaxRowsGrad<T> for CPU {
 
 impl<T, D> MaxCols<T, (), (), D> for CPU
 where
-    T: Ord + Copy,
+    T: Number,
     D: MainMemory,
 {
     #[inline]
@@ -77,7 +77,7 @@ impl<T: PartialEq + Copy + AddAssign> MaxColsGrad<T> for CPU {
 }
 
 #[inline]
-pub fn max<T: Ord + Copy>(x: &[T]) -> Option<T> {
+pub fn max<T: Number>(x: &[T]) -> Option<T> {
     x.iter().copied().reduce(T::max)
 }
 
@@ -86,7 +86,7 @@ pub fn max_grad<T: PartialEq + One>(out: &T, x: &[T], x_grad: &mut [T]) {
     x_grad[x.iter().position(|val| val == out).unwrap()] = T::one()
 }
 
-pub fn max_rows<T: Ord + Copy>(cols: usize, x: &[T], out: &mut [T]) {
+pub fn max_rows<T: Number>(cols: usize, x: &[T], out: &mut [T]) {
     for row in x.chunks(cols) {
         for (val, max) in row.iter().zip(out.iter_mut()) {
             *max = T::max(*val, *max)
@@ -111,7 +111,7 @@ where
     }
 }
 
-pub fn max_cols<T: Ord + Copy>(cols: usize, x: &[T], out: &mut [T]) {
+pub fn max_cols<T: Number>(cols: usize, x: &[T], out: &mut [T]) {
     for (row, val) in x.chunks(cols).zip(out) {
         *val = max(row).expect("The slice should contain at least one value.");
     }

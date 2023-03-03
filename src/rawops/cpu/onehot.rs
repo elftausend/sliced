@@ -1,7 +1,7 @@
 use crate::{max, Onehot};
 use custos::{prelude::Number, Buffer, Device, CPU};
 
-impl<T: Ord + Number> Onehot<T> for CPU {
+impl<T: PartialOrd + Number> Onehot<T> for CPU {
     #[inline]
     fn onehot(&self, classes: &Buffer<T>) -> Buffer<T> {
         let highest_class = max(classes).unwrap().as_usize() + 1;

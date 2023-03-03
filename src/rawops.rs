@@ -228,7 +228,6 @@ pub trait SoftmaxGrad<T, S: Shape = ()>: Device {
         &self,
         samples: usize,
         features: usize,
-        x: &Buffer<T, Self, S>,
         x_grad: &mut Buffer<T, Self, S>,
         out: &Buffer<T, Self, S>,
         out_grad: &Buffer<T, Self, S>,
