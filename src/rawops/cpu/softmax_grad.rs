@@ -17,7 +17,7 @@ where
         out: &Buffer<T, Self, S>,
         out_grad: &Buffer<T, Self, S>,
     ) {
-        for idx in range(samples - 1) {
+        for idx in range(samples) {
             let index = idx * features;
 
             // ensure that data is only read
@@ -59,19 +59,19 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::SoftmaxGrad;
-    use custos::{range, Buffer, Device, GenericBlas, Shape, CPU, MainMemory};
+    use crate::{SoftmaxGrad, Softmax};
+    use custos::{Buffer, CPU};
 
     #[test]
     fn test_softmax_grad() {
-        /*let device = CPU::new();
-        let samples = 2;
-        let features = 3;
-        let mut x_grad = Buffer::<f32>::zeros(samples * features);
-        let out = Buffer::<f32>::from_slice(&[0.1, 0.2, 0.7, 0.3, 0.4, 0.3]);
-        let out_grad = Buffer::<f32>::from_slice(&[0.1, 0.2, 0.7, 0.3, 0.4, 0.3]);
-        device.softmax_grad(samples, features, &mut x_grad, &out, &out_grad);
-        assert_eq!(x_grad, Buffer::<f32>::from_slice(&[0.1, 0.2, 0.7, 0.3, 0.4, 0.3]));*/
+        let device = CPU::new();
+        let x = Buffer::from((&device, &[1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
+        let out = device.softmax(2, 3, &x);
+        crate::test_utils::roughly_equals(&*out, &[0.09003057, 0.24472847, 0.66524096, 0.09003057, 0.24472847, 0.66524096]);
+
+        let mut x_grad = Buffer::from((&device, &[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]));
+        let out_grad = Buffer::from((&device, &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]));
+        device.softmax_grad(2, 3, &mut x_grad, &out, &out_grad);
+        crate::test_utils::roughly_equals(&*x_grad, &[-0.141871, -0.14077032, 0.28258747, -0.141871,  -0.14077032, 0.28258747]);
     }
 }

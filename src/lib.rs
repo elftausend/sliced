@@ -26,3 +26,20 @@ pub use ::custos::Buffer;
 pub mod custos {
     pub use custos::*;
 }
+
+#[cfg(test)]
+pub mod test_utils {
+    use custos::prelude::Float;
+
+    pub fn roughly_equals<T: Float>(lhs: &[T], rhs: &[T]) {
+        for (a, b) in lhs.iter().zip(rhs) {
+            let abs = (*a - *b).abs();
+            if abs > T::one() / T::from_u64(100) {
+                panic!(
+                    "\n left: '{:?}',\n right: '{:?}', \n left elem.: {} != right elem. {}",
+                    lhs, rhs, a, b
+                )
+            }
+        }
+    }
+}
