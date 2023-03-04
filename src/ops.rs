@@ -12,7 +12,7 @@ use custos::{
 use crate::{
     BinaryElementWise, BinaryGrad, Diagflat, DiagflatGrad, Gemm, GemmGrad, MaxCols, MaxColsGrad,
     MaxRows, MaxRowsGrad, MeanCols, MeanColsGrad, MeanRows, MeanRowsGrad, RowOp, RowOpGrad,
-    SumCols, SumColsGrad, SumRows, SumRowsGrad, Transpose,
+    Softmax, SoftmaxGrad, SumCols, SumColsGrad, SumRows, SumRowsGrad, Transpose,
 };
 
 pub trait SquareMayGrad<T, S = ()>: Device
@@ -566,6 +566,45 @@ where
             self.tape_mut().add_grad_fn(move |grads, device| {
                 let (_, x_grad, out_grad) = grads.get_double(device, ids);
                 device.diagflat_grad(x_grad, out_grad);
+            })
+        }
+        out
+    }
+}
+
+pub trait SoftmaxMayGrad<T, S>: Device
+where
+    S: Shape,
+{
+    fn softmax(
+        &self,
+        samples: usize,
+        features: usize,
+        x: &Buffer<T, Self, S>,
+    ) -> Buffer<T, Self, S>;
+}
+
+impl<T, S, D> SoftmaxMayGrad<T, S> for D
+where
+    T: Copy + 'static,
+    S: Shape,
+    D: Softmax<T, S> + SoftmaxGrad<T, S> + for<'a> Alloc<'a, T, S> + MayTapeReturn,
+{
+    fn softmax(
+        &self,
+        samples: usize,
+        features: usize,
+        x: &Buffer<T, Self, S>,
+    ) -> Buffer<T, Self, S> {
+        let out = self.softmax(samples, features, x);
+
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (x.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let out = device.get_existing_buf(ids.1);
+                let (_, x_grad, out_grad) = grads.get_double(device, ids);
+                device.softmax_grad(samples, features, x_grad, &out, out_grad);
             })
         }
         out

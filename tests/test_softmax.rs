@@ -1,4 +1,2 @@
 #[test]
-fn test_softmax() {
-    
-}
+fn test_softmax() {}

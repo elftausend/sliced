@@ -1,6 +1,9 @@
 use std::ops::AddAssign;
 
-use custos::{prelude::{One, Number}, Buffer, Device, MainMemory, Shape, CPU};
+use custos::{
+    prelude::{Number, One},
+    Buffer, Device, MainMemory, Shape, CPU,
+};
 
 use crate::{Max, MaxCols, MaxColsGrad, MaxRows, MaxRowsGrad};
 

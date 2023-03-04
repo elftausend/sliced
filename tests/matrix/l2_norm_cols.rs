@@ -1,9 +1,10 @@
 use custos::prelude::Float;
 
+#[cfg(test)]
 #[cfg(feature = "cpu")]
 #[test]
 fn test_l2_norm_cols() {
-    use sliced::{Matrix, CPU};
+    use sliced::{test_utils::roughly_equals, Matrix, CPU};
 
     let device = CPU::new();
 
@@ -17,6 +18,6 @@ fn test_l2_norm_cols() {
 
         let expected_grad = [0.1826, 0.3651, 0.5477, 0.7303];
 
-        sliced::test_utils::roughly_equals(&expected_grad, &*lhs.grad());
+        roughly_equals(&expected_grad, &*lhs.grad());
     }
 }

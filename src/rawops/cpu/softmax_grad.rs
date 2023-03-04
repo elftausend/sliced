@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::{BinaryElementWise, Diagflat, Gemm, SoftmaxGrad, Transpose};
-use custos::{range, Buffer, Device, GenericBlas, Shape, CPU, MainMemory};
+use custos::{range, Buffer, Device, GenericBlas, MainMemory, Shape, CPU};
 
 impl<T, S> SoftmaxGrad<T, S> for CPU
 where
@@ -25,6 +25,7 @@ where
                 Buffer::from_raw_host((&out[index..index + features]).as_ptr() as *mut T, features)
             };
 
+            // ensure that data is only read
             let single_grad: Buffer<T> = unsafe {
                 Buffer::from_raw_host(
                     (&out_grad[index..index + features]).as_ptr() as *mut T,
@@ -59,7 +60,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::{SoftmaxGrad, Softmax};
+    use crate::{Softmax, SoftmaxGrad};
     use custos::{Buffer, CPU};
 
     #[test]
@@ -67,11 +68,38 @@ mod tests {
         let device = CPU::new();
         let x = Buffer::from((&device, &[1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
         let out = device.softmax(2, 3, &x);
-        crate::test_utils::roughly_equals(&*out, &[0.09003057, 0.24472847, 0.66524096, 0.09003057, 0.24472847, 0.66524096]);
+        crate::test_utils::roughly_equals(
+            &*out,
+            &[
+                0.09003057, 0.24472847, 0.66524096, 0.09003057, 0.24472847, 0.66524096,
+            ],
+        );
 
         let mut x_grad = Buffer::from((&device, &[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]));
         let out_grad = Buffer::from((&device, &[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]));
         device.softmax_grad(2, 3, &mut x_grad, &out, &out_grad);
-        crate::test_utils::roughly_equals(&*x_grad, &[-0.141871, -0.14077032, 0.28258747, -0.141871,  -0.14077032, 0.28258747]);
+        crate::test_utils::roughly_equals(
+            &*x_grad,
+            &[
+                -0.141871,
+                -0.14077032,
+                0.28258747,
+                -0.141871,
+                -0.14077032,
+                0.28258747,
+            ],
+        );
+    }
+
+    #[cfg(feature = "matrix")]
+    #[test]
+    fn test_matrix_forward_softmax_grad() {
+        use crate::{Matrix, MaxColsMayGrad};
+
+        let device = CPU::new();
+
+        let x = Matrix::from((&device, 2, 3, [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
+
+        x.max_cols();
     }
 }

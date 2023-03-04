@@ -13,8 +13,8 @@ use custos::{
 };
 
 use crate::{
-    BinaryOpsMayGrad, DiagflatMayGrad, GemmMayGrad, MaxRowsMayGrad, PowMayGrad, RandOp,
-    RowOpMayGrad, SquareMayGrad, SumColsMayGrad, TransposeMayGrad,
+    BinaryOpsMayGrad, DiagflatMayGrad, GemmMayGrad, MaxColsMayGrad, MaxRowsMayGrad, PowMayGrad,
+    RandOp, RowOpMayGrad, SoftmaxMayGrad, SquareMayGrad, SumColsMayGrad, TransposeMayGrad,
 };
 
 pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
@@ -188,6 +188,19 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    pub fn max_cols<OS: Shape>(&self) -> Matrix<'a, T, D, OS>
+    where
+        D: MaxColsMayGrad<T, S, OS>,
+    {
+        (
+            self.device().max_cols(self.rows, self.cols, self),
+            self.rows,
+            self.cols,
+        )
+            .into()
+    }
+
+    #[inline]
     pub fn sum_cols<OS: Shape>(&self) -> Matrix<'a, T, D, OS>
     where
         D: SumColsMayGrad<T, S, OS>,
@@ -213,11 +226,24 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
-    pub fn diagflat<OS: Shape>(&self) -> Matrix<T, D, OS>
+    pub fn diagflat<OS: Shape>(&self) -> Matrix<'a, T, D, OS>
     where
         D: DiagflatMayGrad<T, S, OS>,
     {
         (self.device().diagflat(self), self.rows, self.rows).into()
+    }
+
+    #[inline]
+    pub fn softmax(&self) -> Matrix<'a, T, D, S>
+    where
+        D: SoftmaxMayGrad<T, S>,
+    {
+        (
+            self.device().softmax(self.rows, self.cols, self),
+            self.rows,
+            self.cols,
+        )
+            .into()
     }
 }
 

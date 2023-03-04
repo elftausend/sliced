@@ -23,6 +23,11 @@ mod tests {
         let device = CPU::new();
         let x = Buffer::from((&device, &[1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
         let out = device.softmax(2, 3, &x);
-        crate::test_utils::roughly_equals(&*out, &[0.09003057, 0.24472847, 0.66524096, 0.09003057, 0.24472847, 0.66524096]);
+        crate::test_utils::roughly_equals(
+            &*out,
+            &[
+                0.09003057, 0.24472847, 0.66524096, 0.09003057, 0.24472847, 0.66524096,
+            ],
+        );
     }
 }

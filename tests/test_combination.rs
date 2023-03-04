@@ -1,5 +1,5 @@
 use custos::{get_count, range, ApplyFunction, Buffer, Combiner, OpenCL, TapeReturn, CPU};
-use sliced::{BinaryElementWise, BinaryOpsMayGrad, SquareMayGrad};
+use sliced::{BinaryOpsMayGrad, SquareMayGrad};
 
 #[test]
 fn test_comb() {

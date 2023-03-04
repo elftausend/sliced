@@ -27,7 +27,6 @@ pub mod custos {
     pub use custos::*;
 }
 
-#[cfg(test)]
 pub mod test_utils {
     use custos::prelude::Float;
 
