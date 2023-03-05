@@ -12,7 +12,7 @@ use custos::{
 use crate::{
     BinaryElementWise, BinaryGrad, Diagflat, DiagflatGrad, Gemm, GemmGrad, MaxCols, MaxColsGrad,
     MaxRows, MaxRowsGrad, MeanCols, MeanColsGrad, MeanRows, MeanRowsGrad, RowOp, RowOpGrad,
-    Softmax, SoftmaxGrad, SumCols, SumColsGrad, SumRows, SumRowsGrad, Transpose,
+    Softmax, SoftmaxGrad, SumCols, SumColsGrad, SumRows, SumRowsGrad, Transpose, TranposeGrad,
 };
 
 pub trait SquareMayGrad<T, S = ()>: Device
@@ -176,7 +176,7 @@ where
     T: Clone + 'static,
     IS: Shape,
     OS: Shape,
-    D: Transpose<T, IS, OS> + MayTapeReturn + for<'b> Alloc<'b, T> + WriteBuf<T>,
+    D: Transpose<T, IS, OS> + TranposeGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T> + WriteBuf<T>,
 {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.transpose(rows, cols, x);
@@ -187,7 +187,8 @@ where
             self.tape_mut().add_grad_fn(move |grads, device| {
                 let (_, lhs_grad, out_grad) = grads.get_double(device, ids);
 
-                lhs_grad.write_buf(out_grad);
+                // TODO transpose out grad
+                device.transpose_grad(cols, rows, lhs_grad, out_grad);
             });
         }
         out

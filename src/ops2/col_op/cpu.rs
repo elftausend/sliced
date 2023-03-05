@@ -1,6 +1,6 @@
 use custos::{Buffer, Device, MainMemory, CPU};
 
-use crate::ColOp;
+use super::ColOp;
 
 // TODO: shape?
 impl<T: Copy, D: MainMemory> ColOp<T, (), (), D> for CPU {

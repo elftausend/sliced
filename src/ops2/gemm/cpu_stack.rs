@@ -1,6 +1,6 @@
 use custos::{impl_stack, Buffer, Device, GenericBlas, MainMemory, Shape, CPU};
 
-use crate::Gemm;
+use super::Gemm;
 
 #[cfg(feature = "stack")]
 use custos::Stack;

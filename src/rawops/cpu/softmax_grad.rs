@@ -100,6 +100,6 @@ mod tests {
 
         let x = Matrix::from((&device, 2, 3, [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
 
-        x.max_cols();
+        // x.sub_cols(x.max_cols());
     }
 }

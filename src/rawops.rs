@@ -21,67 +21,6 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
-    fn binary_ew<O>(
-        &self,
-        lhs: &Buffer<T, D, S>,
-        rhs: &Buffer<T, D, S>,
-        f: impl Fn(Resolve<T>, Resolve<T>) -> O,
-    ) -> Buffer<T, Self, S>
-    where
-        O: Eval<T> + ToString;
-
-    #[inline]
-    fn add<O>(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
-    where
-        T: Display + Eval<T> + core::ops::Add<T, Output = T>,
-        O: Eval<T> + ToString,
-    {
-        self.binary_ew(lhs, rhs, |lhs, rhs| lhs.add(rhs))
-    }
-
-    #[inline]
-    fn mul<O>(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
-    where
-        T: Display + Eval<T> + core::ops::Mul<T, Output = T>,
-        O: Eval<T> + ToString,
-    {
-        self.binary_ew(lhs, rhs, |lhs, rhs| lhs.mul(rhs))
-    }
-
-    #[inline]
-    fn div<O>(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
-    where
-        T: Display + Eval<T> + core::ops::Div<T, Output = T>,
-        O: Eval<T> + ToString,
-    {
-        self.binary_ew(lhs, rhs, |lhs, rhs| lhs.div(rhs))
-    }
-
-    #[inline]
-    fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
-    where
-        T: Display + Eval<T> + core::ops::Sub<T, Output = T>,
-    {
-        self.binary_ew(lhs, rhs, |lhs, rhs| lhs.sub(rhs))
-    }
-}
-
-pub trait BinaryGrad<T, S: Shape = (), D: Device = Self>: Device {
-    fn add_binary_grad<LO, RO>(
-        &self,
-        lhs: &Buffer<T, D, S>,
-        rhs: &Buffer<T, D, S>,
-        lhs_grad: &mut Buffer<T, D, S>,
-        rhs_grad: &mut Buffer<T, D, S>,
-        out: &Buffer<T, D, S>,
-        lhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> LO,
-        rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> RO,
-    ) where
-        LO: Eval<T> + ToString,
-        RO: Eval<T> + ToString;
-}
-
 pub trait BinaryEWMayGrad<T, S: Shape = (), D: Device = Self>: Device {
     fn binary_ew_w_grad<FO, LO, RO>(
         &self,
@@ -95,51 +34,6 @@ pub trait BinaryEWMayGrad<T, S: Shape = (), D: Device = Self>: Device {
         FO: Eval<T> + ToString,
         LO: Eval<T> + ToString,
         RO: Eval<T> + ToString;
-}
-
-pub trait Gemm<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
-    Device
-{
-    fn gemm(
-        &self,
-        m: usize,
-        k: usize,
-        n: usize,
-        lhs: &Buffer<T, D, LS>,
-        rhs: &Buffer<T, D, RS>,
-    ) -> Buffer<T, Self, OS>;
-}
-
-pub trait GemmGrad<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
-    Device
-{
-    fn gemm_grad(
-        &self,
-        m: usize,
-        k: usize,
-        n: usize,
-        lhs: &Buffer<T, D, LS>,
-        rhs: &Buffer<T, D, RS>,
-        lhs_grad: &mut Buffer<T, D, LS>,
-        rhs_grad: &mut Buffer<T, D, RS>,
-        out_grad: &Buffer<T, D, OS>,
-    );
-}
-
-pub trait Transpose<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
-    fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
-}
-
-pub trait Transpose2<
-    T,
-    const ROWS: usize = 0,
-    const COLS: usize = 0,
-    IS: MayDim2<ROWS, COLS> = (),
-    OS: MayDim2<COLS, ROWS> = (),
-    D: Device = Self,
->: Device
-{
-    fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
 }
 
 pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
@@ -157,44 +51,6 @@ pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
         lhs: &mut Buffer<T, D, LS>,
         rhs: &Buffer<T, D, RS>,
     );
-}
-
-pub trait ColOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
-    fn col_op<F>(
-        &self,
-        cols: usize,
-        lhs: &Buffer<T, D, LS>,
-        rhs: &Buffer<T, D, RS>,
-        f: F,
-    ) -> Buffer<T, Self, LS>
-    where
-        F: Fn(T, T) -> T + Copy;
-
-    #[inline]
-    fn sub_cols(
-        &self,
-        cols: usize,
-        lhs: &Buffer<T, D, LS>,
-        rhs: &Buffer<T, D, RS>,
-    ) -> Buffer<T, Self, LS>
-    where
-        T: Sub<Output = T>,
-    {
-        self.col_op(cols, lhs, rhs, |lhs, rhs| lhs - rhs)
-    }
-
-    #[inline]
-    fn div_cols(
-        &self,
-        cols: usize,
-        lhs: &Buffer<T, D, LS>,
-        rhs: &Buffer<T, D, RS>,
-    ) -> Buffer<T, Self, LS>
-    where
-        T: Div<Output = T>,
-    {
-        self.col_op(cols, lhs, rhs, |lhs, rhs| lhs / rhs)
-    }
 }
 
 pub trait RowOpGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
@@ -235,39 +91,6 @@ pub trait SoftmaxGrad<T, S: Shape = ()>: Device {
 }
 
 //pub trait SumOp
-pub trait Max<T, S: Shape = (), D: Device = Self>: Device {
-    fn max(&self, x: &Buffer<T, D, S>) -> T;
-}
-
-pub trait MaxRows<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
-    fn max_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
-}
-
-pub trait MaxRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
-    fn max_rows_grad(
-        &self,
-        cols: usize,
-        out: &Buffer<T, Self, OS>,
-        x: &Buffer<T, Self, IS>,
-        x_grad: &mut Buffer<T, Self, IS>,
-        out_grad: &Buffer<T, Self, OS>,
-    );
-}
-
-pub trait MaxCols<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
-    fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
-}
-
-pub trait MaxColsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
-    fn max_cols_grad(
-        &self,
-        cols: usize,
-        out: &Buffer<T, Self, OS>,
-        x: &Buffer<T, Self, IS>,
-        x_grad: &mut Buffer<T, Self, IS>,
-        out_grad: &Buffer<T, Self, OS>,
-    );
-}
 
 pub trait Sum<T, S: Shape = (), D: Device = Self>: Device {
     fn sum(&self, x: &Buffer<T, D, S>) -> T;

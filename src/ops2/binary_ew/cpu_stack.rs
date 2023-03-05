@@ -1,6 +1,6 @@
 use custos::{impl_stack, Buffer, Device, Eval, MainMemory, Resolve, Shape, ToVal, CPU};
 
-use crate::BinaryElementWise;
+use super::BinaryElementWise;
 
 #[cfg(feature = "stack")]
 use custos::Stack;

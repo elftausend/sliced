@@ -2,7 +2,9 @@ use custos::{opencl::enqueue_kernel, prelude::CLBuffer, CDatatype, Device, Error
 
 use std::fmt::Write;
 
-use crate::Gemm;
+use crate::assign_or_set::{AssignOrSet, Set};
+
+use super::Gemm;
 
 impl<T: CDatatype> Gemm<T> for OpenCL {
     #[inline]
@@ -15,7 +17,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
         rhs: &CLBuffer<T>,
     ) -> CLBuffer<T> {
         let mut out = self.retrieve(m * n, (lhs, rhs));
-        cl_gemm(self, m, k, n, lhs, rhs, &mut out, false).unwrap();
+        cl_gemm::<T, Set>(self, m, k, n, lhs, rhs, &mut out).unwrap();
         out
     }
 }
@@ -37,7 +39,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
 ///     Ok(())
 /// }
 /// ```
-pub fn cl_gemm<T: CDatatype>(
+pub fn cl_gemm<T: CDatatype, AOS: AssignOrSet<T>>(
     device: &OpenCL,
     m: usize,
     k: usize,
@@ -45,7 +47,6 @@ pub fn cl_gemm<T: CDatatype>(
     lhs: &CLBuffer<T>,
     rhs: &CLBuffer<T>,
     out: &mut CLBuffer<T>,
-    add_to_out: bool,
 ) -> Result<(), Error> {
     let (m, n) = (n, m);
 
@@ -86,8 +87,6 @@ pub fn cl_gemm<T: CDatatype>(
     }
 
     let dt = T::as_c_type_str();
-
-    let add_to_out = if add_to_out { "+" } else { "" };
 
     let src = format!("
         #define K {k}
@@ -133,8 +132,8 @@ pub fn cl_gemm<T: CDatatype>(
 
                 #pragma unroll
                 for (uint n=0; n<NW; ++n)
-                    C[(nc*NW + n)*MT + mt] {add_to_out}= *( (floatMW*) CT[n]);
-            }}");
+                    C[(nc*NW + n)*MT + mt] {aos} *( (floatMW*) CT[n]);
+            }}", aos = AOS::STR_OP);
 
     let gws = [f, s, 0];
 

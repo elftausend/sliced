@@ -1,9 +1,12 @@
+pub mod assign_or_set;
 #[cfg(feature = "matrix")]
 mod matrix;
 mod ops;
+mod ops2;
 mod rawops;
 
 pub use ops::*;
+pub use ops2::*;
 pub use rawops::*;
 
 #[cfg(feature = "matrix")]

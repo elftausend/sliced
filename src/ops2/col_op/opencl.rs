@@ -1,6 +1,6 @@
 use custos::{prelude::cpu_exec_binary_may_unified, Buffer, OpenCL};
 
-use crate::ColOp;
+use super::ColOp;
 
 impl<T: Copy + Default> ColOp<T> for OpenCL {
     #[inline]

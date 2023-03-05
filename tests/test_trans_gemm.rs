@@ -1,5 +1,5 @@
 use custos::GenericBlas;
-use sliced::slice_transpose;
+use sliced::{assign_or_set::Set, slice_transpose};
 
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -13,7 +13,7 @@ fn test_left_trans_gemm() {
 
     // 4 x 2
     let mut trans_a = [0.; 2 * 4];
-    slice_transpose(2, 4, &a, &mut trans_a);
+    slice_transpose::<_, Set>(2, 4, &a, &mut trans_a);
 
     // 2 x 3;
     #[rustfmt::skip]
@@ -47,7 +47,7 @@ fn test_left_trans_gemm_large() {
 
     // 5 x 7
     let mut trans_a = [0.; 7 * 5];
-    slice_transpose(7, 5, &a, &mut trans_a);
+    slice_transpose::<_, Set>(7, 5, &a, &mut trans_a);
 
     // 7 x 10
     let b = [
@@ -89,7 +89,7 @@ fn test_right_trans_gemm() {
 
     // 3 x 2
     let mut trans_b = [0.; 2 * 3];
-    slice_transpose(2, 3, &a, &mut trans_b);
+    slice_transpose::<_, Set>(2, 3, &a, &mut trans_b);
 
     let mut out = [0.; 4 * 2];
 

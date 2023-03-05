@@ -11,6 +11,15 @@ fn test_transpose_cpu() {
 
     let out: Buffer<i32, _> = device.transpose(2, 3, &x);
     assert_eq!(&*out, [1, 4, 2, 5, 3, 6]);
+
+    /*let y = Buffer::from((&device, [-2, 3, -4, -2, -3, -1]));
+
+
+    #[cfg(feature = "autograd")]
+    {
+        out.backward();
+        assert_eq!(&**x.grad(), [1, 1, 1, 1, 1, 1]);
+    }*/
 }
 
 #[cfg(feature = "opencl")]

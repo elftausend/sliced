@@ -2,7 +2,7 @@ use std::ops::{AddAssign, Mul};
 
 use custos::{impl_stack, Buffer, Eval, MainMemory, Resolve, Shape, ToVal, CPU};
 
-use crate::BinaryGrad;
+use super::BinaryGrad;
 
 #[cfg(feature = "stack")]
 use custos::Stack;

@@ -36,6 +36,18 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         }
     }
 
+    /// Returns the rows of `Matrix`.
+    #[inline]
+    pub fn rows(&self) -> usize {
+        self.rows
+    }
+
+    /// Returns the columns of `Matrix`.
+    #[inline]
+    pub fn cols(&self) -> usize {
+        self.cols
+    }
+
     /// Returns a reference to the underlying buffer.
     #[inline]
     pub fn as_buf(&self) -> &Buffer<'a, T, D, S> {

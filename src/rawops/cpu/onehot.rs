@@ -54,7 +54,7 @@ pub fn onehot_grad<T: Number>(
 #[cfg(test)]
 mod tests {
     use super::onehot;
-    use crate::{onehot_grad, rawops::cpu::max};
+    use crate::{max, onehot_grad};
 
     #[test]
     fn test_onehot() {

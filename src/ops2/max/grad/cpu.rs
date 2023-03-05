@@ -1,42 +1,8 @@
 use std::ops::AddAssign;
 
-use custos::{
-    prelude::{Number, One},
-    Buffer, Device, MainMemory, Shape, CPU,
-};
+use custos::{prelude::One, Buffer, CPU};
 
-use crate::{Max, MaxCols, MaxColsGrad, MaxRows, MaxRowsGrad};
-
-impl<T, D, S> Max<T, S, D> for CPU
-where
-    T: Number,
-    D: MainMemory,
-    S: Shape,
-{
-    #[inline]
-    fn max(&self, x: &Buffer<T, D, S>) -> T {
-        max(x).expect("Buffer should contain at least an element.")
-    }
-}
-
-impl<T, D, IS, OS> MaxRows<T, IS, OS, D> for CPU
-where
-    T: Number,
-    D: MainMemory,
-    IS: Shape,
-    OS: Shape,
-{
-    #[inline]
-    fn max_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve::<_, OS>(cols, x);
-
-        // If all values in a column are negative, the corresponding maximum would be 0.
-        out.copy_from_slice(&x[..cols]);
-
-        max_rows(cols, x, &mut out);
-        out
-    }
-}
+use crate::{MaxColsGrad, MaxRowsGrad};
 
 impl<T: PartialEq + Copy + AddAssign> MaxRowsGrad<T> for CPU {
     #[inline]
@@ -49,19 +15,6 @@ impl<T: PartialEq + Copy + AddAssign> MaxRowsGrad<T> for CPU {
         out_grad: &Buffer<T>,
     ) {
         max_rows_grad(cols, out, x, x_grad, out_grad);
-    }
-}
-
-impl<T, D> MaxCols<T, (), (), D> for CPU
-where
-    T: Number,
-    D: MainMemory,
-{
-    #[inline]
-    fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D>) -> Buffer<T> {
-        let mut out = self.retrieve::<_, ()>(rows, x);
-        max_cols(cols, x, &mut out);
-        out
     }
 }
 
@@ -80,21 +33,8 @@ impl<T: PartialEq + Copy + AddAssign> MaxColsGrad<T> for CPU {
 }
 
 #[inline]
-pub fn max<T: Number>(x: &[T]) -> Option<T> {
-    x.iter().copied().reduce(T::max)
-}
-
-#[inline]
 pub fn max_grad<T: PartialEq + One>(out: &T, x: &[T], x_grad: &mut [T]) {
     x_grad[x.iter().position(|val| val == out).unwrap()] = T::one()
-}
-
-pub fn max_rows<T: Number>(cols: usize, x: &[T], out: &mut [T]) {
-    for row in x.chunks(cols) {
-        for (val, max) in row.iter().zip(out.iter_mut()) {
-            *max = T::max(*val, *max)
-        }
-    }
 }
 
 pub fn max_rows_grad<T>(cols: usize, out: &[T], x: &[T], x_grad: &mut [T], out_grad: &[T])
@@ -114,12 +54,6 @@ where
     }
 }
 
-pub fn max_cols<T: Number>(cols: usize, x: &[T], out: &mut [T]) {
-    for (row, val) in x.chunks(cols).zip(out) {
-        *val = max(row).expect("The slice should contain at least one value.");
-    }
-}
-
 pub fn max_cols_grad<T>(cols: usize, out: &[T], x: &[T], x_grad: &mut [T], out_grad: &[T])
 where
     T: PartialEq + Copy + AddAssign,
@@ -133,42 +67,6 @@ where
 #[cfg(test)]
 mod tests {
     use crate::{max_cols, max_cols_grad, max_grad, max_rows, max_rows_grad};
-
-    #[test]
-    fn test_max_rows() {
-        #[rustfmt::skip]
-        let x = [-3, 2, 3, 1,
-                            1, 5, -5, 4,
-                            -9, -2, -4, -1];
-
-        let mut out = [0; 4];
-        max_rows(4, &x, &mut out);
-        assert_eq!(out, [1, 5, 3, 4]);
-    }
-
-    #[test]
-    fn test_max_rows_neg() {
-        #[rustfmt::skip]
-        let x = [-3, -2, -3, -1,
-                            -1, -5, -5, -4,
-                            -9, -2, -4, -1];
-
-        let mut out = [-3, -2, -3, -1];
-        max_rows(4, &x, &mut out);
-        assert_eq!(out, [-1, -2, -3, -1]);
-    }
-
-    #[test]
-    fn test_max_cols() {
-        #[rustfmt::skip]
-        let x = [-3, 2, 3, 1,
-                            1, 5, -5, 4,
-                            -9, -2, -4, -1];
-
-        let mut out = [0; 3];
-        max_cols(4, &x, &mut out);
-        assert_eq!(out, [3, 5, -1]);
-    }
 
     #[test]
     fn test_max_cols_grad() {

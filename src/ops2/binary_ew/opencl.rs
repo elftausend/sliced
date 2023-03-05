@@ -2,7 +2,7 @@ use custos::{
     prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, OpenCL, Resolve, Shape, ToMarker,
 };
 
-use crate::BinaryElementWise;
+use super::BinaryElementWise;
 
 impl<T> BinaryElementWise<T> for OpenCL
 where

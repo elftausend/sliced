@@ -2,7 +2,7 @@
 use custos::Stack;
 use custos::{impl_stack, Buffer, GenericBlas, MainMemory, Shape, CPU};
 
-use crate::GemmGrad;
+use super::GemmGrad;
 
 #[cfg(feature = "blas")]
 #[cfg(not(feature = "matrixmultiply"))]

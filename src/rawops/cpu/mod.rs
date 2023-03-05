@@ -1,11 +1,6 @@
-mod binary_ew;
-mod binary_grad;
-mod col_op;
+mod col_op_grad;
 mod diagflat;
-mod gemm;
-mod gemm_grad;
 mod l2_norm;
-mod max;
 mod mean;
 mod onehot;
 mod rand;
@@ -16,12 +11,9 @@ mod softmax_grad;
 mod sum;
 mod transpose;
 
-pub use binary_ew::*;
-pub use binary_grad::*;
-pub use col_op::*;
+pub use col_op_grad::*;
 pub use diagflat::*;
 pub use l2_norm::*;
-pub use max::*;
 pub use mean::*;
 pub use onehot::*;
 pub use row_op::*;

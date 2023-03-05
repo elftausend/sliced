@@ -1,6 +1,6 @@
 use custos::{prelude::enqueue_kernel, Buffer, CDatatype, Eval, OpenCL, Resolve, ToMarker};
 
-use crate::BinaryGrad;
+use super::BinaryGrad;
 
 impl<T> BinaryGrad<T> for OpenCL
 where
