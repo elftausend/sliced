@@ -12,3 +12,6 @@ pub use max::*;
 
 mod transpose;
 pub use transpose::*;
+
+mod row_op;
+pub use row_op::*;

@@ -36,41 +36,6 @@ pub trait BinaryEWMayGrad<T, S: Shape = (), D: Device = Self>: Device {
         RO: Eval<T> + ToString;
 }
 
-pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
-    fn add_row(
-        &self,
-        rows: usize,
-        cols: usize,
-        lhs: &Buffer<T, D, LS>,
-        rhs: &Buffer<T, D, RS>,
-    ) -> Buffer<T, Self, LS>;
-    fn add_row_mut(
-        &self,
-        rows: usize,
-        cols: usize,
-        lhs: &mut Buffer<T, D, LS>,
-        rhs: &Buffer<T, D, RS>,
-    );
-}
-
-pub trait RowOpGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
-    fn add_row_grad(
-        &self,
-        rows: usize,
-        cols: usize,
-        lhs_grad: &mut Buffer<T, D, LS>,
-        rhs_grad: &mut Buffer<T, D, RS>,
-        out_grad: &Buffer<T, D, LS>,
-    );
-    fn add_row_mut_grad(
-        &self,
-        rows: usize,
-        cols: usize,
-        rhs_grad: &mut Buffer<T, D, RS>,
-        out_grad: &Buffer<T, D, LS>,
-    );
-}
-
 pub trait RandOp<T, S: Shape = (), D: Device = Self>: Device {
     fn rand(&self, x: &mut Buffer<T, D, S>, lo: T, hi: T);
 }

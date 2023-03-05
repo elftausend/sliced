@@ -8,9 +8,10 @@ pub use cpu::*;
 
 #[cfg(feature = "opencl")]
 mod opencl;
-use custos::{Buffer, Device, Shape};
 #[cfg(feature = "opencl")]
 pub use opencl::*;
+
+use custos::{Buffer, Device, Shape};
 
 pub trait Max<T, S: Shape = (), D: Device = Self>: Device {
     fn max(&self, x: &Buffer<T, D, S>) -> T;

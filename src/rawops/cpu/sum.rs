@@ -26,7 +26,7 @@ where
     #[inline]
     fn sum_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(cols, x);
-        sum_rows2(cols, x, &mut out);
+        slice_sum_rows2(cols, x, &mut out);
         out
     }
 }
@@ -44,7 +44,7 @@ where
         x_grad: &mut Buffer<T, Self, IS>,
         out_grad: &Buffer<T, Self, IS>,
     ) {
-        sum_rows_grad(cols, x_grad, out_grad);
+        slice_sum_rows_grad(cols, x_grad, out_grad);
     }
 }
 
@@ -61,7 +61,7 @@ where
         x_grad: &mut Buffer<T, Self, IS>,
         out_grad: &Buffer<T, Self, IS>,
     ) {
-        sum_cols_grad(cols, x_grad, out_grad);
+        slice_sum_cols_grad(cols, x_grad, out_grad);
     }
 }
 
@@ -76,12 +76,12 @@ where
     fn sum_cols(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let rows = x.len() / cols;
         let mut out = self.retrieve(rows, x);
-        sum_cols(cols, x, &mut out);
+        slice_sum_cols(cols, x, &mut out);
         out
     }
 }
 
-pub fn sum_rows<T: AddAssign + Copy>(rows: usize, cols: usize, x: &[T], out: &mut [T]) {
+pub fn slice_sum_rows<T: AddAssign + Copy>(rows: usize, cols: usize, x: &[T], out: &mut [T]) {
     for idx in 0..rows {
         let index = idx * cols;
         let row = &x[index..index + cols];
@@ -93,7 +93,7 @@ pub fn sum_rows<T: AddAssign + Copy>(rows: usize, cols: usize, x: &[T], out: &mu
 }
 
 /// Accumulates to out
-pub fn sum_rows2<T: AddAssign + Copy>(cols: usize, x: &[T], out: &mut [T]) {
+pub fn slice_sum_rows2<T: AddAssign + Copy>(cols: usize, x: &[T], out: &mut [T]) {
     for row in x.chunks(cols) {
         for (val, out) in row.iter().zip(&mut *out) {
             *out += *val;
@@ -101,7 +101,7 @@ pub fn sum_rows2<T: AddAssign + Copy>(cols: usize, x: &[T], out: &mut [T]) {
     }
 }
 
-pub fn sum_rows_grad<T: Copy + AddAssign>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
+pub fn slice_sum_rows_grad<T: Copy + AddAssign>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
     for x_grad in x_grad.chunks_mut(cols) {
         for (x, out) in x_grad.iter_mut().zip(out_grad) {
             *x += *out;
@@ -110,13 +110,13 @@ pub fn sum_rows_grad<T: Copy + AddAssign>(cols: usize, x_grad: &mut [T], out_gra
     }
 }
 
-pub fn sum_cols<T: Sum<T> + Copy>(cols: usize, x: &[T], out: &mut [T]) {
+pub fn slice_sum_cols<T: Sum<T> + Copy>(cols: usize, x: &[T], out: &mut [T]) {
     for (row, out) in x.chunks(cols).zip(out) {
         *out = row.iter().copied().sum::<T>();
     }
 }
 
-pub fn sum_cols_grad<T: Copy + AddAssign>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
+pub fn slice_sum_cols_grad<T: Copy + AddAssign>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
     for (x_grad, out_grad) in x_grad.chunks_mut(cols).zip(out_grad) {
         for val in x_grad {
             *val += *out_grad
@@ -126,7 +126,7 @@ pub fn sum_cols_grad<T: Copy + AddAssign>(cols: usize, x_grad: &mut [T], out_gra
 
 #[cfg(test)]
 mod tests {
-    use crate::{sum_cols, sum_cols_grad, sum_rows2, sum_rows_grad};
+    use crate::{slice_sum_cols, slice_sum_cols_grad, slice_sum_rows2, slice_sum_rows_grad};
 
     #[test]
     fn test_sum_rows() {
@@ -139,7 +139,7 @@ mod tests {
         ];
 
         let mut out = [0, 0, 0];
-        sum_rows2(3, &x, &mut out);
+        slice_sum_rows2(3, &x, &mut out);
         assert_eq!(out, [10, 15, 6]);
     }
     #[test]
@@ -153,7 +153,7 @@ mod tests {
         ];
 
         let mut out = [0, 0, 0, 0];
-        sum_cols(3, &x, &mut out);
+        slice_sum_cols(3, &x, &mut out);
         assert_eq!(out, [6, 6, 6, 13]);
     }
 
@@ -167,7 +167,7 @@ mod tests {
             4, 8, 1
         ];
         let mut x_grad = [0; 12];
-        sum_cols_grad(3, &mut x_grad, &[2, 3, 4, -1]);
+        slice_sum_cols_grad(3, &mut x_grad, &[2, 3, 4, -1]);
 
         #[rustfmt::skip]
         let expected = [
@@ -189,7 +189,7 @@ mod tests {
             4, 8, 1
         ];
         let mut x_grad = [0; 12];
-        sum_rows_grad(3, &mut x_grad, &[2, 4, -1]);
+        slice_sum_rows_grad(3, &mut x_grad, &[2, 4, -1]);
 
         #[rustfmt::skip]
         let expected = [

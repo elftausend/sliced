@@ -1,8 +1,8 @@
 use std::ops::AddAssign;
 
-use custos::{Shape, CPU, MainMemory, Buffer};
+use custos::{Buffer, MainMemory, Shape, CPU};
 
-use crate::{TranposeGrad, slice_transpose, assign_or_set::Assign};
+use crate::{assign_or_set::Assign, slice_transpose, TranposeGrad};
 
 impl<T, IS: Shape, OS: Shape, D: MainMemory> TranposeGrad<T, IS, OS, D> for CPU
 where

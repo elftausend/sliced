@@ -14,7 +14,9 @@ pub use opencl::*;
 
 use crate::assign_or_set::{AssignOrSet, Set};
 
-pub trait Transpose<T, IS: Shape = (), OS: Shape = (), D: Device = Self, AOS: AssignOrSet<T> = Set>: Device {
+pub trait Transpose<T, IS: Shape = (), OS: Shape = (), D: Device = Self, AOS: AssignOrSet<T> = Set>:
+    Device
+{
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
 }
 

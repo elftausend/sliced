@@ -12,7 +12,7 @@ use custos::{
 use crate::{
     BinaryElementWise, BinaryGrad, Diagflat, DiagflatGrad, Gemm, GemmGrad, MaxCols, MaxColsGrad,
     MaxRows, MaxRowsGrad, MeanCols, MeanColsGrad, MeanRows, MeanRowsGrad, RowOp, RowOpGrad,
-    Softmax, SoftmaxGrad, SumCols, SumColsGrad, SumRows, SumRowsGrad, Transpose, TranposeGrad,
+    Softmax, SoftmaxGrad, SumCols, SumColsGrad, SumRows, SumRowsGrad, TranposeGrad, Transpose,
 };
 
 pub trait SquareMayGrad<T, S = ()>: Device
@@ -187,7 +187,6 @@ where
             self.tape_mut().add_grad_fn(move |grads, device| {
                 let (_, lhs_grad, out_grad) = grads.get_double(device, ids);
 
-                // TODO transpose out grad
                 device.transpose_grad(cols, rows, lhs_grad, out_grad);
             });
         }
@@ -261,7 +260,7 @@ pub trait RowOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Dev
 
 impl<T, LS, RS, D> RowOpMayGrad<T, LS, RS, D> for D
 where
-    T: 'static,
+    T: 'static + Add<Output = T>,
     LS: Shape,
     RS: Shape,
     D: RowOp<T, LS, RS> + RowOpGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,

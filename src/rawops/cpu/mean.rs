@@ -1,6 +1,6 @@
 use custos::{prelude::Number, Buffer, Device, Shape, CPU};
 
-use crate::{sum_rows2, Mean, MeanCols, MeanColsGrad, MeanRows, MeanRowsGrad};
+use crate::{slice_sum_rows2, Mean, MeanCols, MeanColsGrad, MeanRows, MeanRowsGrad};
 
 impl<T: Number, IS: Shape> Mean<T, IS> for CPU {
     #[inline]
@@ -56,7 +56,7 @@ pub fn mean<T: Number>(x: &[T]) -> T {
 }
 
 pub fn mean_rows<T: Number>(cols: usize, x: &[T], out: &mut [T]) {
-    sum_rows2(cols, x, out);
+    slice_sum_rows2(cols, x, out);
     for val in out {
         *val /= T::from_usize(x.len() / cols)
     }

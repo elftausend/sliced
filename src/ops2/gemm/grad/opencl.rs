@@ -1,6 +1,6 @@
 use custos::{prelude::CLBuffer, CDatatype, OpenCL};
 
-use crate::{cl_gemm, GemmGrad, Transpose, assign_or_set::Assign};
+use crate::{assign_or_set::Assign, cl_gemm, GemmGrad, Transpose};
 
 impl<T: CDatatype> GemmGrad<T> for OpenCL {
     fn gemm_grad(

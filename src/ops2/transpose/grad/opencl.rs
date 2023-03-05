@@ -1,6 +1,6 @@
-use custos::{Shape, OpenCL, Buffer, CDatatype};
+use custos::{Buffer, CDatatype, OpenCL, Shape};
 
-use crate::{TranposeGrad, cl_transpose, assign_or_set::Assign};
+use crate::{assign_or_set::Assign, cl_transpose, TranposeGrad};
 
 impl<T, IS: Shape, OS: Shape> TranposeGrad<T, IS, OS> for OpenCL
 where
