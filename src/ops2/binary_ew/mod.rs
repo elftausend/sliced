@@ -28,28 +28,25 @@ pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
         O: Eval<T> + ToString;
 
     #[inline]
-    fn add<O>(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
+    fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
     where
         T: Display + Eval<T> + core::ops::Add<T, Output = T>,
-        O: Eval<T> + ToString,
     {
         self.binary_ew(lhs, rhs, |lhs, rhs| lhs.add(rhs))
     }
 
     #[inline]
-    fn mul<O>(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
+    fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
     where
         T: Display + Eval<T> + core::ops::Mul<T, Output = T>,
-        O: Eval<T> + ToString,
     {
         self.binary_ew(lhs, rhs, |lhs, rhs| lhs.mul(rhs))
     }
 
     #[inline]
-    fn div<O>(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
+    fn div(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
     where
         T: Display + Eval<T> + core::ops::Div<T, Output = T>,
-        O: Eval<T> + ToString,
     {
         self.binary_ew(lhs, rhs, |lhs, rhs| lhs.div(rhs))
     }

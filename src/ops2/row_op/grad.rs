@@ -10,6 +10,17 @@ use custos::{Buffer, Device, Shape};
 pub use opencl::*;
 
 pub trait RowOpGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+    fn row_op_grad(
+        &self,
+        cols: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+        lhs_grad: &mut Buffer<T, D, LS>,
+        rhs_grad: &mut Buffer<T, D, RS>,
+        out_grad: &Buffer<T, D, LS>,
+        lhs_grad_fn: impl Fn(T) -> T,
+        rhs_grad_fn: impl Fn(T) -> T,
+    );
     fn add_row_grad(
         &self,
         rows: usize,

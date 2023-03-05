@@ -52,6 +52,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use std::any::Any;
+
     use custos::{Buffer, Combiner, OpenCL};
 
     use super::cl_binary_ew;
@@ -70,5 +72,29 @@ mod tests {
         assert_eq!(out.read(), vec![0, 7, 12, 3, 4]);
 
         Ok(())
+    }
+
+    #[test]
+    fn test_cpu_exec_macro() {
+        use crate::{BinaryElementWise, Buffer, CPU};
+
+        let mut device = crate::OpenCL::new(0).unwrap();
+
+        let cpu = CPU::new();
+
+        let lhs = Buffer::from((&device, [1, 2, 3]));
+        let rhs = Buffer::from((&device, [1, 2, 3]));
+
+        let a = custos::cpu_exec!(
+            device, cpu, lhs, rhs; cpu.add(&lhs, &rhs)
+        );
+        //let a = Buffer::from((&device, a));
+
+        assert_eq!(a.device().type_id(), device.type_id());
+        assert_eq!(a.read(), [2, 4, 6]);
+
+        let a = custos::cl_cpu_exec_unified!(
+            device, lhs, rhs; device.cpu.add(&lhs, &rhs)
+        );
     }
 }
