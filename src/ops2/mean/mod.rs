@@ -1,5 +1,4 @@
 mod grad;
-use custos::{Device, Shape, Buffer};
 pub use grad::*;
 
 #[cfg(feature = "cpu")]
@@ -12,6 +11,7 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
+use custos::{Device, Shape, Buffer};
 pub trait Mean<T, S: Shape>: Device {
     fn mean(&self, x: &Buffer<T, Self, S>) -> T;
 }

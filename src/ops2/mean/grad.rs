@@ -5,10 +5,10 @@ pub use cpu::*;
 
 #[cfg(feature = "opencl")]
 mod opencl;
-use custos::{Device, Shape, Buffer};
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
+use custos::{Device, Shape, Buffer};
 pub trait MeanRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
     fn mean_rows_grad(
         &self,

@@ -21,3 +21,12 @@ pub use sum::*;
 
 mod mean;
 pub use mean::*;
+
+mod diagflat;
+pub use diagflat::*;
+
+mod softmax;
+pub use softmax::*;
+
+mod onehot;
+pub use onehot::*;
