@@ -1,4 +1,3 @@
-
 use std::ops::{AddAssign, Mul};
 
 use crate::RowOpGrad;
@@ -23,18 +22,17 @@ where
         lhs_grad_fn: impl Fn(T) -> T,
         rhs_grad_fn: impl Fn(T) -> T,
     ) {
-        let cpu = custos::CPU::new();
         use custos::{Buffer, WriteBuf, CPU};
 
         #[rustfmt::skip]
         custos::cl_cpu_exec_unified_mut!(
-            self, cpu,
+            self,
             lhs, rhs, out_grad
             WRITE_TO<
                 lhs_grad, lhs_grad_cpu,
                 rhs_grad, rhs_grad_cpu
             >
-            cpu.row_op_grad(cols, &lhs, &rhs,
+            self.cpu.row_op_grad(cols, &lhs, &rhs,
                 &mut lhs_grad_cpu, &mut rhs_grad_cpu,
                 &out_grad, lhs_grad_fn, rhs_grad_fn
             )
@@ -49,7 +47,18 @@ where
         rhs_grad: &mut CLBuffer<T>,
         out_grad: &CLBuffer<T>,
     ) {
-        todo!()
+        use custos::{Buffer, WriteBuf, CPU};
+
+        #[rustfmt::skip]
+        custos::cl_cpu_exec_unified_mut!(
+            self,
+            out_grad
+            WRITE_TO<
+                lhs_grad, lhs_grad_cpu,
+                rhs_grad, rhs_grad_cpu
+            >
+            self.cpu.add_row_grad(rows, cols, &mut lhs_grad_cpu, &mut rhs_grad_cpu, &out_grad)
+        );
     }
 
     #[inline]

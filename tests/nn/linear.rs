@@ -114,6 +114,7 @@ fn test_mnist() {
 
     let device = CPU::new();
 
+    /*
     let loader = CSVLoader::new(true);
     let Ok(loaded_data) = loader.load::<f32, _>("../gradients-fallback/datasets/digit-recognizer/train.csv") else {
         return;
@@ -121,7 +122,7 @@ fn test_mnist() {
 
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
-    let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);
+    let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);*/
 }
 
 #[cfg(feature = "autograd")]

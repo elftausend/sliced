@@ -24,19 +24,17 @@ where
     #[inline]
     fn row_op<F: Fn(&mut T, T, T)>(
         &self,
-        rows: usize,
         cols: usize,
         lhs: &Buffer<T, Self, LS>,
         rhs: &Buffer<T, Self, RS>,
         f: F,
     ) -> Buffer<T, Self, LS> {
-        row_op(self, rows, cols, lhs, rhs, f)
+        row_op(self, cols, lhs, rhs, f)
     }
 }
 
 pub fn row_op<'a, T, F, D, Host, LS: Shape, RS: Shape>(
     device: &'a Host,
-    rows: usize,
     cols: usize,
     lhs: &Buffer<T, D, LS>,
     rhs: &Buffer<T, D, RS>,
@@ -51,7 +49,7 @@ where
     debug_assert_eq!(rhs.len(), cols);
 
     let mut out = device.retrieve(lhs.len(), (lhs, rhs));
-    slice_row_op_mut(rows, cols, lhs, rhs, &mut out, f);
+    slice_row_op_mut(cols, lhs, rhs, &mut out, f);
     out
 }
 
@@ -69,17 +67,39 @@ where
     }
 }
 
-pub fn slice_row_op_mut<T, F>(lrows: usize, lcols: usize, lhs: &[T], rhs: &[T], out: &mut [T], f: F)
+pub fn slice_row_op_mut<T, F>(cols: usize, lhs: &[T], rhs: &[T], out: &mut [T], f: F)
 where
     T: Copy,
     F: Fn(&mut T, T, T),
 {
-    for i in 0..lrows {
+    for (row, out) in lhs.chunks(cols).zip(out.chunks_mut(cols)) {
+        for ((lhs, rhs), out) in row.iter().zip(rhs).zip(out) {
+            f(out, *lhs, *rhs);
+        }
+    }
+    /*for i in 0..lrows {
         let index = i * lcols;
         let x = &lhs[index..index + lcols];
 
         for (idx, value) in rhs.iter().enumerate() {
             f(&mut out[index + idx], x[idx], *value);
         }
+    }*/
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_row_op_slice() {
+        // 3 x 4
+        let lhs = [4, 3, 2, 3, 5, 7, 1, 1, 7, 2, 3, 4];
+
+        let rhs = [1, 2, 3, 4];
+
+        let mut out = [0; 12];
+
+        super::slice_row_op_mut(4, &lhs, &rhs, &mut out, |out, lhs, rhs| *out = lhs + rhs);
+
+        assert_eq!(out, [5, 5, 5, 7, 6, 9, 4, 5, 8, 4, 6, 8]);
     }
 }

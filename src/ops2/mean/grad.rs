@@ -8,7 +8,7 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-use custos::{Device, Shape, Buffer};
+use custos::{Buffer, Device, Shape};
 pub trait MeanRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
     fn mean_rows_grad(
         &self,

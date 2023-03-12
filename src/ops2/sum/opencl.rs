@@ -1,7 +1,8 @@
 use std::{iter::Sum, ops::AddAssign};
 
 use custos::{
-    exec_on_cpu::cpu_exec_reduce_may_unified, prelude::cpu_exec_unary_may_unified, Buffer, OpenCL,
+    exec_on_cpu::cpu_exec_reduce_may_unified, prelude::cpu_exec_unary_may_unified, Buffer,
+    CDatatype, OpenCL,
 };
 
 use crate::{SumCols, SumRows};
@@ -34,4 +35,10 @@ where
     fn sum_cols(&self, cols: usize, x: &Buffer<T, Self>) -> Buffer<T, Self> {
         cpu_exec_unary_may_unified(self, x, |cpu, x| cpu.sum_cols(cols, x)).unwrap()
     }
+}
+
+pub fn cl_sum<T>(x: &Buffer<T, OpenCL>)
+where
+    T: CDatatype,
+{
 }

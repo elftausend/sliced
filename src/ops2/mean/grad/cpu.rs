@@ -1,6 +1,5 @@
-use custos::{prelude::Number, Buffer, Shape, CPU};
 use crate::{MeanColsGrad, MeanRowsGrad};
-
+use custos::{prelude::Number, Buffer, Shape, CPU};
 
 impl<T: Number, IS: Shape, OS: Shape> MeanRowsGrad<T, IS, OS> for CPU {
     #[inline]
@@ -26,7 +25,6 @@ impl<T: Number, IS: Shape, OS: Shape> MeanColsGrad<T, IS, OS> for CPU {
     }
 }
 
-
 pub fn mean_rows_grad<T: Number>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
     let len = x_grad.len();
     for x_grad in x_grad.chunks_mut(cols) {
@@ -35,7 +33,6 @@ pub fn mean_rows_grad<T: Number>(cols: usize, x_grad: &mut [T], out_grad: &[T]) 
         }
     }
 }
-
 
 pub fn mean_cols_grad<T: Number>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
     for (row, out) in x_grad.chunks_mut(cols).zip(out_grad) {
@@ -66,7 +63,6 @@ mod tests {
 
         assert_eq!(expected, x_grad);
     }
-
 
     #[test]
     fn test_mean_cols_grad() {

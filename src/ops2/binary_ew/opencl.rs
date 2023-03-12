@@ -6,7 +6,7 @@ use super::BinaryElementWise;
 
 impl<T> BinaryElementWise<T> for OpenCL
 where
-    T: CDatatype,
+    T: CDatatype + Default,
 {
     #[inline]
     fn binary_ew<O>(
@@ -33,7 +33,7 @@ pub fn cl_binary_ew<T, S, O>(
 ) -> custos::Result<()>
 where
     S: Shape,
-    T: CDatatype,
+    T: CDatatype + Default,
     O: ToString,
 {
     let src = format!(

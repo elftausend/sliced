@@ -1,5 +1,5 @@
 mod grad;
-use custos::{Device, Buffer, Shape};
+use custos::{Buffer, Device, Shape};
 pub use grad::*;
 
 #[cfg(feature = "cpu")]

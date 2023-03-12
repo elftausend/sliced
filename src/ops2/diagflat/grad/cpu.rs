@@ -1,7 +1,6 @@
-use std::ops::AddAssign;
-use custos::{Buffer, Shape, CPU};
 use crate::DiagflatGrad;
-
+use custos::{Buffer, Shape, CPU};
+use std::ops::AddAssign;
 
 // TODO stack impl
 impl<T: Copy + AddAssign, IS: Shape, OS: Shape> DiagflatGrad<T, IS, OS> for CPU {

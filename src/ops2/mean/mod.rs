@@ -11,7 +11,7 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-use custos::{Device, Shape, Buffer};
+use custos::{Buffer, Device, Shape};
 pub trait Mean<T, S: Shape>: Device {
     fn mean(&self, x: &Buffer<T, Self, S>) -> T;
 }

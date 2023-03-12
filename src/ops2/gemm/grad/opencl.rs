@@ -1,8 +1,10 @@
+use std::ops::AddAssign;
+
 use custos::{prelude::CLBuffer, CDatatype, OpenCL};
 
 use crate::{assign_or_set::Assign, cl_gemm, GemmGrad, Transpose};
 
-impl<T: CDatatype> GemmGrad<T> for OpenCL {
+impl<T: CDatatype + AddAssign> GemmGrad<T> for OpenCL {
     fn gemm_grad(
         &self,
         m: usize,

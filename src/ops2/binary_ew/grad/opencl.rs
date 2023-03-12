@@ -4,7 +4,7 @@ use super::BinaryGrad;
 
 impl<T> BinaryGrad<T> for OpenCL
 where
-    T: CDatatype,
+    T: CDatatype + Default,
 {
     #[inline]
     fn add_binary_grad<LO, RO>(
@@ -45,7 +45,7 @@ pub fn cl_binary_grad<T, LO, RO>(
     rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> RO,
 ) -> custos::Result<()>
 where
-    T: CDatatype,
+    T: CDatatype + Default,
     LO: ToString,
     RO: ToString,
 {

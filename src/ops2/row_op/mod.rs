@@ -17,7 +17,6 @@ pub use opencl::*;
 pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     fn row_op<F: Fn(&mut T, T, T) + Copy>(
         &self,
-        rows: usize,
         cols: usize,
         lhs: &Buffer<T, D, LS>,
         rhs: &Buffer<T, D, RS>,
@@ -27,7 +26,6 @@ pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     #[inline]
     fn add_row(
         &self,
-        rows: usize,
         cols: usize,
         lhs: &Buffer<T, D, LS>,
         rhs: &Buffer<T, D, RS>,
@@ -35,7 +33,7 @@ pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     where
         T: Add<Output = T>,
     {
-        self.row_op(rows, cols, lhs, rhs, |c, a, b| *c = a + b)
+        self.row_op(cols, lhs, rhs, |c, a, b| *c = a + b)
     }
     fn add_row_mut(
         &self,

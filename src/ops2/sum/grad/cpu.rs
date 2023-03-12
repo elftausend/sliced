@@ -4,7 +4,6 @@ use custos::{Buffer, Shape, CPU};
 
 use crate::{SumColsGrad, SumRowsGrad};
 
-
 impl<T, IS, OS> SumRowsGrad<T, IS, OS> for CPU
 where
     T: Copy + AddAssign,
@@ -16,7 +15,7 @@ where
         &self,
         cols: usize,
         x_grad: &mut Buffer<T, Self, IS>,
-        out_grad: &Buffer<T, Self, IS>,
+        out_grad: &Buffer<T, Self, OS>,
     ) {
         slice_sum_rows_grad(cols, x_grad, out_grad);
     }
@@ -39,7 +38,6 @@ where
     }
 }
 
-
 pub fn slice_sum_rows_grad<T: Copy + AddAssign>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
     for x_grad in x_grad.chunks_mut(cols) {
         for (x, out) in x_grad.iter_mut().zip(out_grad) {
@@ -56,7 +54,6 @@ pub fn slice_sum_cols_grad<T: Copy + AddAssign>(cols: usize, x_grad: &mut [T], o
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -11,7 +11,7 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-use custos::{Shape, Device, Buffer};
+use custos::{Buffer, Device, Shape};
 
 /// Provides the onehot encoding operation.
 pub trait Onehot<T, IS: Shape = (), OS: Shape = ()>: Device {

@@ -272,7 +272,7 @@ where
         lhs: &Buffer<T, D, LS>,
         rhs: &Buffer<T, D, RS>,
     ) -> Buffer<T, D, LS> {
-        let out = self.add_row(rows, cols, lhs, rhs);
+        let out = self.add_row(cols, lhs, rhs);
 
         #[cfg(feature = "autograd")]
         {

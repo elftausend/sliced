@@ -1,7 +1,6 @@
-use custos::{prelude::Number, Buffer, CPU, Device};
+use custos::{prelude::Number, Buffer, Device, CPU};
 
-use crate::{Onehot, max};
-
+use crate::{max, Onehot};
 
 impl<T: PartialOrd + Number> Onehot<T> for CPU {
     #[inline]
@@ -9,7 +8,7 @@ impl<T: PartialOrd + Number> Onehot<T> for CPU {
         let highest_class = max(classes).unwrap().as_usize() + 1;
 
         let mut out = self.retrieve(classes.len() * highest_class, classes);
-        onehot(highest_class, classes, &mut out);
+        slice_onehot(highest_class, classes, &mut out);
 
         out
     }
@@ -20,13 +19,13 @@ impl<T: PartialOrd + Number> Onehot<T> for CPU {
 /// # Example
 ///
 /// ```
-/// use sliced::{max, onehot};
+/// use sliced::{max, slice_onehot};
 ///
 /// let classes = [2, 3, 0, 1];
 /// let highest_class = max(&classes).unwrap() + 1;
 /// let mut onehot_classes = vec![0; classes.len() * highest_class];
 ///
-/// onehot(highest_class, &classes, &mut onehot_classes);
+/// slice_onehot(highest_class, &classes, &mut onehot_classes);
 ///
 /// assert_eq!([
 ///     0, 0, 1, 0,
@@ -36,7 +35,7 @@ impl<T: PartialOrd + Number> Onehot<T> for CPU {
 /// ], &*onehot_classes);
 ///
 /// ```
-pub fn onehot<T: Number>(highest_class: usize, classes: &[T], onehot: &mut [T]) {
+pub fn slice_onehot<T: Number>(highest_class: usize, classes: &[T], onehot: &mut [T]) {
     for (onehot_row, class) in classes.iter().enumerate() {
         onehot[onehot_row * highest_class + class.as_usize()] = T::one();
     }
@@ -44,8 +43,7 @@ pub fn onehot<T: Number>(highest_class: usize, classes: &[T], onehot: &mut [T]) 
 
 #[cfg(test)]
 mod tests {
-    use crate::{onehot, max};
-
+    use crate::{max, slice_onehot};
 
     #[test]
     fn test_onehot() {
@@ -54,10 +52,10 @@ mod tests {
         let highest_class = max(&classes).unwrap() + 1;
         let mut onehot_classes = vec![0; classes.len() * highest_class];
 
-        onehot(highest_class, &classes, &mut onehot_classes);
+        slice_onehot(highest_class, &classes, &mut onehot_classes);
 
         #[rustfmt::skip]
-        let cmp_to = 
+        let cmp_to =
         [
             1, 0, 0, 0, 0, 0, 
             0, 1, 0, 0, 0, 0, 

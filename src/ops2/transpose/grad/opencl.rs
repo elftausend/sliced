@@ -1,10 +1,12 @@
+use std::ops::AddAssign;
+
 use custos::{Buffer, CDatatype, OpenCL, Shape};
 
 use crate::{assign_or_set::Assign, cl_transpose, TranposeGrad};
 
 impl<T, IS: Shape, OS: Shape> TranposeGrad<T, IS, OS> for OpenCL
 where
-    T: CDatatype,
+    T: CDatatype + AddAssign,
     IS: Shape,
     OS: Shape,
 {

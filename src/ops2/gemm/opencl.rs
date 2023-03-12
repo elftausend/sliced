@@ -25,8 +25,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
 /// OpenCL matrix multiplication of two buffers / matrices.
 /// # Example
 /// ```
-/// use custos::{OpenCL, Buffer, Read};
-/// use sliced::cl_gemm;
+/// use sliced::{cl_gemm, OpenCL, Buffer, custos::Read, assign_or_set::Set};
 ///
 /// fn main() -> Result<(), custos::Error> {
 ///     let device = OpenCL::new(0)?;
@@ -34,7 +33,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
 ///     let rhs = Buffer::from((&device, [3i16, 2, 7, 1, 9, 20]));
 ///     let mut out = Buffer::new(&device, 4);
 ///     
-///     cl_gemm(&device, 2, 3, 2, &lhs, &rhs, &mut out, false)?;
+///     cl_gemm::<_, Set>(&device, 2, 3, 2, &lhs, &rhs, &mut out)?;
 ///     assert_eq!(device.read(&out), vec![444, 480, 116, 118]);
 ///     Ok(())
 /// }

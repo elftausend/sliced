@@ -8,7 +8,7 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-use custos::{Device, Shape, Buffer};
+use custos::{Buffer, Device, Shape};
 
 pub trait SoftmaxGrad<T, S: Shape = ()>: Device {
     fn softmax_grad(

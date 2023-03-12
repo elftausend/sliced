@@ -1,8 +1,8 @@
 use std::{iter::Sum, ops::AddAssign};
 
-use custos::{CPU, Shape, MainMemory, Buffer, Device};
+use custos::{Buffer, Device, MainMemory, Shape, CPU};
 
-use crate::{SumRows, SumCols};
+use crate::{SumCols, SumRows};
 
 impl<T, S, D> crate::Sum<T, S, D> for CPU
 where
@@ -30,7 +30,6 @@ where
         out
     }
 }
-
 
 impl<T, IS, OS, D> SumCols<T, IS, OS, D> for CPU
 where
@@ -77,7 +76,6 @@ pub fn slice_sum_cols<T: Sum<T> + Copy>(cols: usize, x: &[T], out: &mut [T]) {
 #[cfg(test)]
 mod tests {
     use crate::{slice_sum_cols, slice_sum_rows2};
-
 
     #[test]
     fn test_sum_rows() {

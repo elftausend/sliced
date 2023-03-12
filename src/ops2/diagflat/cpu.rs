@@ -1,5 +1,5 @@
-use custos::{Buffer, Device, Shape, CPU};
 use crate::Diagflat;
+use custos::{Buffer, Device, Shape, CPU};
 
 // TODO stack impl
 impl<T: Copy, IS: Shape, OS: Shape> Diagflat<T, IS, OS> for CPU {
@@ -44,7 +44,6 @@ pub fn diagflat<T: Copy>(x: &[T], out: &mut [T]) {
         out[x.len() * idx + idx] = *val;
     }
 }
-
 
 #[cfg(test)]
 mod tests {
