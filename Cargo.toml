@@ -13,13 +13,14 @@ fastrand = "1.8.0"
 purpur = "0.1.0"
 
 [features]
-default = ["blas", "stack", "cpu", "matrix", "opencl", "autograd"]
+default = ["blas", "cpu"]
+#default = ["blas", "stack", "cpu", "matrix", "opencl", "autograd"]
 #default = ["stack", "cpu", "opencl", "blas", "matrix", "static-api"]
 autograd = ["custos/autograd"]
 static-api = ["custos/static-api"]
 stack = ["custos/stack"]
 cpu = ["custos/cpu"]
-opencl = ["custos/opencl"]
+opencl = ["custos/opencl", "cpu"]
 blas = ["custos/blas"]
 opt-cache = ["custos/opt-cache"]
 matrix = []

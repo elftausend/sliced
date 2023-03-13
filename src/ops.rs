@@ -374,7 +374,7 @@ where
         {
             let ids = (x.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let out = device.get_existing_buf::<T, ()>(ids.1);
+                let out = unsafe {device.get_existing_buf::<T, ()>(ids.1)};
                 let (x, x_grad, out_grad) = grads.get_double(device, ids);
                 device.max_cols_grad(cols, &out, &x, x_grad, out_grad);
             })
@@ -406,7 +406,7 @@ where
         {
             let ids = (x.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let out = device.get_existing_buf::<T, ()>(ids.1);
+                let out = unsafe {device.get_existing_buf::<T, ()>(ids.1)};
                 let (x, x_grad, out_grad) = grads.get_double(device, ids);
                 device.max_rows_grad(cols, &out, &x, x_grad, out_grad);
             })
@@ -602,7 +602,7 @@ where
         {
             let ids = (x.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let out = device.get_existing_buf(ids.1);
+                let out = unsafe {device.get_existing_buf(ids.1)};
                 let (_, x_grad, out_grad) = grads.get_double(device, ids);
                 device.softmax_grad(samples, features, x_grad, &out, out_grad);
             })
