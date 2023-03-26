@@ -1,3 +1,5 @@
+use std::ops::{Mul, AddAssign};
+
 use crate::{MeanColsGrad, MeanRowsGrad};
 use custos::{prelude::Number, Buffer, Shape, CPU};
 
@@ -25,8 +27,18 @@ impl<T: Number, IS: Shape, OS: Shape> MeanColsGrad<T, IS, OS> for CPU {
     }
 }
 
+pub fn slice_rows_grad_unary<T: Mul<Output = T> + AddAssign + Copy>(cols: usize, x_grad: &mut [T], out_grad: &[T], x_grad_fn: impl Fn(&T) -> T) {
+    for x_grad in x_grad.chunks_mut(cols) {
+        for (x, out) in x_grad.iter_mut().zip(out_grad) {
+            *x += x_grad_fn(x) * *out;
+        }
+    }
+}
+
 pub fn mean_rows_grad<T: Number>(cols: usize, x_grad: &mut [T], out_grad: &[T]) {
     let len = x_grad.len();
+    slice_rows_grad_unary(cols, x_grad, out_grad, |_| T::from_usize(len) / T::from_usize(cols));
+
     for x_grad in x_grad.chunks_mut(cols) {
         for (x, out) in x_grad.iter_mut().zip(out_grad) {
             *x += *out / T::from_usize(len / cols);

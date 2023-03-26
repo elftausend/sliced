@@ -1,5 +1,6 @@
 use custos::{
     prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, OpenCL, Resolve, Shape, ToMarker,
+
 };
 
 use super::BinaryElementWise;
@@ -54,7 +55,7 @@ where
 mod tests {
     use std::any::Any;
 
-    use custos::{Buffer, Combiner, OpenCL};
+    use custos::{Buffer, Combiner, OpenCL, CacheReturn};
 
     use super::cl_binary_ew;
 
@@ -75,10 +76,10 @@ mod tests {
     }
 
     #[test]
-    fn test_cpu_exec_macro() {
+    fn test_cpu_exec_macro() -> custos::Result<()> {
         use crate::{BinaryElementWise, Buffer, CPU};
 
-        let mut device = crate::OpenCL::new(0).unwrap();
+        let device = crate::OpenCL::new(0)?;
 
         let cpu = CPU::new();
 
@@ -95,6 +96,11 @@ mod tests {
 
         let a = custos::cl_cpu_exec_unified!(
             device, lhs, rhs; device.cpu.add(&lhs, &rhs)
-        );
+        )?;
+
+        assert_eq!(a.device().type_id(), device.type_id());
+        assert_eq!(a.read(), [2, 4, 6]);
+
+        Ok(())
     }
 }

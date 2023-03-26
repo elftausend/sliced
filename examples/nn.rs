@@ -1,7 +1,7 @@
 use custos::{
     prelude::{Float, Number, One},
     range, Alloc, Buffer, ClearBuf, Device, GraphReturn, IsShapeIndep, MainMemory, MayTapeReturn,
-    WriteBuf, CPU,
+    WriteBuf, CPU, TapeReturn,
 };
 use graplot::Plot;
 use sliced::{Gemm, GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
@@ -86,7 +86,7 @@ pub struct SGD<T> {
 impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: MayTapeReturn + WriteBuf<T> + for<'b> Alloc<'b, T> + ClearBuf<T>,
+        D: MayTapeReturn + WriteBuf<T> + for<'b> Alloc<'b, T> + ClearBuf<T> + 'static,
     {
         for param in params {
             param.param.grad_mut().clear();
@@ -95,7 +95,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
 
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: MainMemory + MayTapeReturn + WriteBuf<T> + for<'b> Alloc<'b, T>,
+        D: MainMemory + MayTapeReturn + WriteBuf<T> + for<'b> Alloc<'b, T> + 'static,
     {
         for param in params {
             let grad = param.param.grad_unbound();
@@ -133,7 +133,7 @@ fn main() {
 
     for i in range(18000) {
         #[cfg(feature = "autograd")]
-        device.tape.borrow_mut().grads.zero_grad();
+        device.tape_mut().grads.zero_grad();
 
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());

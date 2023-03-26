@@ -12,8 +12,8 @@ pub use opencl::*;
 
 use custos::{Buffer, Device, Eval, Resolve, Shape};
 
-pub trait BinaryGrad<T, S: Shape = (), D: Device = Self>: Device {
-    fn add_binary_grad<LO, RO>(
+pub trait BinaryElementWiseGrad<T, S: Shape = (), D: Device = Self>: Device {
+    fn binary_ew_grad<LO, RO>(
         &self,
         lhs: &Buffer<T, D, S>,
         rhs: &Buffer<T, D, S>,
@@ -26,3 +26,13 @@ pub trait BinaryGrad<T, S: Shape = (), D: Device = Self>: Device {
         LO: Eval<T> + ToString,
         RO: Eval<T> + ToString;
 }
+
+pub trait AddElementWiseGrad<T, S: Shape = (), D: Device = Self>: Device {
+    fn add_ew_grad(
+        &self,
+        lhs_grad: &mut Buffer<T, D, S>,
+        rhs_grad: &mut Buffer<T, D, S>,
+        out: &Buffer<T, D, S>,
+    );
+}
+

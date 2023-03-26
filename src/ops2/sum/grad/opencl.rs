@@ -1,6 +1,6 @@
 use std::ops::AddAssign;
 
-use custos::{cpu_exec_mut, OpenCL, Shape};
+use custos::{OpenCL, Shape, CacheReturn};
 
 use crate::SumRowsGrad;
 

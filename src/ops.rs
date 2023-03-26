@@ -10,9 +10,9 @@ use custos::{
 };
 
 use crate::{
-    BinaryElementWise, BinaryGrad, Diagflat, DiagflatGrad, Gemm, GemmGrad, MaxCols, MaxColsGrad,
+    BinaryElementWise, BinaryElementWiseGrad, Diagflat, DiagflatGrad, Gemm, GemmGrad, MaxCols, MaxColsGrad,
     MaxRows, MaxRowsGrad, MeanCols, MeanColsGrad, MeanRows, MeanRowsGrad, RowOp, RowOpGrad,
-    Softmax, SoftmaxGrad, SumCols, SumColsGrad, SumRows, SumRowsGrad, TranposeGrad, Transpose,
+    Softmax, SoftmaxGrad, SumCols, SumColsGrad, SumRows, SumRowsGrad, TranposeGrad, Transpose, AddElementWiseGrad,
 };
 
 pub trait SquareMayGrad<T, S = ()>: Device
@@ -74,6 +74,8 @@ impl<T: 'static, S: Shape, D: Device> SquareMayGrad<T, S> for D {}
 
 pub trait BinaryOpsMayGrad<T, S: Shape = (), D: Device = Self>: Device {
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
+    fn add2(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>
+    where D: AddElementWiseGrad<T>;
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
 }
@@ -81,7 +83,7 @@ pub trait BinaryOpsMayGrad<T, S: Shape = (), D: Device = Self>: Device {
 impl<T, S, D> BinaryOpsMayGrad<T, S, D> for D
 where
     S: Shape + 'static,
-    D: BinaryElementWise<T, S, D> + BinaryGrad<T, (), D> + MayTapeReturn + for<'b> Alloc<'b, T>,
+    D: BinaryElementWise<T, S, D> + BinaryElementWiseGrad<T, (), D> + MayTapeReturn + for<'b> Alloc<'b, T>,
     T: Mul<Output = T>
         + Sub<Output = T>
         + Add<Output = T>
@@ -102,7 +104,7 @@ where
                 let (lhs, rhs, lhs_grad, rhs_grad, out_grad) =
                     grads.get_triple::<T, ()>(device, ids);
 
-                device.add_binary_grad(
+                device.binary_ew_grad(
                     &lhs,
                     &rhs,
                     lhs_grad,
@@ -126,7 +128,7 @@ where
                 let (lhs, rhs, lhs_grad, rhs_grad, out_grad) =
                     grads.get_triple::<T, ()>(device, ids);
 
-                device.add_binary_grad(
+                device.binary_ew_grad(
                     &lhs,
                     &rhs,
                     lhs_grad,
@@ -151,7 +153,7 @@ where
                 let (lhs, rhs, lhs_grad, rhs_grad, out_grad) =
                     grads.get_triple::<T, ()>(device, ids);
 
-                device.add_binary_grad(
+                device.binary_ew_grad(
                     &lhs,
                     &rhs,
                     lhs_grad,
@@ -163,6 +165,29 @@ where
             });
         }
 
+        out
+    }
+
+    fn add2(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> 
+    where
+        D: AddElementWiseGrad<T>,
+    {
+        let out = self.binary_ew(lhs, rhs, |a, b| a.add(b));
+
+        #[cfg(feature = "autograd")]
+        {
+            let ids = (lhs.id(), rhs.id(), out.id());
+            self.tape_mut().add_grad_fn(move |grads, device| {
+                let (_, _, lhs_grad, rhs_grad, out_grad) =
+                    grads.get_triple::<T, ()>(device, ids);
+
+                device.add_ew_grad(
+                    lhs_grad,
+                    rhs_grad,
+                    out_grad,
+                );
+            });
+        }
         out
     }
 }

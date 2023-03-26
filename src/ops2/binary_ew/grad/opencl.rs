@@ -1,13 +1,13 @@
 use custos::{prelude::enqueue_kernel, Buffer, CDatatype, Eval, OpenCL, Resolve, ToMarker};
 
-use super::BinaryGrad;
+use super::BinaryElementWiseGrad;
 
-impl<T> BinaryGrad<T> for OpenCL
+impl<T> BinaryElementWiseGrad<T> for OpenCL
 where
     T: CDatatype + Default,
 {
     #[inline]
-    fn add_binary_grad<LO, RO>(
+    fn binary_ew_grad<LO, RO>(
         &self,
         lhs: &Buffer<T, OpenCL>,
         rhs: &Buffer<T, OpenCL>,

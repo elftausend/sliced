@@ -12,8 +12,11 @@ custos = {path = "../custos", default-features=false, features=["macro"]}
 fastrand = "1.8.0"
 purpur = "0.1.0"
 
+[profile.release]
+debug = true
+
 [features]
-default = ["blas", "cpu"]
+default = ["blas", "cpu",  "autograd", "matrix", "opencl", "stack"]
 #default = ["blas", "stack", "cpu", "matrix", "opencl", "autograd"]
 #default = ["stack", "cpu", "opencl", "blas", "matrix", "static-api"]
 autograd = ["custos/autograd"]
@@ -23,6 +26,7 @@ cpu = ["custos/cpu"]
 opencl = ["custos/opencl", "cpu"]
 blas = ["custos/blas"]
 opt-cache = ["custos/opt-cache"]
+realloc = ["custos/realloc"]
 matrix = []
 
 [dev-dependencies]

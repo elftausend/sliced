@@ -14,7 +14,7 @@ impl<T: PartialEq + Copy + AddAssign> MaxRowsGrad<T> for CPU {
         x_grad: &mut Buffer<T>,
         out_grad: &Buffer<T>,
     ) {
-        max_rows_grad(cols, out, x, x_grad, out_grad);
+        slice_max_rows_grad(cols, out, x, x_grad, out_grad);
     }
 }
 
@@ -28,7 +28,7 @@ impl<T: PartialEq + Copy + AddAssign> MaxColsGrad<T> for CPU {
         x_grad: &mut Buffer<T>,
         out_grad: &Buffer<T>,
     ) {
-        max_cols_grad(cols, out, x, x_grad, out_grad);
+        slice_max_cols_grad(cols, out, x, x_grad, out_grad);
     }
 }
 
@@ -37,7 +37,7 @@ pub fn max_grad<T: PartialEq + One>(out: &T, x: &[T], x_grad: &mut [T]) {
     x_grad[x.iter().position(|val| val == out).unwrap()] = T::one()
 }
 
-pub fn max_rows_grad<T>(cols: usize, out: &[T], x: &[T], x_grad: &mut [T], out_grad: &[T])
+pub fn slice_max_rows_grad<T>(cols: usize, out: &[T], x: &[T], x_grad: &mut [T], out_grad: &[T])
 where
     T: PartialEq + Copy + AddAssign,
 {
@@ -54,19 +54,19 @@ where
     }
 }
 
-pub fn max_cols_grad<T>(cols: usize, out: &[T], x: &[T], x_grad: &mut [T], out_grad: &[T])
+pub fn slice_max_cols_grad<T>(cols: usize, out: &[T], x: &[T], x_grad: &mut [T], out_grad: &[T])
 where
     T: PartialEq + Copy + AddAssign,
 {
     for (idx, ((row, max), grad)) in x.chunks(cols).zip(out).zip(out_grad).enumerate() {
-        let grad_idx = idx * cols + row.iter().position(|val| val == max).unwrap();
+        let grad_idx = idx * cols + row.iter().position(|val| val == max).expect("Could not find maximum in gradient calculation");
         x_grad[grad_idx] += *grad
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{max_cols, max_cols_grad, max_grad, max_rows, max_rows_grad};
+    use crate::{max_cols, slice_max_cols_grad, max_grad, max_rows, slice_max_rows_grad};
 
     #[test]
     fn test_max_cols_grad() {
@@ -82,7 +82,7 @@ mod tests {
 
         let out_grad = [1, 2, 3];
 
-        max_cols_grad(4, &out, &x, &mut x_grad, &out_grad);
+        slice_max_cols_grad(4, &out, &x, &mut x_grad, &out_grad);
 
         #[rustfmt::skip]
         let expected = [
@@ -108,7 +108,7 @@ mod tests {
 
         let out_grad = [2, 3, 4, 1];
 
-        max_rows_grad(4, &out, &x, &mut x_grad, &out_grad);
+        slice_max_rows_grad(4, &out, &x, &mut x_grad, &out_grad);
 
         #[rustfmt::skip]
         let expected = [
