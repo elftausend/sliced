@@ -19,9 +19,9 @@ pub fn cl_onehot<T: CDatatype>(
 
 #[cfg(test)]
 mod tests {
-    use custos::{OpenCL, Buffer};
+    use custos::{Buffer, OpenCL};
 
-    use crate::{ops2::max, cl_onehot};
+    use crate::{cl_onehot, ops2::max};
 
     #[test]
     fn test_onehot_cl() -> custos::Result<()> {

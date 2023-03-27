@@ -1,5 +1,5 @@
 use custos::{get_count, range, ApplyFunction, Buffer, Combiner, OpenCL, TapeReturn, CPU};
-use sliced::{BinaryOpsMayGrad, SquareMayGrad, Matrix};
+use sliced::{BinaryOpsMayGrad, Matrix, SquareMayGrad};
 
 #[test]
 fn test_comb() {
@@ -67,10 +67,9 @@ fn test_2perf_min_this() {
     //let device = OpenCL::new(0).unwrap();
     let device = CPU::new();
     //device.tape_mut().disable();
-    
 
-    let mut x: Buffer = Buffer::from((&device, vec![1.3f32; 123412]));
-    let mut b = Buffer::from((&device, vec![2.1f32; 123412]));
+    let mut x: Buffer = Buffer::from((&device, vec![1.3f32; 1312])); // 123412
+    let mut b = Buffer::from((&device, vec![2.1f32; 1312])); // 123412
     let start = std::time::Instant::now();
 
     const TIMES: usize = 100;

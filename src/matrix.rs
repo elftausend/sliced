@@ -13,8 +13,9 @@ use custos::{
 };
 
 use crate::{
-    BinaryOpsMayGrad, DiagflatMayGrad, GemmMayGrad, MaxColsMayGrad, MaxRowsMayGrad, PowMayGrad,
-    RandOp, RowOpMayGrad, SoftmaxMayGrad, SquareMayGrad, SumColsMayGrad, TransposeMayGrad, BinaryElementWise, AddElementWiseGrad,
+    AddElementWiseGrad, BinaryElementWise, BinaryOpsMayGrad, DiagflatMayGrad, GemmMayGrad,
+    MaxColsMayGrad, MaxRowsMayGrad, PowMayGrad, RandOp, RowOpMayGrad, SoftmaxMayGrad,
+    SquareMayGrad, SumColsMayGrad, TransposeMayGrad,
 };
 
 pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
@@ -139,7 +140,8 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + ApplyFunction<T, S>
             + MayTapeReturn
             + UnaryGrad<T, S>
-            + for<'b> Alloc<'b, T, S> + 'static,
+            + for<'b> Alloc<'b, T, S>
+            + 'static,
     {
         let out = self.device().apply_fn(self, |x| x.geq(T::zero()).mul(x));
 

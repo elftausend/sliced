@@ -59,14 +59,18 @@ where
     T: PartialEq + Copy + AddAssign,
 {
     for (idx, ((row, max), grad)) in x.chunks(cols).zip(out).zip(out_grad).enumerate() {
-        let grad_idx = idx * cols + row.iter().position(|val| val == max).expect("Could not find maximum in gradient calculation");
+        let grad_idx = idx * cols
+            + row
+                .iter()
+                .position(|val| val == max)
+                .expect("Could not find maximum in gradient calculation");
         x_grad[grad_idx] += *grad
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{max_cols, slice_max_cols_grad, max_grad, max_rows, slice_max_rows_grad};
+    use crate::{max_cols, max_grad, max_rows, slice_max_cols_grad, slice_max_rows_grad};
 
     #[test]
     fn test_max_cols_grad() {

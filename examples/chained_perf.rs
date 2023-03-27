@@ -1,14 +1,13 @@
 use std::hint::black_box;
 
 use custos::{range, Dim1, WithShape};
-use sliced::{CPU, Buffer, SquareMayGrad, BinaryOpsMayGrad, Stack};
+use sliced::{BinaryOpsMayGrad, Buffer, SquareMayGrad, Stack, CPU};
 
 fn main() {
     //let device = OpenCL::new(0).unwrap();
     // let device = Stack;
-     let device = CPU::new();
+    let device = CPU::new();
     //device.tape_mut().disable();
-    
 
     let mut x = Buffer::with(&device, [1.3f32; 123412]);
     let mut b = Buffer::from((&device, vec![2.1f32; 123412]));
@@ -24,7 +23,6 @@ fn main() {
             let add = device.add(&b, &x);
             let mul_b = device.mul(&add, &b);
             let out = device.add(&mul, &mul_b);
-
 
             if epoch % 200 == 0 {
                 println!("out: {}", out.read()[0]);

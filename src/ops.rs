@@ -10,9 +10,10 @@ use custos::{
 };
 
 use crate::{
-    BinaryElementWise, BinaryElementWiseGrad, Diagflat, DiagflatGrad, Gemm, GemmGrad, MaxCols, MaxColsGrad,
-    MaxRows, MaxRowsGrad, MeanCols, MeanColsGrad, MeanRows, MeanRowsGrad, RowOp, RowOpGrad,
-    Softmax, SoftmaxGrad, SumCols, SumColsGrad, SumRows, SumRowsGrad, TranposeGrad, Transpose, AddElementWiseGrad,
+    AddElementWiseGrad, BinaryElementWise, BinaryElementWiseGrad, Diagflat, DiagflatGrad, Gemm,
+    GemmGrad, MaxCols, MaxColsGrad, MaxRows, MaxRowsGrad, MeanCols, MeanColsGrad, MeanRows,
+    MeanRowsGrad, RowOp, RowOpGrad, Softmax, SoftmaxGrad, SumCols, SumColsGrad, SumRows,
+    SumRowsGrad, TranposeGrad, Transpose,
 };
 
 pub trait SquareMayGrad<T, S = ()>: Device
@@ -75,7 +76,8 @@ impl<T: 'static, S: Shape, D: Device> SquareMayGrad<T, S> for D {}
 pub trait BinaryOpsMayGrad<T, S: Shape = (), D: Device = Self>: Device {
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
     fn add2(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>
-    where D: AddElementWiseGrad<T>;
+    where
+        D: AddElementWiseGrad<T>;
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
 }
@@ -83,7 +85,10 @@ pub trait BinaryOpsMayGrad<T, S: Shape = (), D: Device = Self>: Device {
 impl<T, S, D> BinaryOpsMayGrad<T, S, D> for D
 where
     S: Shape + 'static,
-    D: BinaryElementWise<T, S, D> + BinaryElementWiseGrad<T, (), D> + MayTapeReturn + for<'b> Alloc<'b, T>,
+    D: BinaryElementWise<T, S, D>
+        + BinaryElementWiseGrad<T, (), D>
+        + MayTapeReturn
+        + for<'b> Alloc<'b, T>,
     T: Mul<Output = T>
         + Sub<Output = T>
         + Add<Output = T>
@@ -168,7 +173,7 @@ where
         out
     }
 
-    fn add2(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> 
+    fn add2(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>
     where
         D: AddElementWiseGrad<T>,
     {
@@ -178,14 +183,9 @@ where
         {
             let ids = (lhs.id(), rhs.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, _, lhs_grad, rhs_grad, out_grad) =
-                    grads.get_triple::<T, ()>(device, ids);
+                let (_, _, lhs_grad, rhs_grad, out_grad) = grads.get_triple::<T, ()>(device, ids);
 
-                device.add_ew_grad(
-                    lhs_grad,
-                    rhs_grad,
-                    out_grad,
-                );
+                device.add_ew_grad(lhs_grad, rhs_grad, out_grad);
             });
         }
         out
@@ -399,7 +399,7 @@ where
         {
             let ids = (x.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let out = unsafe {device.get_existing_buf::<T, ()>(ids.1)};
+                let out = unsafe { device.get_existing_buf::<T, ()>(ids.1) };
                 let (x, x_grad, out_grad) = grads.get_double(device, ids);
                 device.max_cols_grad(cols, &out, &x, x_grad, out_grad);
             })
@@ -431,7 +431,7 @@ where
         {
             let ids = (x.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let out = unsafe {device.get_existing_buf::<T, ()>(ids.1)};
+                let out = unsafe { device.get_existing_buf::<T, ()>(ids.1) };
                 let (x, x_grad, out_grad) = grads.get_double(device, ids);
                 device.max_rows_grad(cols, &out, &x, x_grad, out_grad);
             })
@@ -627,7 +627,7 @@ where
         {
             let ids = (x.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let out = unsafe {device.get_existing_buf(ids.1)};
+                let out = unsafe { device.get_existing_buf(ids.1) };
                 let (_, x_grad, out_grad) = grads.get_double(device, ids);
                 device.softmax_grad(samples, features, x_grad, &out, out_grad);
             })

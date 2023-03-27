@@ -56,7 +56,6 @@ pub fn slice_binary_grad<T, LO, RO>(
     }
 }
 
-
 impl<T, S, D> AddElementWiseGrad<T, S, D> for CPU
 where
     T: Copy + AddAssign + Mul<Output = T>,
@@ -74,11 +73,8 @@ where
     }
 }
 
-pub fn slice_add_ew_grad<T>(
-    lhs_grad: &mut [T],
-    rhs_grad: &mut [T],
-    out: &[T],
-) where
+pub fn slice_add_ew_grad<T>(lhs_grad: &mut [T], rhs_grad: &mut [T], out: &[T])
+where
     T: Copy + AddAssign + Mul<Output = T>,
 {
     for ((lhs_grad, rhs_grad), out) in lhs_grad.iter_mut().zip(rhs_grad).zip(out) {
@@ -86,4 +82,3 @@ pub fn slice_add_ew_grad<T>(
         *rhs_grad += *out;
     }
 }
-

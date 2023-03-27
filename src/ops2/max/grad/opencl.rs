@@ -1,7 +1,14 @@
 use custos::{prelude::CLBuffer, CDatatype, OpenCL};
 
 // TODO
-pub fn cl_max_rows_grad<T: CDatatype>(device: &OpenCL, cols: usize, out: &CLBuffer<T>, x: &CLBuffer<T>, x_grad: &mut CLBuffer<T>, out_grad: &CLBuffer<T>) -> custos::Result<()> {
+pub fn cl_max_rows_grad<T: CDatatype>(
+    device: &OpenCL,
+    cols: usize,
+    out: &CLBuffer<T>,
+    x: &CLBuffer<T>,
+    x_grad: &mut CLBuffer<T>,
+    out_grad: &CLBuffer<T>,
+) -> custos::Result<()> {
     let src = format!(
         r#"
         __kernel void max_rows_grad(__global const {dtype} *out, __global const {dtype} *x, __global {dtype} *x_grad, __global const {dtype} *out_grad, int cols) {{
@@ -17,11 +24,22 @@ pub fn cl_max_rows_grad<T: CDatatype>(device: &OpenCL, cols: usize, out: &CLBuff
         dtype = T::as_c_type_str()
     );
 
-    device.launch_kernel(&src, [cols, x.len() / cols, 0], None, &[out, x, x_grad, out_grad, &(cols as i32)])?;
-    Ok(())
+    device.launch_kernel(
+        &src,
+        [cols, x.len() / cols, 0],
+        None,
+        &[out, x, x_grad, out_grad, &(cols as i32)],
+    )
 }
 
-pub fn cl_max_cols_grad<T: CDatatype>(device: &OpenCL, cols: usize, out: &CLBuffer<T>, x: &CLBuffer<T>, x_grad: &mut CLBuffer<T>, out_grad: &CLBuffer<T>) -> custos::Result<()> {
+pub fn cl_max_cols_grad<T: CDatatype>(
+    device: &OpenCL,
+    cols: usize,
+    out: &CLBuffer<T>,
+    x: &CLBuffer<T>,
+    x_grad: &mut CLBuffer<T>,
+    out_grad: &CLBuffer<T>,
+) -> custos::Result<()> {
     let src = format!(
         r#"
         __kernel void max_cols_grad(__global const {dtype} *out, __global const {dtype} *x, __global {dtype} *x_grad, __global const {dtype} *out_grad, int cols) {{
@@ -37,15 +55,19 @@ pub fn cl_max_cols_grad<T: CDatatype>(device: &OpenCL, cols: usize, out: &CLBuff
         dtype = T::as_c_type_str()
     );
 
-    device.launch_kernel(&src, [x.len() / cols, cols, 0], None, &[out, x, x_grad, out_grad, &(cols as i32)])?;
-    Ok(())
+    device.launch_kernel(
+        &src,
+        [x.len() / cols, cols, 0],
+        None,
+        &[out, x, x_grad, out_grad, &(cols as i32)],
+    )
 }
 
 #[cfg(test)]
 mod tests {
-    use custos::{OpenCL, Device};
+    use custos::{Device, OpenCL};
 
-    use crate::{MaxRows, cl_max_rows_grad, cl_max_cols_grad, MaxCols};
+    use crate::{cl_max_cols_grad, cl_max_rows_grad, MaxCols, MaxRows};
 
     #[test]
     fn test_max_rows_grad() -> custos::Result<()> {
@@ -58,7 +80,7 @@ mod tests {
 
         let x = device.buffer(x);
         let mut x_grad = device.buffer(x.len());
-        
+
         let out = device.max_rows(4, &x);
 
         let out_grad = device.buffer(&[2, 3, 4, 1]);
@@ -86,8 +108,8 @@ mod tests {
 
         let x = device.buffer(x);
         let mut x_grad = device.buffer(x.len());
-        
-        let out = device.max_cols(3, 4,&x);
+
+        let out = device.max_cols(3, 4, &x);
 
         let out_grad = device.buffer(&[1, 2, 3]);
         cl_max_cols_grad(&device, 4, &out, &x.clone(), &mut x_grad, &out_grad)?;

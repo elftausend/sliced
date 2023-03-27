@@ -1,6 +1,5 @@
 use custos::{
     prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, OpenCL, Resolve, Shape, ToMarker,
-
 };
 
 use super::BinaryElementWise;
@@ -55,7 +54,7 @@ where
 mod tests {
     use std::any::Any;
 
-    use custos::{Buffer, Combiner, OpenCL, CacheReturn};
+    use custos::{Buffer, CacheReturn, Combiner, OpenCL};
 
     use super::cl_binary_ew;
 

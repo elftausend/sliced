@@ -35,4 +35,3 @@ pub trait AddElementWiseGrad<T, S: Shape = (), D: Device = Self>: Device {
         out: &Buffer<T, D, S>,
     );
 }
-

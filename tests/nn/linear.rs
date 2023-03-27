@@ -131,7 +131,7 @@ fn test_mnist() {
 fn test_nn() {
     use std::time::Instant;
 
-    use custos::{range, CPU, TapeReturn};
+    use custos::{range, TapeReturn, CPU};
 
     let device = CPU::new();
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);

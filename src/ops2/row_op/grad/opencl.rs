@@ -4,7 +4,7 @@ use crate::RowOpGrad;
 use custos::{
     opencl::CLBuffer,
     prelude::{cpu_exec_binary_may_unified_mut, One},
-    OpenCL, CacheReturn
+    CacheReturn, OpenCL,
 };
 
 impl<T> RowOpGrad<T> for OpenCL
