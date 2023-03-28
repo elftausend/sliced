@@ -10,12 +10,12 @@ impl<T: Copy, D: MainMemory> ColOp<T, (), (), D> for CPU {
         F: Fn(T, T) -> T,
     {
         let mut out = self.retrieve(lhs.len(), (lhs, rhs));
-        col_op(cols, lhs, rhs, &mut out, f);
+        slice_col_op(cols, lhs, rhs, &mut out, f);
         out
     }
 }
 
-pub fn col_op<T, F>(cols: usize, lhs: &[T], rhs: &[T], out: &mut [T], f: F)
+pub fn slice_col_op<T, F>(cols: usize, lhs: &[T], rhs: &[T], out: &mut [T], f: F)
 where
     T: Copy,
     F: Fn(T, T) -> T,
@@ -29,7 +29,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::col_op;
+    use crate::slice_col_op;
 
     #[test]
     fn test_col_op() {
@@ -44,7 +44,7 @@ mod test {
 
         let mut out = [0; 15];
 
-        col_op(5, &lhs, &rhs, &mut out, |a, b| a + b);
+        slice_col_op(5, &lhs, &rhs, &mut out, |a, b| a + b);
 
         assert_eq!(out, [4, 2, 6, 7, 5, 4, 5, 6, 3, 3, 3, 1, 4, 4, -1]);
     }

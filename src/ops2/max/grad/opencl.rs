@@ -1,4 +1,42 @@
+use std::ops::AddAssign;
+
 use custos::{prelude::CLBuffer, CDatatype, OpenCL};
+
+use crate::{MaxColsGrad, MaxRowsGrad};
+
+impl<T> MaxRowsGrad<T> for OpenCL
+where
+    T: PartialEq + Copy + AddAssign + CDatatype,
+{
+    #[inline]
+    fn max_rows_grad(
+        &self,
+        cols: usize,
+        out: &CLBuffer<T>,
+        x: &CLBuffer<T>,
+        x_grad: &mut CLBuffer<T>,
+        out_grad: &CLBuffer<T>,
+    ) {
+        cl_max_rows_grad(self, cols, out, x, x_grad, out_grad).unwrap();
+    }
+}
+
+impl<T> MaxColsGrad<T> for OpenCL
+where
+    T: PartialEq + Copy + AddAssign + CDatatype,
+{
+    #[inline]
+    fn max_cols_grad(
+        &self,
+        cols: usize,
+        out: &CLBuffer<T>,
+        x: &CLBuffer<T>,
+        x_grad: &mut CLBuffer<T>,
+        out_grad: &CLBuffer<T>,
+    ) {
+        cl_max_cols_grad(self, cols, out, x, x_grad, out_grad).unwrap();
+    }
+}
 
 // TODO
 pub fn cl_max_rows_grad<T: CDatatype>(

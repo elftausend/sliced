@@ -1,3 +1,13 @@
+#[cfg(feature = "cpu")]
+mod cpu;
+#[cfg(feature = "cpu")]
+pub use cpu::*;
+
+#[cfg(feature = "opencl")]
+mod opencl;
+#[cfg(feature = "opencl")]
+pub use opencl::*;
+
 /*copilot pub trait ColOpGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     fn col_op_grad<F>(
         &self,
