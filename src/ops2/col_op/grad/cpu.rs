@@ -32,7 +32,13 @@ pub fn slice_col_op_grad_rhs<T>(
 ) where
     T: Copy + AddAssign + Mul<Output = T>,
 {
-
+    let mut rhs_idx = 0;
+    for (idx, (lhs, out_grad)) in lhs.iter().zip(out_grad).enumerate() {
+        if (idx +1) % (cols+1) == 0 {
+            rhs_idx += 1;
+        }
+        rhs_grad[rhs_idx] += rhs_grad_fn(*lhs, rhs[rhs_idx]) * *out_grad;
+    }
 }
 
 #[cfg(test)]
