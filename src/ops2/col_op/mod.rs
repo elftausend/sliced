@@ -54,3 +54,17 @@ pub trait ColOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
         self.col_op(cols, lhs, rhs, |lhs, rhs| lhs / rhs)
     }
 }
+
+pub trait ColOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: ColOp<T, LS, RS, D> {
+    fn col_op_may_grad<F, G>(
+        &self,
+        cols: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+        f: F,
+        g: G,
+    ) -> Buffer<T, Self, LS>
+    where
+        F: Fn(T, T) -> T + Copy,
+        G: Fn(T, T) -> T + Copy;
+}

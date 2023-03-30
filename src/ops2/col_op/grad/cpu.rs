@@ -1,14 +1,47 @@
 use std::ops::{AddAssign, Mul};
 
+use custos::{Buffer, MainMemory, Shape, CPU, Resolve, Eval, ToVal};
+
+use crate::ColOpGrad;
+
+impl<T, LS, RS, D> ColOpGrad<T, LS, RS, D> for CPU
+where
+    T: Copy + AddAssign + Mul<Output = T>,
+    LS: Shape,
+    RS: Shape,
+    D: MainMemory,
+{
+    #[inline]
+    fn row_op_grad<LhsGrad, RhsGrad>(
+        &self,
+        cols: usize,
+        lhs: &Buffer<T, D, LS>,
+        rhs: &Buffer<T, D, RS>,
+        lhs_grad: &mut Buffer<T, D, LS>,
+        rhs_grad: &mut Buffer<T, D, RS>,
+        out_grad: &Buffer<T, D, LS>,
+        lhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> LhsGrad,
+        rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> RhsGrad,
+    ) 
+    where
+        LhsGrad: Eval<T> + ToString,
+        RhsGrad: Eval<T> + ToString
+    {
+        slice_col_op_grad_lhs(cols, lhs, rhs, lhs_grad, out_grad, lhs_grad_fn);
+        slice_col_op_grad_rhs(cols, lhs, rhs, rhs_grad, out_grad, rhs_grad_fn)
+    }
+}
+
 // TODO: Fix row_op_grad, row op only supports rhs for grad fn
-pub fn slice_col_op_grad_lhs<T>(
+pub fn slice_col_op_grad_lhs<T, GRAD>(
     cols: usize,
     lhs: &[T],
     rhs: &[T],
     lhs_grad: &mut [T],
     out_grad: &[T],
-    lhs_grad_fn: impl Fn(T, T) -> T,
+    lhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> GRAD,
 ) where
+    GRAD: Eval<T>,
     T: Copy + AddAssign + Mul<Output = T>,
 {
     let mut rhs_iter = rhs.iter();
@@ -18,32 +51,36 @@ pub fn slice_col_op_grad_lhs<T>(
             rhs_val = rhs_iter.next().unwrap();
         }
 
-        *lhs_grad += lhs_grad_fn(*lhs, *rhs_val) * *out_grad;
+        *lhs_grad += lhs_grad_fn((*lhs).to_val(), (*rhs_val).to_val()).eval() * *out_grad;
     }
 }
 
-pub fn slice_col_op_grad_rhs<T>(
+// combine with lhs grad version
+pub fn slice_col_op_grad_rhs<T, RhsGrad>(
     cols: usize,
     lhs: &[T],
     rhs: &[T],
     rhs_grad: &mut [T],
     out_grad: &[T],
-    rhs_grad_fn: impl Fn(T, T) -> T,
+    rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> RhsGrad,
 ) where
+    RhsGrad: Eval<T>,
     T: Copy + AddAssign + Mul<Output = T>,
 {
     let mut rhs_idx = 0;
     for (idx, (lhs, out_grad)) in lhs.iter().zip(out_grad).enumerate() {
-        if (idx +1) % (cols+1) == 0 {
+        if (idx + 1) % (cols + 1) == 0 {
             rhs_idx += 1;
         }
-        rhs_grad[rhs_idx] += rhs_grad_fn(*lhs, rhs[rhs_idx]) * *out_grad;
+        rhs_grad[rhs_idx] += rhs_grad_fn((*lhs).to_val(), rhs[rhs_idx].to_val()).eval() * *out_grad;
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{slice_col_op_grad_lhs, test_utils::roughly_equals, slice_col_op_grad_rhs};
+    use custos::{ToVal, Combiner};
+
+    use crate::{slice_col_op_grad_lhs, slice_col_op_grad_rhs, test_utils::roughly_equals};
 
     #[test]
     fn test_slice_col_op_grad_lhs_div() {
@@ -63,7 +100,7 @@ mod tests {
             &rhs,
             &mut lhs_grad,
             &[1.4, 2.5, 3.3, 4., 5., 6.],
-            |_, rhs| 1. / rhs,
+            |_, rhs| (1f32).to_val().div(rhs),
         );
 
         roughly_equals(
@@ -87,7 +124,6 @@ mod tests {
             4., 5., 6.
         ];
 
-
         let rhs = [-3., 2.];
 
         let mut rhs_grad = [0.; 2];
@@ -100,7 +136,7 @@ mod tests {
             &rhs,
             &mut rhs_grad,
             &[1.4, 2.5, 3.3, 4., 5., 6.],
-            gf,
+            |lhs, rhs| lhs.div(rhs.mul(rhs).neg())
         );
 
         roughly_equals(
