@@ -125,7 +125,7 @@ mod tests {
         cl_max_rows_grad(&device, 4, &out, &x.clone(), &mut x_grad, &out_grad)?;
 
         #[rustfmt::skip]
-        let expected = [
+        let expected = vec![
             0, 0, 4, 0,
             2, 3, 0, 1,
             0, 0, 0, 0,
@@ -153,7 +153,7 @@ mod tests {
         cl_max_cols_grad(&device, 4, &out, &x.clone(), &mut x_grad, &out_grad)?;
 
         #[rustfmt::skip]
-        let expected = [
+        let expected = vec![
             0, 0, 1, 0,
             0, 2, 0, 0,
             0, 0, 0, 3,

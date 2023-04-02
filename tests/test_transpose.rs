@@ -34,7 +34,7 @@ fn test_transpose_cl() -> custos::Result<()> {
     let x = Buffer::from((&device, [1, 2, 3, 4, 5, 6]));
 
     let out: Buffer<_, _> = device.transpose(2, 3, &x);
-    assert_eq!(&*out, [1, 4, 2, 5, 3, 6]);
+    assert_eq!(out.read(), [1, 4, 2, 5, 3, 6]);
 
     Ok(())
 }

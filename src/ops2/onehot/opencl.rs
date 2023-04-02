@@ -7,13 +7,13 @@ pub fn cl_onehot<T: CDatatype>(
     highest_class: usize,
 ) -> custos::Result<()> {
     let src = format!("
-        __kernel void onehot(__global const {dtype}* x, __global {dtype}* out, const size_t highest_class) {{
+        __kernel void onehot(__global {dtype}* x, __global {dtype}* out, int highest_class) {{
             size_t id = get_global_id(0);
-            out[id * highest_class + (size_t) x[id]] = 1;     
+            out[id * highest_class + (size_t) x[id]] = 1;
         }}
     ", dtype = T::as_c_type_str());
 
-    device.launch_kernel(&src, [x.len(), 0, 0], None, &[x, out, &highest_class])?;
+    device.launch_kernel(&src, [x.len(), 0, 0], None, &[x, out, &(highest_class as i32)])?;
     Ok(())
 }
 
@@ -36,7 +36,7 @@ mod tests {
         cl_onehot(&device, &x, &mut out, highest_class as usize)?;
 
         #[rustfmt::skip]
-        let expected = [
+        let expected = vec![
             1, 0, 0, 0, 0,
             0, 1, 0, 0, 0,
             0, 0, 0, 0, 1,
