@@ -1,4 +1,4 @@
-use custos::{prelude::enqueue_kernel, Buffer, CDatatype, Eval, OpenCL, Resolve, ToMarker};
+use custos::{prelude::enqueue_kernel, Buffer, CDatatype, Eval, OpenCL, Resolve, ToMarker, MayToCLSource};
 
 use super::BinaryElementWiseGrad;
 
@@ -17,8 +17,8 @@ where
         lhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> LO,
         rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> RO,
     ) where
-        LO: Eval<T> + ToString,
-        RO: Eval<T> + ToString,
+        LO: Eval<T> + MayToCLSource,
+        RO: Eval<T> + MayToCLSource,
     {
         cl_binary_grad(
             self,
@@ -46,8 +46,8 @@ pub fn cl_binary_grad<T, LO, RO>(
 ) -> custos::Result<()>
 where
     T: CDatatype + Default,
-    LO: ToString,
-    RO: ToString,
+    LO: MayToCLSource,
+    RO: MayToCLSource,
 {
     let src = format!(
         "
@@ -65,8 +65,8 @@ where
         }}
     ",
         ty = T::as_c_type_str(),
-        lhs_grad_op = lhs_grad_fn("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_string(),
-        rhs_grad_op = rhs_grad_fn("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_string()
+        lhs_grad_op = lhs_grad_fn("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_cl_source(),
+        rhs_grad_op = rhs_grad_fn("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_cl_source()
     );
 
     enqueue_kernel(

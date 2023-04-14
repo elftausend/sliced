@@ -7,7 +7,7 @@ mod to_static_device;
 use std::{fmt::Display, ops::Mul};
 
 use custos::{
-    prelude::{Float, Number, Two},
+    prelude::{Float, Number, Two, Numeric},
     Alloc, ApplyFunction, Buffer, Combiner, Device, IsShapeIndep, MayTapeReturn, Shape,
     UnaryElementWiseMayGrad, UnaryGrad, CPU,
 };
@@ -179,7 +179,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn squared(&self) -> Matrix<'a, T, D, S>
     where
-        T: Display + Mul<Output = T> + Copy + Two + 'static,
+        T: Numeric + Mul<Output = T> + Copy + Two + 'static,
         D: SquareMayGrad<T, S>
             + ApplyFunction<T, S>
             + UnaryGrad<T, S>

@@ -1,11 +1,11 @@
 use std::fmt::Display;
 
 use crate::{BinaryElementWise, Diagflat, Gemm, SoftmaxGrad, Transpose};
-use custos::{range, Buffer, GenericBlas, MainMemory, Shape, CPU};
+use custos::{range, Buffer, GenericBlas, MainMemory, Shape, CPU, prelude::Number};
 
 impl<T, S> SoftmaxGrad<T, S> for CPU
 where
-    T: Copy + GenericBlas + Default + Display + core::ops::Sub<T, Output = T>,
+    T: GenericBlas + Number,
     S: Shape,
     CPU: Gemm<T>,
 {

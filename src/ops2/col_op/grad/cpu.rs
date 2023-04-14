@@ -1,6 +1,6 @@
 use std::ops::{AddAssign, Mul};
 
-use custos::{Buffer, MainMemory, Shape, CPU, Resolve, Eval, ToVal};
+use custos::{Buffer, Eval, MainMemory, Resolve, Shape, ToVal, CPU};
 
 use crate::ColOpGrad;
 
@@ -22,10 +22,9 @@ where
         out_grad: &Buffer<T, D, LS>,
         lhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> LhsGrad,
         rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> RhsGrad,
-    ) 
-    where
+    ) where
         LhsGrad: Eval<T> + ToString,
-        RhsGrad: Eval<T> + ToString
+        RhsGrad: Eval<T> + ToString,
     {
         slice_col_op_grad_lhs(cols, lhs, rhs, lhs_grad, out_grad, lhs_grad_fn);
         slice_col_op_grad_rhs(cols, lhs, rhs, rhs_grad, out_grad, rhs_grad_fn)
@@ -78,7 +77,7 @@ pub fn slice_col_op_grad_rhs<T, RhsGrad>(
 
 #[cfg(test)]
 mod tests {
-    use custos::{ToVal, Combiner};
+    use custos::{Combiner, ToVal};
 
     use crate::{slice_col_op_grad_lhs, slice_col_op_grad_rhs, test_utils::roughly_equals};
 
@@ -136,7 +135,7 @@ mod tests {
             &rhs,
             &mut rhs_grad,
             &[1.4, 2.5, 3.3, 4., 5., 6.],
-            |lhs, rhs| lhs.div(rhs.mul(rhs).neg())
+            |lhs, rhs| lhs.div(rhs.mul(rhs).neg()),
         );
 
         roughly_equals(

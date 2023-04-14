@@ -10,7 +10,7 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-use custos::{Buffer, Device, Eval, Resolve, Shape};
+use custos::{Buffer, Device, Eval, Resolve, Shape, MayToCLSource};
 
 pub trait BinaryElementWiseGrad<T, S: Shape = (), D: Device = Self>: Device {
     fn binary_ew_grad<LO, RO>(
@@ -23,8 +23,8 @@ pub trait BinaryElementWiseGrad<T, S: Shape = (), D: Device = Self>: Device {
         lhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> LO,
         rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> RO,
     ) where
-        LO: Eval<T> + ToString,
-        RO: Eval<T> + ToString;
+        LO: Eval<T> + MayToCLSource,
+        RO: Eval<T> + MayToCLSource;
 }
 
 pub trait AddElementWiseGrad<T, S: Shape = (), D: Device = Self>: Device {

@@ -6,7 +6,7 @@ use std::{
 use custos::{
     prelude::{Float, One, Two},
     Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeReturn, Shape, UnaryGrad,
-    WriteBuf,
+    WriteBuf, MayToCLSource,
 };
 
 use crate::{
@@ -23,7 +23,7 @@ where
 {
     fn square(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S>
     where
-        T: Display + Eval<T> + Mul<Output = T> + Copy + Two,
+        T: MayToCLSource + Eval<T> + Mul<Output = T> + Copy + Two,
         Self: ApplyFunction<T, S, Self>
             + UnaryGrad<T, S, Self>
             + MayTapeReturn
@@ -93,7 +93,7 @@ where
         + Sub<Output = T>
         + Add<Output = T>
         + Neg<Output = T>
-        + Display
+        + MayToCLSource
         + One
         + Eval<T>
         + 'static,

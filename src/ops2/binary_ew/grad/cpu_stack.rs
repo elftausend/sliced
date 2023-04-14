@@ -1,6 +1,6 @@
 use std::ops::{AddAssign, Mul};
 
-use custos::{impl_stack, Buffer, Eval, MainMemory, Resolve, Shape, ToVal, CPU};
+use custos::{impl_stack, Buffer, Eval, MainMemory, Resolve, Shape, ToVal, CPU, MayToCLSource};
 
 use crate::AddElementWiseGrad;
 
@@ -27,8 +27,8 @@ where
         lhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> LO,
         rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> RO,
     ) where
-        LO: Eval<T> + ToString,
-        RO: Eval<T> + ToString,
+        LO: Eval<T> + MayToCLSource,
+        RO: Eval<T> + MayToCLSource,
     {
         slice_binary_grad(lhs, rhs, lhs_grad, rhs_grad, out, lhs_grad_fn, rhs_grad_fn)
     }

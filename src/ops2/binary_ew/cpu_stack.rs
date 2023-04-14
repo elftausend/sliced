@@ -1,4 +1,4 @@
-use custos::{impl_stack, Buffer, Device, Eval, MainMemory, Resolve, Shape, ToVal, CPU};
+use custos::{impl_stack, Buffer, Device, Eval, MainMemory, Resolve, Shape, ToVal, CPU, MayToCLSource};
 
 use super::BinaryElementWise;
 
@@ -20,7 +20,7 @@ where
         f: impl Fn(Resolve<T>, Resolve<T>) -> O,
     ) -> Buffer<T, Self, S>
     where
-        O: Eval<T> + ToString,
+        O: Eval<T> + MayToCLSource,
     {
         let mut out = self.retrieve(lhs.len(), (lhs, rhs));
         slice_binary_ew(lhs, rhs, &mut out, f);
@@ -35,7 +35,7 @@ pub fn slice_binary_ew<O, T>(
     f: impl Fn(Resolve<T>, Resolve<T>) -> O,
 ) where
     T: Copy,
-    O: Eval<T> + ToString,
+    O: Eval<T> + MayToCLSource,
 {
     for ((lhs, rhs), out) in lhs.iter().zip(rhs.iter()).zip(out.iter_mut()) {
         *out = f((*lhs).to_val(), (*rhs).to_val()).eval()

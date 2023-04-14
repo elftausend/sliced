@@ -55,7 +55,9 @@ pub trait ColOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     }
 }
 
-pub trait ColOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: ColOp<T, LS, RS, D> {
+pub trait ColOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>:
+    ColOp<T, LS, RS, D>
+{
     fn col_op_may_grad<F, G>(
         &self,
         cols: usize,

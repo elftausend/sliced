@@ -1,5 +1,5 @@
 use custos::{
-    prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, OpenCL, Resolve, Shape, ToMarker,
+    prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, OpenCL, Resolve, Shape, ToMarker, MayToCLSource,
 };
 
 use super::BinaryElementWise;
@@ -16,7 +16,7 @@ where
         f: impl Fn(Resolve<T>, Resolve<T>) -> O,
     ) -> Buffer<T, Self>
     where
-        O: Eval<T> + ToString,
+        O: Eval<T> + MayToCLSource,
     {
         let mut out = self.retrieve(lhs.len(), (lhs, rhs));
         cl_binary_ew(self, lhs, rhs, &mut out, f).unwrap();
@@ -34,7 +34,7 @@ pub fn cl_binary_ew<T, S, O>(
 where
     S: Shape,
     T: CDatatype + Default,
-    O: ToString,
+    O: MayToCLSource,
 {
     let src = format!(
         "
@@ -44,7 +44,7 @@ where
         }}
     ",
         ty = T::as_c_type_str(),
-        op = f("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_string()
+        op = f("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_cl_source()
     );
 
     enqueue_kernel(device, &src, [lhs.len(), 0, 0], None, &[lhs, rhs, out])
