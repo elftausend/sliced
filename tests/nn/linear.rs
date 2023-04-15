@@ -125,13 +125,12 @@ fn test_mnist() {
     let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);*/
 }
 
-#[cfg(feature = "autograd")]
 #[test]
 #[cfg_attr(miri, ignore)]
 fn test_nn() {
     use std::time::Instant;
 
-    use custos::{range, TapeReturn, CPU};
+    use custos::{range, CPU};
 
     let device = CPU::new();
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
@@ -143,8 +142,9 @@ fn test_nn() {
 
     let start = Instant::now();
 
-    for _ in range(10) {
-        device.tape_mut().grads.zero_grad();
+    for _ in range(1000) {
+        #[cfg(feature = "autograd")]
+        custos::TapeReturn::tape_mut(&device).grads.zero_grad();
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
         // sgd.zero_grad(lin3.params());
@@ -154,13 +154,18 @@ fn test_nn() {
         let out = lin3.forward(&out);
 
         let loss = (&out - &y).squared();
-        loss.backward();
+        
+        #[cfg(feature = "autograd")]
+        {
+            loss.backward();
 
-        //println!("lin1 dweights grad: {:?}", lin1.weights.grad());
-
-        sgd.step(lin1.params());
-        sgd.step(lin2.params());
-        sgd.step(lin3.params());
+            //println!("lin1 dweights grad: {:?}", lin1.weights.grad());
+    
+            sgd.step(lin1.params());
+            sgd.step(lin2.params());
+            sgd.step(lin3.params());
+        }
+        
     }
 
     println!("elapsed: {:?}", start.elapsed());
@@ -168,7 +173,7 @@ fn test_nn() {
     let out = lin1.forward(&x).relu();
     let out = lin2.forward(&out).relu();
     let out = lin3.forward(&out);
-    println!("out: {:?}", out.read());
+    // println!("out: {:?}", out.read());
 
     let mut plot = graplot::Plot::new((x.read(), y.read()));
     //plot.add((x.read(), out.read(), "-r"));

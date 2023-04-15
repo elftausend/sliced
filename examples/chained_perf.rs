@@ -3,14 +3,26 @@ use std::hint::black_box;
 use custos::{range, Dim1, WithShape};
 use sliced::{BinaryOpsMayGrad, Buffer, SquareMayGrad, Stack, CPU};
 
+// 123412
+// 12.8 MB 13.1MB
+// dur: 23.82ms
+
+
+// 1413412
+// 80MB, 110 MB
+// dur: 434 ms
 fn main() {
     //let device = OpenCL::new(0).unwrap();
-    // let device = Stack;
-    let device = CPU::new();
+    let device = Stack;
+    // let device = CPU::new();
     //device.tape_mut().disable();
 
-    let mut x = Buffer::with(&device, [1.3f32; 123412]);
-    let mut b = Buffer::from((&device, vec![2.1f32; 123412]));
+    const SIZE: usize = 1234; // 123412
+
+
+    // if with fails with CPU -> backwards operation may use () shape, Box<dyn Any> does not like this
+    let mut x = Buffer::with(&device, [1.3f32; SIZE]);
+    let mut b = Buffer::with(&device, [2.1f32; SIZE]);
 
     let start = std::time::Instant::now();
 
@@ -24,7 +36,7 @@ fn main() {
             let mul_b = device.mul(&add, &b);
             let out = device.add(&mul, &mul_b);
 
-            if epoch % 200 == 0 {
+            if epoch % 400 == 0 {
                 println!("out: {}", out.read()[0]);
             }
             //assert_eq!(&*out, [(1.3 * 1.3 * 1.3) * (1.3 + 2.1) * 2.1; 123412]);

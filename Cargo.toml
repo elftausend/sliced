@@ -16,7 +16,7 @@ purpur = "0.1.0"
 debug = true
 
 [features]
-default = ["blas", "cpu",  "autograd", "matrix", "opencl", "stack"]
+default = ["blas", "cpu",  "matrix", "opencl", "stack"]
 #default = ["blas", "stack", "cpu", "matrix", "opencl", "autograd"]
 #default = ["stack", "cpu", "opencl", "blas", "matrix", "static-api"]
 autograd = ["custos/autograd"]

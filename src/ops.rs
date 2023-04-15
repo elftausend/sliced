@@ -77,7 +77,7 @@ pub trait BinaryOpsMayGrad<T, S: Shape = (), D: Device = Self>: Device {
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
     fn add2(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>
     where
-        D: AddElementWiseGrad<T>;
+        D: AddElementWiseGrad<T, S>;
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
 }
@@ -86,9 +86,9 @@ impl<T, S, D> BinaryOpsMayGrad<T, S, D> for D
 where
     S: Shape + 'static,
     D: BinaryElementWise<T, S, D>
-        + BinaryElementWiseGrad<T, (), D>
+        + BinaryElementWiseGrad<T, S, D>
         + MayTapeReturn
-        + for<'b> Alloc<'b, T>,
+        + for<'b> Alloc<'b, T, S>,
     T: Mul<Output = T>
         + Sub<Output = T>
         + Add<Output = T>
@@ -107,7 +107,7 @@ where
             let ids = (lhs.id(), rhs.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
                 let (lhs, rhs, lhs_grad, rhs_grad, out_grad) =
-                    grads.get_triple::<T, ()>(device, ids);
+                    grads.get_triple::<T, S>(device, ids);
 
                 device.binary_ew_grad(
                     &lhs,
@@ -131,7 +131,7 @@ where
             let ids = (lhs.id(), rhs.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
                 let (lhs, rhs, lhs_grad, rhs_grad, out_grad) =
-                    grads.get_triple::<T, ()>(device, ids);
+                    grads.get_triple::<T, S>(device, ids);
 
                 device.binary_ew_grad(
                     &lhs,
@@ -156,7 +156,7 @@ where
             let ids = (lhs.id(), rhs.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
                 let (lhs, rhs, lhs_grad, rhs_grad, out_grad) =
-                    grads.get_triple::<T, ()>(device, ids);
+                    grads.get_triple::<T, S>(device, ids);
 
                 device.binary_ew_grad(
                     &lhs,
@@ -175,7 +175,7 @@ where
 
     fn add2(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>
     where
-        D: AddElementWiseGrad<T>,
+        D: AddElementWiseGrad<T, S>,
     {
         let out = self.binary_ew(lhs, rhs, |a, b| a.add(b));
 
@@ -183,7 +183,7 @@ where
         {
             let ids = (lhs.id(), rhs.id(), out.id());
             self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, _, lhs_grad, rhs_grad, out_grad) = grads.get_triple::<T, ()>(device, ids);
+                let (_, _, lhs_grad, rhs_grad, out_grad) = grads.get_triple::<T, S>(device, ids);
 
                 device.add_ew_grad(lhs_grad, rhs_grad, out_grad);
             });
