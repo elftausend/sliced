@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::{BinaryElementWise, Diagflat, Gemm, SoftmaxGrad, Transpose};
-use custos::{range, Buffer, GenericBlas, MainMemory, Shape, CPU, prelude::Number};
+use custos::{prelude::Number, range, Buffer, GenericBlas, MainMemory, Shape, CPU};
 
 impl<T, S> SoftmaxGrad<T, S> for CPU
 where
@@ -99,7 +99,7 @@ mod tests {
         let device = CPU::new();
 
         let x = Matrix::from((&device, 2, 3, [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
-
+        
         // x.sub_cols(x.max_cols());
     }
 }

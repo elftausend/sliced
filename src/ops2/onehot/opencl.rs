@@ -6,14 +6,22 @@ pub fn cl_onehot<T: CDatatype>(
     out: &mut CLBuffer<T>,
     highest_class: usize,
 ) -> custos::Result<()> {
-    let src = format!("
+    let src = format!(
+        "
         __kernel void onehot(__global {dtype}* x, __global {dtype}* out, int highest_class) {{
             size_t id = get_global_id(0);
             out[id * highest_class + (size_t) x[id]] = 1;
         }}
-    ", dtype = T::as_c_type_str());
+    ",
+        dtype = T::as_c_type_str()
+    );
 
-    device.launch_kernel(&src, [x.len(), 0, 0], None, &[x, out, &(highest_class as i32)])?;
+    device.launch_kernel(
+        &src,
+        [x.len(), 0, 0],
+        None,
+        &[x, out, &(highest_class as i32)],
+    )?;
     Ok(())
 }
 

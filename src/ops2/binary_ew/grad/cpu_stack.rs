@@ -1,6 +1,6 @@
 use std::ops::{AddAssign, Mul};
 
-use custos::{impl_stack, Buffer, Eval, MainMemory, Resolve, Shape, ToVal, CPU, MayToCLSource};
+use custos::{impl_stack, Buffer, Eval, MainMemory, MayToCLSource, Resolve, Shape, ToVal, CPU};
 
 use crate::AddElementWiseGrad;
 

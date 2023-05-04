@@ -77,7 +77,10 @@ fn test_gemm_cl() -> custos::Result<()> {
         out.backward();
 
         let lhs_grad = lhs.grad();
-        assert_eq!(lhs_grad.read(), [6.0, 15.0, 6.0, 15.0, 6.0, 15.0, 6.0, 15.0]);
+        assert_eq!(
+            lhs_grad.read(),
+            [6.0, 15.0, 6.0, 15.0, 6.0, 15.0, 6.0, 15.0]
+        );
 
         let rhs_grad = rhs.grad();
         assert_eq!(rhs_grad.read(), [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]);

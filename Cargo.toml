@@ -10,13 +10,12 @@ edition = "2021"
 #custos = {git = "https://github.com/elftausend/custos", branch = "autograd", default-features=false, features=["macro"]}
 custos = {path = "../custos", default-features=false, features=["macro"]}
 fastrand = "1.8.0"
-purpur = "0.1.0"
 
 [profile.release]
 debug = true
 
 [features]
-default = ["blas", "cpu",  "matrix", "opencl", "stack"]
+default = ["blas", "cpu",  "matrix", "opencl", "autograd"]
 #default = ["blas", "stack", "cpu", "matrix", "opencl", "autograd"]
 #default = ["stack", "cpu", "opencl", "blas", "matrix", "static-api"]
 autograd = ["custos/autograd"]
@@ -28,10 +27,12 @@ blas = ["custos/blas"]
 opt-cache = ["custos/opt-cache"]
 realloc = ["custos/realloc"]
 matrix = []
+nnapi = ["custos/nnapi"]
 
 [dev-dependencies]
 rawsliced = { path = "../rawsliced" }
 graplot = "0.1.22"
+purpur = "0.1.0"
 
 [[test]]
 name = "test_combination"

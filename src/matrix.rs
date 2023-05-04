@@ -7,9 +7,9 @@ mod to_static_device;
 use std::{fmt::Display, ops::Mul};
 
 use custos::{
-    prelude::{Float, Number, Two, Numeric},
+    prelude::{Float, Number, Numeric, Two},
     Alloc, ApplyFunction, Buffer, Combiner, Device, IsShapeIndep, MayTapeReturn, Shape,
-    UnaryElementWiseMayGrad, UnaryGrad, CPU,
+    UnaryElementWiseMayGrad, UnaryGrad, CPU, CloneBuf,
 };
 
 use crate::{
@@ -304,5 +304,29 @@ impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Sub for &Matrix<'a, T
     #[inline]
     fn sub(self, rhs: Self) -> Self::Output {
         (self.device().sub(self, rhs), self.rows, self.cols).into()
+    }
+}
+
+impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Add for &Matrix<'a, T, D, S> {
+    type Output = Matrix<'a, T, D, S>;
+
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        (self.device().add(self, rhs), self.rows, self.cols).into()
+    }
+}
+
+impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Add for Matrix<'a, T, D, S> {
+    type Output = Matrix<'a, T, D, S>;
+
+    #[inline]
+    fn add(self, rhs: Self) -> Self::Output {
+        (self.device().add(&self, &rhs), self.rows, self.cols).into()
+    }
+}
+
+impl<'a, T: Clone, D: CloneBuf<'a, T, S>, S: Shape> Clone for Matrix<'a, T, D, S> {
+    fn clone(&self) -> Self {
+        Self { data: self.data.clone(), rows: self.rows.clone(), cols: self.cols.clone() }
     }
 }

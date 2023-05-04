@@ -1,5 +1,6 @@
 use custos::{
-    prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, OpenCL, Resolve, Shape, ToMarker, MayToCLSource,
+    prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, MayToCLSource, OpenCL, Resolve,
+    Shape, ToMarker,
 };
 
 use super::BinaryElementWise;

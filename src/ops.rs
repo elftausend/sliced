@@ -5,8 +5,8 @@ use std::{
 
 use custos::{
     prelude::{Float, One, Two},
-    Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeReturn, Shape, UnaryGrad,
-    WriteBuf, MayToCLSource,
+    Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeReturn, MayToCLSource, Shape,
+    UnaryGrad, WriteBuf,
 };
 
 use crate::{

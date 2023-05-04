@@ -1,7 +1,7 @@
 use custos::{
     prelude::{Float, Number, One},
     range, Alloc, Buffer, ClearBuf, Device, GraphReturn, IsShapeIndep, MainMemory, MayTapeReturn,
-    TapeReturn, WriteBuf, CPU,
+    WriteBuf, CPU, TapeReturn,
 };
 use graplot::Plot;
 use sliced::{Gemm, GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
@@ -158,7 +158,7 @@ fn main() {
 
         if !already {
             println!("traces: {:?}", device.graph().cache_traces());
-            //device.optimize().unwrap();
+            // device.optimize().unwrap();
             already = true;
         }
 

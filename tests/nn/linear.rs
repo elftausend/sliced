@@ -154,18 +154,17 @@ fn test_nn() {
         let out = lin3.forward(&out);
 
         let loss = (&out - &y).squared();
-        
+
         #[cfg(feature = "autograd")]
         {
             loss.backward();
 
             //println!("lin1 dweights grad: {:?}", lin1.weights.grad());
-    
+
             sgd.step(lin1.params());
             sgd.step(lin2.params());
             sgd.step(lin3.params());
         }
-        
     }
 
     println!("elapsed: {:?}", start.elapsed());

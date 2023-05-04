@@ -1,4 +1,6 @@
-use custos::{impl_stack, Buffer, Device, Eval, MainMemory, Resolve, Shape, ToVal, CPU, MayToCLSource};
+use custos::{
+    impl_stack, Buffer, Device, Eval, MainMemory, MayToCLSource, Resolve, Shape, ToVal, CPU,
+};
 
 use super::BinaryElementWise;
 

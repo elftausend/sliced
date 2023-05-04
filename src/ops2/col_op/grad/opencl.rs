@@ -1,5 +1,5 @@
-use custos::{CDatatype, OpenCL, Resolve, ToMarker, MayToCLSource};
 use custos::prelude::CLBuffer;
+use custos::{CDatatype, MayToCLSource, OpenCL, Resolve, ToMarker};
 
 pub fn cl_col_op_grad_lhs<T: CDatatype + Default, LhsGrad>(
     device: &OpenCL,
@@ -21,7 +21,14 @@ pub fn cl_col_op_grad_lhs<T: CDatatype + Default, LhsGrad>(
         }}
     ", dtype=T::as_c_type_str(), op=lhs_grad_fn("lhs[idx]".to_marker(), "rhs[rhs_idx]".to_marker()).to_cl_source());
 
-    device.launch_kernel(&src, [lhs.len(), 0, 0], None, &[lhs, rhs, lhs_grad, out_grad, &cols]).unwrap();
+    device
+        .launch_kernel(
+            &src,
+            [lhs.len(), 0, 0],
+            None,
+            &[lhs, rhs, lhs_grad, out_grad, &cols],
+        )
+        .unwrap();
 }
 
 pub fn cl_col_op_grad_rhs<T: CDatatype + Default, LhsGrad>(
@@ -35,7 +42,8 @@ pub fn cl_col_op_grad_rhs<T: CDatatype + Default, LhsGrad>(
 ) where
     LhsGrad: MayToCLSource,
 {
-    let src = format!(r#"
+    let src = format!(
+        r#"
         __kernel void col_op_grad_rhs(__global const {dtype}* lhs, __global const {dtype}* rhs, __global {dtype}* rhs_grad, __global const {dtype}* out_grad, const size_t cols) {{
             size_t idx = get_global_id(0);
             size_t rhs_idx = idx % (cols-1);
@@ -46,15 +54,25 @@ pub fn cl_col_op_grad_rhs<T: CDatatype + Default, LhsGrad>(
             
             rhs_grad[rhs_idx] += val;
         }}
-    "#, dtype=T::as_c_type_str(), op=rhs_grad_fn("lhs[idx]".to_marker(), "rhs[rhs_idx]".to_marker()).to_cl_source());
-    device.launch_kernel(&src, [lhs.len(), 0, 0], None, &[lhs, rhs, rhs_grad, out_grad, &cols]).unwrap();
+    "#,
+        dtype = T::as_c_type_str(),
+        op = rhs_grad_fn("lhs[idx]".to_marker(), "rhs[rhs_idx]".to_marker()).to_cl_source()
+    );
+    device
+        .launch_kernel(
+            &src,
+            [lhs.len(), 0, 0],
+            None,
+            &[lhs, rhs, rhs_grad, out_grad, &cols],
+        )
+        .unwrap();
 }
 
 #[cfg(test)]
 mod tests {
-    use custos::{OpenCL, Device, Resolve, Combiner};
+    use custos::{Combiner, Device, OpenCL, Resolve};
 
-    use crate::{cl_col_op_grad_lhs, test_utils::roughly_equals, cl_col_op_grad_rhs};
+    use crate::{cl_col_op_grad_lhs, cl_col_op_grad_rhs, test_utils::roughly_equals};
 
     #[test]
     fn test_cl_col_op_grad_lhs_div() -> custos::Result<()> {
@@ -73,7 +91,21 @@ mod tests {
 
         let out_grad = device.buffer([1.4, 2.5, 3.3, 4., 5., 6.]);
 
-        cl_col_op_grad_lhs(&device, 3, &lhs, &rhs, &mut lhs_grad, &out_grad, |_lhs, rhs| Resolve { val: 1., marker: "1" }.div(rhs));
+        cl_col_op_grad_lhs(
+            &device,
+            3,
+            &lhs,
+            &rhs,
+            &mut lhs_grad,
+            &out_grad,
+            |_lhs, rhs| {
+                Resolve {
+                    val: 1.,
+                    marker: "1",
+                }
+                .div(rhs)
+            },
+        );
 
         roughly_equals(
             lhs_grad.read(),
@@ -107,7 +139,15 @@ mod tests {
 
         let out_grad = device.buffer([1.4, 2.5, 3.3, 4., 5., 6.]);
 
-        cl_col_op_grad_rhs(&device, 3, &lhs, &rhs, &mut rhs_grad, &out_grad, |lhs, rhs| lhs.div(rhs.mul(rhs).neg()));
+        cl_col_op_grad_rhs(
+            &device,
+            3,
+            &lhs,
+            &rhs,
+            &mut rhs_grad,
+            &out_grad,
+            |lhs, rhs| lhs.div(rhs.mul(rhs).neg()),
+        );
 
         let gf = |lhs: f32, rhs: f32| lhs / -(rhs * rhs);
 
