@@ -100,7 +100,7 @@ where
 {
     #[inline]
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
-        let out = self.binary_ew(lhs, rhs, |a, b| a.add(b));
+        let out = self.add(lhs, rhs);
 
         #[cfg(feature = "autograd")]
         {
@@ -124,7 +124,7 @@ where
     }
 
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
-        let out = self.binary_ew(lhs, rhs, |a, b| a.sub(b));
+        let out = self.sub(lhs, rhs);
 
         #[cfg(feature = "autograd")]
         {
@@ -149,7 +149,7 @@ where
     }
 
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
-        let out = self.binary_ew(lhs, rhs, |a, b| a.mul(b));
+        let out = self.mul(lhs, rhs);
 
         #[cfg(feature = "autograd")]
         {

@@ -74,8 +74,12 @@ where
         lhs: &custos::Buffer<T, D, LS>,
         rhs: &custos::Buffer<T, D, RS>,
     ) -> custos::Buffer<T, Self, OS> {
-        let mut out = self.retrieve(m * n, (lhs.node.idx, rhs.node.idx));
+        // compile_error!("Activate blas feature");
+        
+        unimplemented!("This gemm isn't available. Please consider activating the 'blas' feature.")
+        /*let mut out = self.retrieve(m * n, (lhs, rhs));
         crate::raw_ops::naive_gemm(m, k, n, lhs, rhs, &mut out);
         (out, m, n).into()
+        */
     }
 }

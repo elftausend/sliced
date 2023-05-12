@@ -1,17 +1,25 @@
 #[cfg(any(feature = "cpu", feature = "stack"))]
+#[cfg(feature = "autograd")]
 mod cpu_stack;
 
 #[cfg(any(feature = "cpu", feature = "stack"))]
+#[cfg(feature = "autograd")]
 pub use cpu_stack::*;
 
 #[cfg(feature = "opencl")]
+#[cfg(feature = "autograd")]
 mod opencl;
 
 #[cfg(feature = "opencl")]
+#[cfg(feature = "autograd")]
 pub use opencl::*;
 
-use custos::{Buffer, Device, Eval, MayToCLSource, Resolve, Shape};
+use custos::{Buffer, Device, Shape, using_autograd};
 
+#[cfg(feature = "autograd")]
+use custos::{Eval, MayToCLSource, Resolve};
+
+#[using_autograd]
 pub trait BinaryElementWiseGrad<T, S: Shape = (), D: Device = Self>: Device {
     fn binary_ew_grad<LO, RO>(
         &self,
