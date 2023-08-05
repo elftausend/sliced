@@ -8,8 +8,8 @@ use std::{fmt::Display, ops::Mul};
 
 use custos::{
     prelude::{Float, Number, Numeric, Two},
-    Alloc, ApplyFunction, Buffer, Combiner, Device, IsShapeIndep, MayTapeReturn, Shape,
-    UnaryElementWiseMayGrad, UnaryGrad, CPU, CloneBuf,
+    Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep, MayTapeReturn, Shape,
+    UnaryElementWiseMayGrad, UnaryGrad, CPU,
 };
 
 use crate::{
@@ -327,6 +327,10 @@ impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Add for Matrix<'a, T,
 
 impl<'a, T: Clone, D: CloneBuf<'a, T, S>, S: Shape> Clone for Matrix<'a, T, D, S> {
     fn clone(&self) -> Self {
-        Self { data: self.data.clone(), rows: self.rows.clone(), cols: self.cols.clone() }
+        Self {
+            data: self.data.clone(),
+            rows: self.rows.clone(),
+            cols: self.cols.clone(),
+        }
     }
 }

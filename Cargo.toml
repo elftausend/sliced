@@ -15,7 +15,7 @@ fastrand = "1.8.0"
 debug = true
 
 [features]
-default = ["cpu",  "matrix", "opencl", "nnapi"]
+default = ["cpu",  "matrix", "opencl"]
 #default = ["blas", "stack", "cpu", "matrix", "opencl", "autograd"]
 #default = ["stack", "cpu", "opencl", "blas", "matrix", "static-api"]
 autograd = ["custos/autograd"]
@@ -27,7 +27,7 @@ blas = ["custos/blas"]
 opt-cache = ["custos/opt-cache"]
 realloc = ["custos/realloc"]
 matrix = []
-nnapi = ["custos/nnapi"]
+#nnapi = ["custos/nnapi"]
 
 [dev-dependencies]
 rawsliced = { path = "../rawsliced" }

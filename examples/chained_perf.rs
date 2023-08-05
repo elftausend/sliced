@@ -1,6 +1,8 @@
 use std::hint::black_box;
 
-use custos::{range, Alloc, Device, Dim1, MainMemory, Resolve, Shape, WithShape, GraphReturn, CacheReturn};
+use custos::{
+    range, Alloc, CacheReturn, Device, Dim1, GraphReturn, MainMemory, Resolve, Shape, WithShape,
+};
 use sliced::{BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU};
 
 pub fn op<'b, T, D, S>(
@@ -11,7 +13,7 @@ pub fn op<'b, T, D, S>(
 where
     D: for<'a> Alloc<'a, T, S> + MainMemory,
     S: Shape,
-    T: Copy
+    T: Copy,
 {
     let mut out = lhs.device().retrieve(lhs.len(), (lhs, rhs));
 

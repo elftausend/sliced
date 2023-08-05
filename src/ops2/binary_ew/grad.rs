@@ -14,7 +14,7 @@ mod opencl;
 #[cfg(feature = "autograd")]
 pub use opencl::*;
 
-use custos::{Buffer, Device, Shape, using_autograd};
+use custos::{using_autograd, Buffer, Device, Shape};
 
 #[cfg(feature = "autograd")]
 use custos::{Eval, MayToCLSource, Resolve};

@@ -1,7 +1,7 @@
 use custos::{
     prelude::{Float, Number, One},
     range, Alloc, Buffer, ClearBuf, Device, GraphReturn, IsShapeIndep, MainMemory, MayTapeReturn,
-    WriteBuf, CPU, TapeReturn,
+    TapeReturn, WriteBuf, CPU,
 };
 use graplot::Plot;
 use sliced::{Gemm, GemmMayGrad, Matrix, RandOp, RowOpMayGrad};

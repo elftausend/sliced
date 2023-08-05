@@ -43,14 +43,15 @@ pub fn slice_col_op_grad_lhs<T, GRAD>(
     GRAD: Eval<T>,
     T: Copy + AddAssign + Mul<Output = T>,
 {
-    let mut rhs_iter = rhs.iter();
-    let mut rhs_val = rhs_iter.next().unwrap();
-    for (idx, ((lhs, lhs_grad), out_grad)) in lhs.iter().zip(lhs_grad).zip(out_grad).enumerate() {
-        if (idx + 1) % (cols + 1) == 0 {
-            rhs_val = rhs_iter.next().unwrap();
+    for (((lhs, lhs_grad), out_grad), rhs) in lhs
+        .chunks(cols)
+        .zip(lhs_grad.chunks_mut(cols))
+        .zip(out_grad.chunks(cols))
+        .zip(rhs)
+    {
+        for ((lhs, lhs_grad), out_grad) in lhs.iter().zip(lhs_grad).zip(out_grad) {
+            *lhs_grad += lhs_grad_fn((*lhs).to_val(), (*rhs).to_val()).eval() * *out_grad;
         }
-
-        *lhs_grad += lhs_grad_fn((*lhs).to_val(), (*rhs_val).to_val()).eval() * *out_grad;
     }
 }
 
@@ -66,13 +67,23 @@ pub fn slice_col_op_grad_rhs<T, RhsGrad>(
     RhsGrad: Eval<T>,
     T: Copy + AddAssign + Mul<Output = T>,
 {
-    let mut rhs_idx = 0;
+    for (((lhs, out_grad), rhs), rhs_grad) in lhs
+        .chunks(cols)
+        .zip(out_grad.chunks(cols))
+        .zip(rhs)
+        .zip(rhs_grad)
+    {
+        for (lhs, out_grad) in lhs.iter().zip(out_grad) {
+            *rhs_grad += rhs_grad_fn((*lhs).to_val(), (*rhs).to_val()).eval() * *out_grad;
+        }
+    }
+    /*let mut rhs_idx = 0;
     for (idx, (lhs, out_grad)) in lhs.iter().zip(out_grad).enumerate() {
         if (idx + 1) % (cols + 1) == 0 {
             rhs_idx += 1;
         }
         rhs_grad[rhs_idx] += rhs_grad_fn((*lhs).to_val(), rhs[rhs_idx].to_val()).eval() * *out_grad;
-    }
+    }*/
 }
 
 #[cfg(test)]

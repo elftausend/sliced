@@ -13,13 +13,13 @@ pub fn cl_col_op_grad_lhs<T: CDatatype + Default, LhsGrad>(
     LhsGrad: MayToCLSource,
 {
     let src = format!("
-        __kernel void col_op_grad_lhs(__global const {dtype}* lhs, __global const {dtype}* rhs, __global {dtype}* lhs_grad, __global const {dtype}* out_grad, const size_t cols) {{
+        __kernel void col_op_grad_lhs(__global const {dtype}* lhs, __global const {dtype}* rhs, __global {dtype}* lhs_grad, __global const {dtype}* out_grad, long cols) {{
             size_t idx = get_global_id(0);
             size_t rhs_idx = idx / cols;
 
             lhs_grad[idx] += {op} * out_grad[idx];
         }}
-    ", dtype=T::as_c_type_str(), op=lhs_grad_fn("lhs[idx]".to_marker(), "rhs[rhs_idx]".to_marker()).to_cl_source());
+    ", dtype=T::as_c_type_str(), op=lhs_grad_fn("lhs[idx]".to_marker(), "rhs[rhs_idx]".to_marker()).to_cl_source()); 
 
     device
         .launch_kernel(
@@ -44,24 +44,25 @@ pub fn cl_col_op_grad_rhs<T: CDatatype + Default, LhsGrad>(
 {
     let src = format!(
         r#"
-        __kernel void col_op_grad_rhs(__global const {dtype}* lhs, __global const {dtype}* rhs, __global {dtype}* rhs_grad, __global const {dtype}* out_grad, const size_t cols) {{
+        __kernel void col_op_grad_rhs(__global const {dtype}* lhs, __global const {dtype}* rhs, __global {dtype}* rhs_grad, __global const {dtype}* out_grad, long cols) {{
             size_t idx = get_global_id(0);
-            size_t rhs_idx = idx % (cols-1);
 
-            {dtype} val = {op} * out_grad[idx];
-            // printf("rhs_idx: %d, %f, ", rhs_idx, val);
-            // barrier: atomic_add(&rhs_grad[rhs_idx], val);
-            
-            rhs_grad[rhs_idx] += val;
+            {dtype} sum = 0;
+            for (int col = 0; col < cols; col++) {{
+                {dtype} lhs_val = lhs[idx * cols + col];
+                sum += {op} * out_grad[idx * cols + col];
+            }}
+
+            rhs_grad[idx] += sum;
         }}
     "#,
         dtype = T::as_c_type_str(),
-        op = rhs_grad_fn("lhs[idx]".to_marker(), "rhs[rhs_idx]".to_marker()).to_cl_source()
+        op = rhs_grad_fn("lhs_val".to_marker(), "rhs[idx]".to_marker()).to_cl_source()
     );
     device
         .launch_kernel(
             &src,
-            [lhs.len(), 0, 0],
+            [rhs.len(), 0, 0],
             None,
             &[lhs, rhs, rhs_grad, out_grad, &cols],
         )
@@ -80,7 +81,7 @@ mod tests {
 
         #[rustfmt::skip]
         let lhs = [
-            1., 2., 3., 
+            1f32, 2., 3., 
             4., 5., 6.
         ];
 
@@ -108,7 +109,7 @@ mod tests {
         );
 
         roughly_equals(
-            lhs_grad.read(),
+            &lhs_grad.read_to_vec(),
             &[
                 1.4 * 1. / -3.,
                 2.5 * 1. / -3.,
@@ -152,7 +153,7 @@ mod tests {
         let gf = |lhs: f32, rhs: f32| lhs / -(rhs * rhs);
 
         roughly_equals(
-            rhs_grad.read(),
+            &rhs_grad.read_to_vec(),
             &[
                 gf(1., -3.) * 1.4 + gf(2., -3.) * 2.5 + gf(3., -3.) * 3.3,
                 gf(4., 2.) * 4. + gf(5., 2.) * 5. + gf(6., 2.) * 6.,

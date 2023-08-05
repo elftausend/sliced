@@ -15,10 +15,10 @@ pub use opencl::*;
 
 use core::fmt::Display;
 
-use custos::{Buffer, Combiner, Device, Eval, MayToCLSource, Resolve, Shape, impl_nnapi_op};
+use custos::{impl_nnapi_op, Buffer, Combiner, Device, Eval, MayToCLSource, Resolve, Shape};
 
 #[cfg(feature = "nnapi")]
-use custos::nnapi::{Operand, nnapi_sys::OperationCode};
+use custos::nnapi::{nnapi_sys::OperationCode, Operand};
 
 // pub trait BinaryElementWise2<T, S: Shape = (), D: Device = Self>: Device {
 //     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
@@ -45,7 +45,13 @@ use custos::nnapi::{Operand, nnapi_sys::OperationCode};
 //     }
 // }
 
-#[impl_nnapi_op(None, ANEURALNETWORKS_ADD, ANEURALNETWORKS_MUL, ANEURALNETWORKS_DIV, ANEURALNETWORKS_SUB)]
+#[impl_nnapi_op(
+    None,
+    ANEURALNETWORKS_ADD,
+    ANEURALNETWORKS_MUL,
+    ANEURALNETWORKS_DIV,
+    ANEURALNETWORKS_SUB
+)]
 pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
     fn binary_ew<O>(
         &self,
