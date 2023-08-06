@@ -19,7 +19,7 @@ pub fn cl_col_op_grad_lhs<T: CDatatype + Default, LhsGrad>(
 
             lhs_grad[idx] += {op} * out_grad[idx];
         }}
-    ", dtype=T::as_c_type_str(), op=lhs_grad_fn("lhs[idx]".to_marker(), "rhs[rhs_idx]".to_marker()).to_cl_source()); 
+    ", dtype=T::as_c_type_str(), op=lhs_grad_fn("lhs[idx]".to_marker(), "rhs[rhs_idx]".to_marker()).to_cl_source());
 
     device
         .launch_kernel(
