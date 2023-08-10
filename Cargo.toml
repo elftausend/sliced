@@ -1,4 +1,4 @@
-[package]
+ [package]
 name = "sliced"
 version = "0.1.0"
 edition = "2021"
@@ -15,7 +15,7 @@ fastrand = "1.8.0"
 debug = true
 
 [features]
-default = ["cpu",  "matrix", "opencl"]
+default = ["cpu",  "matrix", "opencl", "stack"]
 #default = ["blas", "stack", "cpu", "matrix", "opencl", "autograd"]
 #default = ["stack", "cpu", "opencl", "blas", "matrix", "static-api"]
 autograd = ["custos/autograd"]

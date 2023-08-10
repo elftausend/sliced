@@ -1,9 +1,9 @@
-use std::hint::black_box;
+use std::{hint::black_box, ops::{Mul, Add}};
 
 use custos::{
-    range, Alloc, CacheReturn, Device, Dim1, GraphReturn, MainMemory, Resolve, Shape, WithShape,
+    range, Alloc, CacheReturn, Device, Dim1, GraphReturn, MainMemory, Resolve, Shape, WithShape, Combiner,
 };
-use sliced::{BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU};
+use sliced::{BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU, slice_binary_ew};
 
 pub fn op<'b, T, D, S>(
     lhs: &Buffer<'b, T, D, S>,
@@ -24,6 +24,23 @@ where
     out
 }
 
+
+pub fn slice_binary_ew2<T>(
+    lhs: &[T],
+    rhs: &[T],
+    out: &mut [T],
+    f: impl Fn(T, T) -> T,
+) where
+    T: Copy + Add<Output = T>,
+{
+    for i in 0..out.len() {
+        out[i] = lhs[i] + rhs[i]
+    }
+    /*for ((lhs, rhs), out) in lhs.iter().zip(rhs.iter()).zip(out.iter_mut()) {
+        *out = f(*lhs, *rhs)
+    }*/
+}
+
 // 123412
 // 12.8 MB 13.1MB
 // dur: 23.82ms
@@ -33,15 +50,15 @@ where
 // dur: 434 ms
 fn main() {
     //let device = OpenCL::new(0).unwrap();
-    // let device = Stack;
-    let device = CPU::new();
+    let device = custos::Stack;
+    // let device = CPU::new();
     //device.tape_mut().disable();
 
-    const SIZE: usize = 2203412; // 123412
+    const SIZE: usize = 12000; // 123412
 
     // if with fails with CPU -> backwards operation may use () shape, Box<dyn Any> does not like this
-    let mut x: Buffer = Buffer::from((&device, vec![1.3f32; SIZE]));
-    let mut b = Buffer::from((&device, vec![2.1f32; SIZE]));
+    let mut x = Buffer::with(&device, [1.3f32; SIZE]);
+    let mut b = Buffer::with(&device, [2.1f32; SIZE]);
 
     let start = std::time::Instant::now();
 
@@ -53,8 +70,8 @@ fn main() {
     let b_slice = &*b;
     for _ in 0..TIMES {
         for epoch in range(100) {
-            /*let mut out = device.retrieve::<_, Dim1<SIZE>>(SIZE, (&x, &b));
-            for idx in 0..SIZE {
+            //let mut out = device.retrieve::<_, Dim1<SIZE>>(SIZE, (&x, &b));
+            /*for idx in 0..SIZE {
                 let x = x_slice[idx];
                 let b = b_slice[idx];
 
@@ -64,15 +81,36 @@ fn main() {
                 let mul_b = add * b;
                 out[idx] = mul + mul_b;
             }*/
+
+
             let squared = device.square(&x);
+
             let add = device.add(&b, &x);
             let mul_b = device.mul(&add, &b);
             let mul = device.mul(&squared, &x);
             let out = device.add(&mul, &mul_b);
+            assert_eq!(out.read()[0], 9.336999);
 
-            if epoch % 900 == 0 {
-                println!("out: {}", out.read()[0]);
-            }
+
+            // let squared = device.mul(&x, &x);
+            // let mut squared: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(x.len(), (&x, &x));
+            // slice_binary_ew2(&x, &x, &mut squared, |x, _| x.mul(x));
+
+
+            // let mut add: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(b.len(), (&b, &x));
+            // slice_binary_ew2(&b, &x, &mut add, |b, x| b.add(x));
+
+            // let mut mul_b: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(add.len(), (&add, &b));
+            // slice_binary_ew2(&add, &b, &mut mul_b, |add, b| add.mul(b));
+            
+
+            
+            // let mut mul: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(squared.len(), (&squared, &x));
+            // slice_binary_ew2(&squared, &x, &mut mul, |squared, x| squared.mul(x));
+
+            // let mut out: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(mul.len(), (&mul, &mul_b));
+            // slice_binary_ew2(&mul, &mul_b, &mut out, |mul, mul_b| mul.add(mul_b));
+
 
             if !already {
                 // println!("cache traces: {:?}", &device.graph().cache_traces());
@@ -99,7 +137,8 @@ fn main() {
             //sliced::ew_assign_scalar(&mut x_grad, &0.1, |x, r| *x *= r);
             //sliced::ew_assign_binary(&mut x, &x_grad, |x, y| *x -= y);
         }
+        println!("next")
     }
 
-    println!("elapsed: {:?}", start.elapsed() / TIMES as u32);
+    println!("elapsed (custos/sliced): {:?}", start.elapsed() / TIMES as u32);
 }
