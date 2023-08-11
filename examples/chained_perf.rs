@@ -49,12 +49,12 @@ pub fn slice_binary_ew2<T>(
 // 80MB, 110 MB
 // dur: 434 ms
 fn main() {
-    //let device = OpenCL::new(0).unwrap();
-    let device = custos::Stack;
+    let device = custos::OpenCL::new(0).unwrap();
+    // let device = custos::Stack;
     // let device = CPU::new();
     //device.tape_mut().disable();
 
-    const SIZE: usize = 12000; // 123412
+    const SIZE: usize = 123412; // 123412
 
     // if with fails with CPU -> backwards operation may use () shape, Box<dyn Any> does not like this
     let mut x = Buffer::with(&device, [1.3f32; SIZE]);
@@ -62,12 +62,12 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    const TIMES: usize = 1000;
+    const TIMES: usize = 100;
 
     let mut already = false;
 
-    let x_slice = &*x;
-    let b_slice = &*b;
+    /*let x_slice = &*x;
+    let b_slice = &*b;*/
     for _ in 0..TIMES {
         for epoch in range(100) {
             //let mut out = device.retrieve::<_, Dim1<SIZE>>(SIZE, (&x, &b));
@@ -84,7 +84,6 @@ fn main() {
 
 
             let squared = device.square(&x);
-
             let add = device.add(&b, &x);
             let mul_b = device.mul(&add, &b);
             let mul = device.mul(&squared, &x);
@@ -137,7 +136,7 @@ fn main() {
             //sliced::ew_assign_scalar(&mut x_grad, &0.1, |x, r| *x *= r);
             //sliced::ew_assign_binary(&mut x, &x_grad, |x, y| *x -= y);
         }
-        println!("next")
+        // println!("next")
     }
 
     println!("elapsed (custos/sliced): {:?}", start.elapsed() / TIMES as u32);

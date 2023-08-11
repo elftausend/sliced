@@ -5,17 +5,17 @@ use custos::{
 
 use super::BinaryElementWise;
 
-impl<T> BinaryElementWise<T> for OpenCL
+impl<T, S: Shape> BinaryElementWise<T, S> for OpenCL
 where
     T: CDatatype + Default,
 {
     #[inline]
     fn binary_ew<O>(
         &self,
-        lhs: &Buffer<T, Self>,
-        rhs: &Buffer<T, Self>,
+        lhs: &Buffer<T, Self, S>,
+        rhs: &Buffer<T, Self, S>,
         f: impl Fn(Resolve<T>, Resolve<T>) -> O,
-    ) -> Buffer<T, Self>
+    ) -> Buffer<T, Self, S>
     where
         O: Eval<T> + MayToCLSource,
     {
