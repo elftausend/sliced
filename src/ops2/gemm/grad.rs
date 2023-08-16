@@ -7,10 +7,11 @@ pub use cpu_stack::*;
 #[cfg(feature = "opencl")]
 mod opencl;
 
-use custos::{Buffer, Device, Shape};
+use custos::{impl_nnapi_op, Buffer, Device, Shape};
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
+#[impl_nnapi_op(None)]
 pub trait GemmGrad<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
     Device
 {
