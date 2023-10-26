@@ -1,6 +1,6 @@
 #[cfg(feature = "stack")]
 use custos::Stack;
-use custos::{impl_stack, Buffer, GenericBlas, MainMemory, Shape, CPU};
+use custos::{impl_stack, Buffer, GenericBlas, Shape, CPU};
 
 use super::GemmGrad;
 

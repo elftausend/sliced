@@ -1,4 +1,6 @@
-use custos::{prelude::Number, Buffer, Device, MainMemory, Shape, CPU};
+use std::ops::Deref;
+
+use custos::{prelude::Number, Buffer, Device, Shape, CPU, Retriever};
 
 use crate::{Max, MaxCols, MaxRows};
 
@@ -10,7 +12,8 @@ pub fn max<T: Number>(x: &[T]) -> Option<T> {
 impl<T, D, S> Max<T, S, D> for CPU
 where
     T: Number,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, S>: Deref<Target = [T]>,
     S: Shape,
 {
     #[inline]
@@ -22,13 +25,14 @@ where
 impl<T, D, IS, OS> MaxRows<T, IS, OS, D> for CPU
 where
     T: Number,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, IS>: Deref<Target = [T]>,
     IS: Shape,
     OS: Shape,
 {
     #[inline]
     fn max_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve::<_, OS>(cols, x);
+        let mut out = self.retrieve(cols, x);
 
         // If all values in a column are negative, the corresponding maximum would be 0.
         out.copy_from_slice(&x[..cols]);
@@ -49,11 +53,12 @@ pub fn max_rows<T: Number>(cols: usize, x: &[T], out: &mut [T]) {
 impl<T, D> MaxCols<T, (), (), D> for CPU
 where
     T: Number,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, ()>: Deref<Target = [T]>,
 {
     #[inline]
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D>) -> Buffer<T> {
-        let mut out = self.retrieve::<_, ()>(rows, x);
+        let mut out = self.retrieve(rows, x);
         max_cols(cols, x, &mut out);
         out
     }

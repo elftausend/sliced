@@ -2,7 +2,7 @@
 fn test_softmax_with_matrix() {
     use sliced::{Matrix, CPU};
 
-    let device = CPU::new();
+    let device = CPU::<custos::Base>::new();
 
     let x = Matrix::from((&device, 2, 3, [1., 2., 3., 4., 5., 6.]));
     let out = x.softmax();

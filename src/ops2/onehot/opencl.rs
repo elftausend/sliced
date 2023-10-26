@@ -13,7 +13,7 @@ pub fn cl_onehot<T: CDatatype>(
             out[id * highest_class + (size_t) x[id]] = 1;
         }}
     ",
-        dtype = T::as_c_type_str()
+        dtype = T::C_DTYPE_STR
     );
 
     device.launch_kernel(
@@ -33,7 +33,7 @@ mod tests {
 
     #[test]
     fn test_onehot_cl() -> custos::Result<()> {
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         let x = Buffer::from((&device, [0i32, 1, 4, 3]));
 

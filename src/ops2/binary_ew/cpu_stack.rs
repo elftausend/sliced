@@ -1,6 +1,6 @@
-use custos::{
-    impl_stack, Buffer, Device, Eval, MainMemory, MayToCLSource, Resolve, Shape, ToVal, CPU,
-};
+use std::ops::Deref;
+
+use custos::{impl_stack, Buffer, Device, Eval, MayToCLSource, Resolve, Shape, ToVal, CPU, Retriever};
 
 use super::BinaryElementWise;
 
@@ -12,7 +12,8 @@ impl<T, S, D> BinaryElementWise<T, S, D> for CPU
 where
     T: Copy + Default,
     S: Shape,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, S>: Deref<Target = [T]>,
 {
     #[inline]
     fn binary_ew<O>(

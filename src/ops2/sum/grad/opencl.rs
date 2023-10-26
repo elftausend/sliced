@@ -1,6 +1,6 @@
 use std::ops::AddAssign;
 
-use custos::{prelude::CLBuffer, CDatatype, CacheReturn, OpenCL, Shape};
+use custos::{prelude::CLBuffer, CDatatype, OpenCL, Shape};
 
 use crate::SumRowsGrad;
 
@@ -22,7 +22,7 @@ pub fn cl_sum_rows_grad<T: CDatatype>(
                 x_grad[grad_idx] += out_grad[col];
             }}    
         }}
-    ", dtype=T::as_c_type_str());
+    ", dtype=T::C_DTYPE_STR);
 
     device.launch_kernel(
         &src,
@@ -49,7 +49,7 @@ pub fn cl_sum_cols_grad<T: CDatatype>(
                 x_grad[grad_idx] += out_grad[row];
             }}    
         }}
-    ", dtype=T::as_c_type_str());
+    ", dtype=T::C_DTYPE_STR);
 
     device.launch_kernel(
         &src,
@@ -73,7 +73,7 @@ pub fn cl_sum_rows_grad_modulo<T: CDatatype>(
 
             x_grad[idx] += out_grad[out_grad_idx];
         }}
-    ", dtype=T::as_c_type_str());
+    ", dtype=T::C_DTYPE_STR);
 
     device.launch_kernel(
         &src,
@@ -96,8 +96,8 @@ where
         x_grad: &mut custos::Buffer<T, Self, IS>,
         out_grad: &custos::Buffer<T, Self, OS>,
     ) {
-        use custos::{Buffer, WriteBuf, CPU};
-        let cpu = custos::CPU::new();
+        use custos::{Buffer, WriteBuf, CPU, Base};
+        let cpu = custos::CPU::<custos::Base>::new();
 
         #[rustfmt::skip]
         custos::cl_cpu_exec_unified_mut!(
@@ -127,7 +127,7 @@ mod tests {
             4, 8, 1
         ];
 
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         let mut x_grad = device.buffer(12);
         let out_grad = device.buffer([2, 3, 4, -1]);
@@ -157,7 +157,7 @@ mod tests {
             4, 8, 1
         ];
 
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         let mut x_grad = device.buffer(12);
         let out_grad = device.buffer([2, 4, -1]);
@@ -185,7 +185,7 @@ mod tests {
             4, 8, 1
         ];
 
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         let mut x_grad = device.buffer(12);
 
@@ -207,7 +207,7 @@ mod tests {
 
     #[test]
     fn test_cl_sum_rows_modulo_vs_for() -> custos::Result<()> {
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         let mut x_grad = device.buffer(4000 * 1000);
 
@@ -227,7 +227,7 @@ mod tests {
 
     #[test]
     fn test_cl_sum_rows_for_large() -> custos::Result<()> {
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         let mut x_grad = device.buffer(4000 * 1000);
 

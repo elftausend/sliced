@@ -25,7 +25,7 @@ pub trait Diagflat<T, IS: Shape = (), OS: Shape = ()>: Device {
     #[cfg_attr(not(feature = "cpu"), doc = "```ignore")]
     /// use sliced::{Diagflat, Buffer, CPU};
     ///
-    /// let device = CPU::new();
+    /// let device = CPU::<custos::Base>::new();
     /// let x = Buffer::from((&device, [1, 2, 7, -1, -2]));
     /// let out: Buffer<i32> = device.diagflat(&x);
     ///

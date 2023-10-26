@@ -1,6 +1,6 @@
-use std::ops::{Add, AddAssign};
+use std::ops::{Add, AddAssign, Deref};
 
-use custos::{Alloc, Buffer, MainMemory, Shape, CPU};
+use custos::{Alloc, Buffer, Device, Shape, CPU, Retriever};
 
 use crate::RowOp;
 
@@ -43,8 +43,11 @@ pub fn row_op<'a, T, F, D, Host, LS: Shape, RS: Shape>(
 where
     T: Copy,
     F: Fn(&mut T, T, T),
-    D: MainMemory,
-    Host: for<'b> Alloc<'b, T, LS> + MainMemory,
+    D: Device,
+    D::Data<T, LS>: Deref<Target = [T]>,
+    D::Data<T, RS>: Deref<Target = [T]>,
+    Host: Alloc<T> + Retriever<T>,
+    Host::Data<T, LS>: Deref<Target = [T]>,
 {
     debug_assert_eq!(rhs.len(), cols);
 

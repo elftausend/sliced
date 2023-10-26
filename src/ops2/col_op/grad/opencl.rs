@@ -19,7 +19,7 @@ pub fn cl_col_op_grad_lhs<T: CDatatype + Default, LhsGrad>(
 
             lhs_grad[idx] += {op} * out_grad[idx];
         }}
-    ", dtype=T::as_c_type_str(), op=lhs_grad_fn("lhs[idx]".to_marker(), "rhs[rhs_idx]".to_marker()).to_cl_source());
+    ", dtype=T::C_DTYPE_STR, op=lhs_grad_fn("lhs[idx]".to_marker(), "rhs[rhs_idx]".to_marker()).to_cl_source());
 
     device
         .launch_kernel(
@@ -56,7 +56,7 @@ pub fn cl_col_op_grad_rhs<T: CDatatype + Default, LhsGrad>(
             rhs_grad[idx] += sum;
         }}
     "#,
-        dtype = T::as_c_type_str(),
+        dtype = T::C_DTYPE_STR,
         op = rhs_grad_fn("lhs_val".to_marker(), "rhs[idx]".to_marker()).to_cl_source()
     );
     device
@@ -77,7 +77,7 @@ mod tests {
 
     #[test]
     fn test_cl_col_op_grad_lhs_div() -> custos::Result<()> {
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         #[rustfmt::skip]
         let lhs = [
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_cl_col_op_grad_rhs_div() -> custos::Result<()> {
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         #[rustfmt::skip]
         let lhs = [

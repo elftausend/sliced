@@ -4,7 +4,7 @@ fn test_min_fn() {
     use custos::{range, Buffer, CPU};
     use sliced::Matrix;
 
-    let device = CPU::new();
+    let device = CPU::<custos::Base>::new();
     let mut x = Matrix::from((&device, 1, 7, [10f32, -10., 10., -5., 6., 3., 1.]));
 
     for i in range(100) {

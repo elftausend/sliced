@@ -1,6 +1,6 @@
-use std::{iter::Sum, ops::AddAssign};
+use std::{iter::Sum, ops::{AddAssign, Deref}};
 
-use custos::{Buffer, Device, MainMemory, Shape, CPU};
+use custos::{Buffer, Device, Shape, CPU, Retriever};
 
 use crate::{SumCols, SumRows};
 
@@ -8,7 +8,8 @@ impl<T, S, D> crate::Sum<T, S, D> for CPU
 where
     T: Copy + Sum,
     S: Shape,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, S>: Deref<Target = [T]>,
 {
     #[inline]
     fn sum(&self, x: &Buffer<T, D, S>) -> T {
@@ -21,7 +22,8 @@ where
     T: Copy + Sum + AddAssign,
     IS: Shape,
     OS: Shape,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, IS>: Deref<Target = [T]>,
 {
     #[inline]
     fn sum_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
@@ -36,7 +38,8 @@ where
     T: Copy + Sum,
     IS: Shape,
     OS: Shape,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, IS>: Deref<Target = [T]>,
 {
     #[inline]
     fn sum_cols(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {

@@ -65,7 +65,7 @@ mod tests {
 
     #[test]
     fn test_softmax_grad() {
-        let device = CPU::new();
+        let device = CPU::<custos::Base>::new();
         let x = Buffer::from((&device, &[1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
         let out = device.softmax(2, 3, &x);
         crate::test_utils::roughly_equals(
@@ -96,7 +96,7 @@ mod tests {
     fn test_matrix_forward_softmax_grad() {
         use crate::{Matrix, MaxColsMayGrad};
 
-        let device = CPU::new();
+        let device = CPU::<custos::Base>::new();
 
         let x = Matrix::from((&device, 2, 3, [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
 

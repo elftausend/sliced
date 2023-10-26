@@ -24,7 +24,7 @@ pub trait MeanRows<T, IS: Shape = (), OS: Shape = ()>: Device {
     #[cfg_attr(not(feature = "cpu"), doc = "```ignore")]
     /// use sliced::{CPU, MeanRows, Buffer};
     ///
-    /// let device = CPU::new();
+    /// let device = CPU::<custos::Base>::new();
     ///
     /// let to_mean_rows = Buffer::from((&device, [
     ///     2, 1, 3,
@@ -47,7 +47,7 @@ pub trait MeanCols<T, IS: Shape = (), OS: Shape = ()>: Device {
     #[cfg_attr(not(feature = "cpu"), doc = "```ignore")]
     /// use sliced::{Buffer, CPU, MeanCols};
     ///
-    /// let device = CPU::new();
+    /// let device = CPU::<custos::Base>::new();
     ///
     /// let to_mean_cols = Buffer::from((&device, [
     ///     1, 4, 1, 2,

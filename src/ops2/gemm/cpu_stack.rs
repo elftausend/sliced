@@ -1,4 +1,6 @@
-use custos::{impl_stack, Buffer, Device, GenericBlas, MainMemory, Shape, CPU};
+use std::ops::Deref;
+
+use custos::{impl_stack, Buffer, Device, GenericBlas, Shape, CPU};
 
 use super::Gemm;
 
@@ -60,7 +62,9 @@ where
 impl<T, D, LS, RS, OS> Gemm<T, LS, RS, OS, D> for CPU
 where
     T: Default + Copy + core::ops::Mul<Output = T> + core::ops::AddAssign,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, LS>: Deref<Target = [T]>,
+    D::Data<T, RS>: Deref<Target = [T]>,
     LS: Shape,
     RS: Shape,
     OS: Shape,

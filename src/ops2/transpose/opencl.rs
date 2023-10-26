@@ -1,4 +1,4 @@
-use custos::{prelude::CLBuffer, CDatatype, Device, OpenCL, Shape};
+use custos::{prelude::CLBuffer, CDatatype, Device, OpenCL, Shape, Retriever};
 
 use crate::{
     assign_or_set::{AssignOrSet, Set},
@@ -44,7 +44,7 @@ pub fn cl_transpose<T: CDatatype, AOS: AssignOrSet<T>, IS: Shape, OS: Shape>(
     
    ",
         aos = AOS::STR_OP,
-        datatype = T::as_c_type_str()
+        datatype = T::C_DTYPE_STR
     );
 
     let gws = [x.len(), 0, 0];

@@ -5,7 +5,7 @@ use std::{
 
 use custos::{
     prelude::{Float, One, Two},
-    Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeReturn, MayToCLSource, Shape,
+    Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeActions, MayToCLSource, Shape,
     UnaryGrad, WriteBuf,
 };
 
@@ -24,10 +24,7 @@ where
     fn square(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S>
     where
         T: MayToCLSource + Eval<T> + Mul<Output = T> + Copy + Two,
-        Self: ApplyFunction<T, S, Self>
-            + UnaryGrad<T, S, Self>
-            + MayTapeReturn
-            + for<'b> Alloc<'b, T, S>,
+        Self: ApplyFunction<T, S, Self> + UnaryGrad<T, S, Self> + MayTapeActions + Alloc<T>,
     {
         let out = self.apply_fn(x, |x| x.mul(x));
 
@@ -52,7 +49,7 @@ impl<T, S, D> PowMayGrad<T, S, D> for D
 where
     T: Display + Eval<T> + Mul<Output = T> + Float + 'static,
     S: Shape + 'static,
-    D: ApplyFunction<T, S, Self> + UnaryGrad<T, S, Self> + MayTapeReturn + for<'b> Alloc<'b, T, S>,
+    D: ApplyFunction<T, S, Self> + UnaryGrad<T, S, Self> + MayTapeActions + Alloc<T>,
 {
     fn pow(&self, x: &Buffer<T, D, S>, rhs: T) -> Buffer<T, D, S> {
         let out = self.apply_fn(x, |x| x.pow(rhs));
@@ -85,10 +82,7 @@ pub trait BinaryOpsMayGrad<T, S: Shape = (), D: Device = Self>: Device {
 impl<T, S, D> BinaryOpsMayGrad<T, S, D> for D
 where
     S: Shape + 'static,
-    D: BinaryElementWise<T, S, D>
-        + BinaryElementWiseGrad<T, S, D>
-        + MayTapeReturn
-        + for<'b> Alloc<'b, T, S>,
+    D: BinaryElementWise<T, S, D> + BinaryElementWiseGrad<T, S, D> + MayTapeActions + Alloc<T>,
     T: Mul<Output = T>
         + Sub<Output = T>
         + Add<Output = T>
@@ -201,7 +195,7 @@ where
     T: Clone + 'static,
     IS: Shape,
     OS: Shape,
-    D: Transpose<T, IS, OS> + TranposeGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T> + WriteBuf<T>,
+    D: Transpose<T, IS, OS> + TranposeGrad<T> + MayTapeActions + Alloc<T> + WriteBuf<T>,
 {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.transpose(rows, cols, x);
@@ -238,7 +232,7 @@ where
     LS: Shape,
     RS: Shape,
     OS: Shape,
-    D: Gemm<T, LS, RS, OS> + GemmGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+    D: Gemm<T, LS, RS, OS> + GemmGrad<T> + MayTapeActions + Alloc<T>,
 {
     fn gemm(
         &self,
@@ -288,7 +282,7 @@ where
     T: 'static + Add<Output = T>,
     LS: Shape,
     RS: Shape,
-    D: RowOp<T, LS, RS> + RowOpGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+    D: RowOp<T, LS, RS> + RowOpGrad<T> + MayTapeActions + Alloc<T>,
 {
     fn add_row(
         &self,
@@ -334,7 +328,7 @@ where
 
 pub trait ExpMayGrad<T, S>
 where
-    Self: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+    Self: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeActions + Alloc<T>,
     T: Float + 'static,
     S: Shape,
 {
@@ -358,7 +352,7 @@ impl<T, S, D> ExpMayGrad<T, S> for D
 where
     T: Float + 'static,
     S: Shape,
-    D: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+    D: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeActions + Alloc<T>,
 {
 }
 
@@ -390,7 +384,7 @@ where
     T: 'static,
     IS: Shape,
     OS: Shape,
-    D: MaxCols<T, IS, OS> + MayTapeReturn + for<'a> Alloc<'a, T> + MaxColsGrad<T>,
+    D: MaxCols<T, IS, OS> + MayTapeActions + Alloc<T> + MaxColsGrad<T>,
 {
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.max_cols(rows, cols, x);
@@ -422,7 +416,7 @@ where
     T: 'static,
     IS: Shape,
     OS: Shape,
-    D: MaxRows<T, IS, OS> + MayTapeReturn + for<'a> Alloc<'a, T> + MaxRowsGrad<T>,
+    D: MaxRows<T, IS, OS> + MayTapeActions + Alloc<T> + MaxRowsGrad<T>,
 {
     fn max_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.max_rows(cols, x);
@@ -455,7 +449,7 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeReturn + SumRows<T, IS, OS> + SumRowsGrad<T> + for<'a> Alloc<'a, T>,
+    D: MayTapeActions + SumRows<T, IS, OS> + SumRowsGrad<T> + Alloc<T>,
 {
     fn sum_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.sum_rows(cols, x);
@@ -486,7 +480,7 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeReturn + SumCols<T, IS, OS> + SumColsGrad<T> + for<'a> Alloc<'a, T>,
+    D: MayTapeActions + SumCols<T, IS, OS> + SumColsGrad<T> + Alloc<T>,
 {
     fn sum_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.sum_cols(cols, x);
@@ -517,7 +511,7 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeReturn + MeanCols<T, IS, OS> + MeanColsGrad<T> + for<'a> Alloc<'a, T>,
+    D: MayTapeActions + MeanCols<T, IS, OS> + MeanColsGrad<T> + Alloc<T>,
 {
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.mean_cols(cols, x);
@@ -547,7 +541,7 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeReturn + MeanRows<T, IS, OS> + MeanRowsGrad<T> + for<'a> Alloc<'a, T>,
+    D: MayTapeActions + MeanRows<T, IS, OS> + MeanRowsGrad<T> + Alloc<T>,
 {
     fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.mean_rows(cols, x);
@@ -575,11 +569,7 @@ where
 impl<T, IS: Shape, OS: Shape, D> DiagflatMayGrad<T, IS, OS> for D
 where
     T: Copy + 'static,
-    D: Diagflat<T, IS, OS>
-        + DiagflatGrad<T, IS, OS>
-        + for<'a> Alloc<'a, T, IS>
-        + for<'a> Alloc<'a, T, OS>
-        + MayTapeReturn,
+    D: Diagflat<T, IS, OS> + DiagflatGrad<T, IS, OS> + Alloc<T> + MayTapeActions,
 {
     #[inline]
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
@@ -613,7 +603,7 @@ impl<T, S, D> SoftmaxMayGrad<T, S> for D
 where
     T: Copy + 'static,
     S: Shape,
-    D: Softmax<T, S> + SoftmaxGrad<T, S> + for<'a> Alloc<'a, T, S> + MayTapeReturn,
+    D: Softmax<T, S> + SoftmaxGrad<T, S> + Alloc<T> + MayTapeActions,
 {
     fn softmax(
         &self,

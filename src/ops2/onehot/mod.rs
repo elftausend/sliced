@@ -24,7 +24,7 @@ pub trait Onehot<T, IS: Shape = (), OS: Shape = ()>: Device {
     ///
     /// use sliced::{CPU, Onehot, Buffer};
     ///
-    /// let device = CPU::new();
+    /// let device = CPU::<custos::Base>::new();
     ///
     /// let classes = Buffer::from((&device, [1, 0, 3, 2]));
     /// let onehot = device.onehot(&classes);

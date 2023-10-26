@@ -8,8 +8,8 @@ use std::{fmt::Display, ops::Mul};
 
 use custos::{
     prelude::{Float, Number, Numeric, Two},
-    Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep, MayTapeReturn, Shape,
-    UnaryElementWiseMayGrad, UnaryGrad, CPU,
+    Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep, MayTapeActions, Shape,
+    UnaryElementWiseMayGrad, UnaryGrad, CPU, OnNewBuffer,
 };
 
 use crate::{
@@ -24,11 +24,11 @@ pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
     cols: usize,
 }
 
-impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
+impl<'a, T, D: Device + OnNewBuffer<T, D, S>, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn new(device: &'a D, rows: usize, cols: usize) -> Matrix<'a, T, D, S>
     where
-        D: Alloc<'a, T, S>,
+        D: Alloc<T>,
     {
         Matrix {
             data: Buffer::new(device, rows * cols),
@@ -138,9 +138,9 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         T: Number + 'static,
         D: UnaryElementWiseMayGrad<T, D, S>
             + ApplyFunction<T, S>
-            + MayTapeReturn
+            + MayTapeActions
             + UnaryGrad<T, S>
-            + for<'b> Alloc<'b, T, S>
+            + Alloc<T>
             + 'static,
     {
         let out = self.device().apply_fn(self, |x| x.geq(T::zero()).mul(x));
@@ -179,12 +179,8 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn squared(&self) -> Matrix<'a, T, D, S>
     where
-        T: Numeric + Mul<Output = T> + Copy + Two + 'static,
-        D: SquareMayGrad<T, S>
-            + ApplyFunction<T, S>
-            + UnaryGrad<T, S>
-            + for<'b> Alloc<'b, T, S>
-            + MayTapeReturn,
+        T: Numeric + Mul<Output = T> + Copy + Two + Combiner + 'static,
+        D: SquareMayGrad<T, S> + ApplyFunction<T, S> + UnaryGrad<T, S> + Alloc<T> + MayTapeActions,
     {
         (self.device().square(self), self.rows, self.cols).into()
     }
@@ -234,15 +230,14 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn l2_norm_cols<OS>(&self) -> Matrix<'a, T, D, OS>
     where
-        T: Float + 'static,
+        T: Combiner + Float + 'static,
         OS: Shape + 'static,
         D: ApplyFunction<T, OS>
             + UnaryGrad<T, OS>
             + ApplyFunction<T, S>
             + UnaryGrad<T, S>
-            + for<'b> Alloc<'b, T, S>
-            + for<'b> Alloc<'b, T, OS>
-            + MayTapeReturn
+            + Alloc<T>
+            + MayTapeActions
             + SumColsMayGrad<T, S, OS>,
     {
         self.squared().sum_cols().pow(T::one() / T::two())
@@ -287,14 +282,14 @@ impl<'a, T, D: Device, S: Shape> core::ops::Deref for Matrix<'a, T, D, S> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        self.as_buf()
+        &*self
     }
 }
 
 impl<'a, T, D: Device, S: Shape> core::ops::DerefMut for Matrix<'a, T, D, S> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
-        self.as_buf_mut()
+        &mut *self
     }
 }
 

@@ -24,15 +24,13 @@ stack = ["custos/stack"]
 cpu = ["custos/cpu"]
 opencl = ["custos/opencl", "cpu"]
 blas = ["custos/blas"]
-opt-cache = ["custos/opt-cache"]
-realloc = ["custos/realloc"]
 matrix = []
 #nnapi = ["custos/nnapi"]
 
 [dev-dependencies]
 rawsliced = { path = "../rawsliced" }
-graplot = "0.1.22"
-purpur = "0.1.0"
+#graplot = "0.1.22"
+#purpur = "0.1.0"
 
 [[test]]
 name = "test_combination"

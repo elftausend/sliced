@@ -107,8 +107,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
 }
 
 fn main() {
-    let device = CPU::new();
-    // let mut device = custos::OpenCL::new(0).unwrap();
+    let device = CPU::<custos::Base>::new();
+    // let mut device = custos::OpenCL::<custos::Base>::new(0).unwrap();
     // device.set_unified_mem(false);
 
     // let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);

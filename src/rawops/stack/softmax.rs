@@ -11,7 +11,7 @@ where
         _features: usize,
         x: &Buffer<T, Self, Dim2<SAMPLES, FEATURES>>,
     ) -> Buffer<T, Self, Dim2<SAMPLES, FEATURES>> {
-        Stack.exp(x);
+        self.exp(x);
         //Stack.max_cols()
         todo!()
     }

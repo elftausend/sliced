@@ -1,4 +1,6 @@
-use custos::{prelude::Float, Buffer, MainMemory, Shape, CPU};
+use std::ops::Deref;
+
+use custos::{prelude::Float, Buffer, Device, Shape, CPU};
 
 use crate::RandOp;
 
@@ -10,7 +12,13 @@ pub fn rand_slice<T: PartialOrd + Copy + Float>(slice: &mut [T], lo: T, hi: T) {
 }
 
 //#[impl_stack]
-impl<T: Float, D: MainMemory, S: Shape> RandOp<T, S, D> for CPU {
+impl<T, D, S> RandOp<T, S, D> for CPU
+where
+    T: Float,
+    S: Shape,
+    D: Device,
+    D::Data<T, S>: Deref<Target = [T]>,
+{
     #[inline]
     fn rand(&self, x: &mut Buffer<T, D, S>, lo: T, hi: T) {
         rand_slice(x, lo, hi)

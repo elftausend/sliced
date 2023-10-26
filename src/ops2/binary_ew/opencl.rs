@@ -1,6 +1,6 @@
 use custos::{
     prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, MayToCLSource, OpenCL, Resolve,
-    Shape, ToMarker,
+    Shape, ToMarker, Retriever,
 };
 
 use super::BinaryElementWise;
@@ -44,7 +44,7 @@ where
             out[id] = {op};
         }}
     ",
-        ty = T::as_c_type_str(),
+        ty = T::C_DTYPE_STR,
         op = f("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_cl_source()
     );
 
@@ -55,13 +55,13 @@ where
 mod tests {
     use std::any::Any;
 
-    use custos::{Buffer, CacheReturn, Combiner, OpenCL};
+    use custos::{Buffer, Combiner, OpenCL};
 
     use super::cl_binary_ew;
 
     #[test]
     fn test_binary_ew() -> custos::Result<()> {
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         let lhs = Buffer::from((&device, &[1, 5, 3, 2, 6]));
         let rhs = Buffer::from((&device, &[-1, 2, 9, 1, -2]));
@@ -77,11 +77,11 @@ mod tests {
 
     #[test]
     fn test_cpu_exec_macro() -> custos::Result<()> {
-        use crate::{BinaryElementWise, Buffer, CPU};
+        use crate::{BinaryElementWise, Buffer, CPU, custos::Base};
 
-        let device = crate::OpenCL::new(0)?;
+        let device = crate::OpenCL::<custos::Base>::new(0)?;
 
-        let cpu = CPU::new();
+        let cpu = CPU::<custos::Base>::new();
 
         let lhs = Buffer::from((&device, [1, 2, 3]));
         let rhs = Buffer::from((&device, [1, 2, 3]));

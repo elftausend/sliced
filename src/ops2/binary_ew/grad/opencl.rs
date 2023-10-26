@@ -66,7 +66,7 @@ where
             rhs_grad[id] += {rhs_grad_op} * out[id];
         }}
     ",
-        ty = T::as_c_type_str(),
+        ty = T::C_DTYPE_STR,
         lhs_grad_op = lhs_grad_fn("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_cl_source(),
         rhs_grad_op = rhs_grad_fn("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_cl_source()
     );

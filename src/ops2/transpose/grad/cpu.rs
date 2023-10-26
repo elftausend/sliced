@@ -1,15 +1,17 @@
-use std::ops::AddAssign;
+use std::ops::{AddAssign, Deref};
 
-use custos::{Buffer, MainMemory, Shape, CPU};
+use custos::{Buffer, Device, Shape, CPU};
 
 use crate::{assign_or_set::Assign, slice_transpose, TranposeGrad};
 
-impl<T, IS: Shape, OS: Shape, D: MainMemory> TranposeGrad<T, IS, OS, D> for CPU
+impl<T, IS, OS, D> TranposeGrad<T, IS, OS, D> for CPU
 where
     T: Default + Copy + AddAssign,
     IS: Shape,
     OS: Shape,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, IS>: Deref<Target = [T]>,
+    D::Data<T, OS>: Deref<Target = [T]>,
 {
     #[inline]
     fn transpose_grad(
