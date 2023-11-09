@@ -1,18 +1,18 @@
 use std::ops::Deref;
 
-use custos::{Buffer, Device, CPU, Retriever};
+use custos::{Buffer, Device, CPU, Retriever, Retrieve};
 
 use super::ColOp;
 
 // TODO: shape?
-impl<T, D> ColOp<T, (), (), D> for CPU
+impl<T, D, Mods: Retrieve<Self, T>> ColOp<T, (), (), D> for CPU<Mods>
 where
     T: Copy,
     D: Device,
     D::Data<T, ()>: Deref<Target = [T]>
 {
     #[inline]
-    fn col_op<F>(&self, cols: usize, lhs: &Buffer<T, D>, rhs: &Buffer<T, D>, f: F) -> Buffer<T>
+    fn col_op<F>(&self, cols: usize, lhs: &Buffer<T, D>, rhs: &Buffer<T, D>, f: F) -> Buffer<T, Self>
     where
         F: Fn(T, T) -> T,
     {

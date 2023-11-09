@@ -1,6 +1,6 @@
 use custos::{
     prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, MayToCLSource, OpenCL, Resolve,
-    Shape, ToMarker, Retriever,
+    Shape, ToMarker, Retriever, UnifiedMemChain
 };
 
 use super::BinaryElementWise;
@@ -93,6 +93,8 @@ mod tests {
 
         assert_eq!(a.device().type_id(), device.type_id());
         assert_eq!(a.read(), [2, 4, 6]);
+
+        use custos::UnifiedMemChain;
 
         let a = custos::cl_cpu_exec_unified!(
             device, lhs, rhs; device.cpu.add(&lhs, &rhs)

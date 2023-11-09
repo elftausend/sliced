@@ -1,10 +1,10 @@
 use std::ops::{Add, AddAssign, Deref};
 
-use custos::{Alloc, Buffer, Device, Shape, CPU, Retriever};
+use custos::{Alloc, Buffer, Device, Shape, CPU, Retriever, Retrieve};
 
 use crate::RowOp;
 
-impl<T, LS, RS> RowOp<T, LS, RS> for CPU
+impl<T, LS, RS, Mods: Retrieve<Self, T>> RowOp<T, LS, RS> for CPU<Mods>
 where
     T: Add<Output = T> + Copy + AddAssign,
     LS: Shape,

@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use custos::{impl_stack, Buffer, Device, Eval, MayToCLSource, Resolve, Shape, ToVal, CPU, Retriever};
+use custos::{impl_stack, Buffer, Device, Eval, MayToCLSource, Resolve, Shape, ToVal, CPU, Retriever, Retrieve};
 
 use super::BinaryElementWise;
 
@@ -8,7 +8,7 @@ use super::BinaryElementWise;
 use custos::Stack;
 
 #[impl_stack]
-impl<T, S, D> BinaryElementWise<T, S, D> for CPU
+impl<T, S, D, Mods: Retrieve<Self, T>> BinaryElementWise<T, S, D> for CPU<Mods>
 where
     T: Copy + Default,
     S: Shape,

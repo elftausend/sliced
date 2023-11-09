@@ -1,4 +1,4 @@
-use custos::{opencl::enqueue_kernel, prelude::CLBuffer, CDatatype, Device, Error, OpenCL, Retriever};
+use custos::{opencl::{enqueue_kernel, CLDevice}, prelude::CLBuffer, CDatatype, Device, Error, OpenCL, Retriever, Buffer};
 
 use std::fmt::Write;
 
@@ -13,9 +13,9 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
         m: usize,
         k: usize,
         n: usize,
-        lhs: &CLBuffer<T>,
-        rhs: &CLBuffer<T>,
-    ) -> CLBuffer<T> {
+        lhs: &Buffer<T, Self>,
+        rhs: &Buffer<T, Self>,
+    ) -> Buffer<T, Self> {
         let mut out = self.retrieve(m * n, (lhs, rhs));
         cl_gemm::<T, Set>(self, m, k, n, lhs, rhs, &mut out).unwrap();
         out
@@ -39,7 +39,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
 /// }
 /// ```
 pub fn cl_gemm<T: CDatatype, AOS: AssignOrSet<T>>(
-    device: &OpenCL,
+    device: &CLDevice,
     m: usize,
     k: usize,
     n: usize,

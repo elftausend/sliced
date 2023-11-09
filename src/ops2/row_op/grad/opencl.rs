@@ -4,21 +4,21 @@ use crate::RowOpGrad;
 use custos::{
     opencl::CLBuffer,
     prelude::{cpu_exec_binary_may_unified_mut, One},
-    Base, OpenCL,
+    Base, OpenCL, Buffer, Retrieve,
 };
 
-impl<T> RowOpGrad<T> for OpenCL
+impl<T, Mods: Retrieve<Self, T>> RowOpGrad<T> for OpenCL<Mods>
 where
     T: Copy + Default + AddAssign + One + Mul<Output = T>,
 {
     fn row_op_grad(
         &self,
         cols: usize,
-        lhs: &CLBuffer<T>,
-        rhs: &CLBuffer<T>,
-        lhs_grad: &mut CLBuffer<T>,
-        rhs_grad: &mut CLBuffer<T>,
-        out_grad: &CLBuffer<T>,
+        lhs: &Buffer<T, Self>,
+        rhs: &Buffer<T, Self>,
+        lhs_grad: &mut Buffer<T, Self>,
+        rhs_grad: &mut Buffer<T, Self>,
+        out_grad: &Buffer<T, Self>,
         lhs_grad_fn: impl Fn(T) -> T,
         rhs_grad_fn: impl Fn(T) -> T,
     ) {
@@ -43,9 +43,9 @@ where
         &self,
         rows: usize,
         cols: usize,
-        lhs_grad: &mut CLBuffer<T>,
-        rhs_grad: &mut CLBuffer<T>,
-        out_grad: &CLBuffer<T>,
+        lhs_grad: &mut Buffer<T, Self>,
+        rhs_grad: &mut Buffer<T, Self>,
+        out_grad: &Buffer<T, Self>,
     ) {
         use custos::{Buffer, WriteBuf, CPU};
 
@@ -66,8 +66,8 @@ where
         &self,
         rows: usize,
         cols: usize,
-        rhs_grad: &mut CLBuffer<T>,
-        out_grad: &CLBuffer<T>,
+        rhs_grad: &mut Buffer<T, Self>,
+        out_grad: &Buffer<T, Self>,
     ) {
         cpu_exec_binary_may_unified_mut(self, rhs_grad, out_grad, |cpu, rhs_grad, out_grad| {
             cpu.add_row_mut_grad(rows, cols, rhs_grad, out_grad)

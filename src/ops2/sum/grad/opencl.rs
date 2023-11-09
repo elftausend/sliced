@@ -129,7 +129,7 @@ mod tests {
 
         let device = OpenCL::<custos::Base>::new(0)?;
 
-        let mut x_grad = device.buffer(12);
+        let mut x_grad = device.buffer::<_, (), _>(12);
         let out_grad = device.buffer([2, 3, 4, -1]);
 
         cl_sum_cols_grad(&device, 3, &mut x_grad, &out_grad)?;
@@ -159,7 +159,7 @@ mod tests {
 
         let device = OpenCL::<custos::Base>::new(0)?;
 
-        let mut x_grad = device.buffer(12);
+        let mut x_grad = device.buffer::<_, (), _>(12);
         let out_grad = device.buffer([2, 4, -1]);
 
         cl_sum_rows_grad(&device, 3, &mut x_grad, &out_grad)?;
@@ -187,7 +187,7 @@ mod tests {
 
         let device = OpenCL::<custos::Base>::new(0)?;
 
-        let mut x_grad = device.buffer(12);
+        let mut x_grad = device.buffer::<_, (), _>(12);
 
         let out_grad = device.buffer([2, 4, -1]);
 
@@ -209,7 +209,7 @@ mod tests {
     fn test_cl_sum_rows_modulo_vs_for() -> custos::Result<()> {
         let device = OpenCL::<custos::Base>::new(0)?;
 
-        let mut x_grad = device.buffer(4000 * 1000);
+        let mut x_grad = device.buffer::<_, (), _>(4000 * 1000);
 
         let out_grad: Buffer<i32, _> = device.buffer(0..1000);
 
@@ -229,7 +229,7 @@ mod tests {
     fn test_cl_sum_rows_for_large() -> custos::Result<()> {
         let device = OpenCL::<custos::Base>::new(0)?;
 
-        let mut x_grad = device.buffer(4000 * 1000);
+        let mut x_grad = device.buffer::<_, (), _>(4000 * 1000);
 
         let out_grad: Buffer<i32, _> = device.buffer(0..1000);
 

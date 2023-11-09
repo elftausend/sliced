@@ -86,7 +86,7 @@ mod tests {
         ];
 
         let lhs = device.buffer(&lhs);
-        let mut lhs_grad = device.buffer(lhs.len());
+        let mut lhs_grad = device.buffer::<_, (), _>(lhs.len());
 
         let rhs = device.buffer([-3., 2.]);
 
@@ -136,7 +136,7 @@ mod tests {
         let lhs = device.buffer(&lhs);
 
         let rhs = device.buffer([-3., 2.]);
-        let mut rhs_grad = device.buffer(rhs.len());
+        let mut rhs_grad = device.buffer::<_, (), _>(rhs.len());
 
         let out_grad = device.buffer([1.4, 2.5, 3.3, 4., 5., 6.]);
 

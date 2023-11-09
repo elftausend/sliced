@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use custos::{prelude::Number, Buffer, Device, Shape, CPU, Retriever};
+use custos::{prelude::Number, Buffer, Device, Shape, CPU, Retriever, OnDropBuffer, Retrieve};
 
 use crate::{Max, MaxCols, MaxRows};
 
@@ -9,7 +9,7 @@ pub fn max<T: Number>(x: &[T]) -> Option<T> {
     x.iter().copied().reduce(T::max)
 }
 
-impl<T, D, S> Max<T, S, D> for CPU
+impl<T, D, S, Mods: OnDropBuffer> Max<T, S, D> for CPU<Mods>
 where
     T: Number,
     D: Device,
@@ -22,7 +22,7 @@ where
     }
 }
 
-impl<T, D, IS, OS> MaxRows<T, IS, OS, D> for CPU
+impl<T, D, IS, OS, Mods: Retrieve<Self, T>> MaxRows<T, IS, OS, D> for CPU<Mods>
 where
     T: Number,
     D: Device,
@@ -50,14 +50,14 @@ pub fn max_rows<T: Number>(cols: usize, x: &[T], out: &mut [T]) {
     }
 }
 
-impl<T, D> MaxCols<T, (), (), D> for CPU
+impl<T, D, Mods: Retrieve<Self, T>> MaxCols<T, (), (), D> for CPU<Mods>
 where
     T: Number,
     D: Device,
     D::Data<T, ()>: Deref<Target = [T]>,
 {
     #[inline]
-    fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D>) -> Buffer<T> {
+    fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D>) -> Buffer<T, Self> {
         let mut out = self.retrieve(rows, x);
         max_cols(cols, x, &mut out);
         out

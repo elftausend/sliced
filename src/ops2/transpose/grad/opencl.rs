@@ -18,6 +18,6 @@ where
         x_grad: &mut Buffer<T, Self, IS>,
         out_grad: &Buffer<T, Self, OS>,
     ) {
-        cl_transpose::<T, Assign, _, _>(self, out_grad, x_grad, rows, cols).unwrap();
+        cl_transpose::<T, Assign>(self, out_grad, x_grad, rows, cols).unwrap();
     }
 }
