@@ -1,11 +1,11 @@
 use custos::{
     prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, MayToCLSource, OpenCL, Resolve,
-    Shape, ToMarker, Retriever, UnifiedMemChain
+    Shape, ToMarker, Retriever, UnifiedMemChain, opencl::{CLPtr, CLDevice}, OnDropBuffer, Retrieve
 };
 
 use super::BinaryElementWise;
 
-impl<T, S: Shape> BinaryElementWise<T, S> for OpenCL
+impl<T, S: Shape, Mods: Retrieve<Self, T>> BinaryElementWise<T, S> for OpenCL<Mods>
 where
     T: CDatatype + Default,
 {
@@ -25,15 +25,14 @@ where
     }
 }
 
-pub fn cl_binary_ew<T, S, O>(
-    device: &OpenCL,
-    lhs: &Buffer<T, OpenCL, S>,
-    rhs: &Buffer<T, OpenCL, S>,
-    out: &mut Buffer<T, OpenCL, S>,
+pub fn cl_binary_ew<T, O>(
+    device: &CLDevice,
+    lhs: &CLPtr<T>,
+    rhs: &CLPtr<T>,
+    out: &mut CLPtr<T>,
     f: impl Fn(Resolve<T>, Resolve<T>) -> O,
 ) -> custos::Result<()>
 where
-    S: Shape,
     T: CDatatype + Default,
     O: MayToCLSource,
 {
@@ -66,7 +65,7 @@ mod tests {
         let lhs = Buffer::from((&device, &[1, 5, 3, 2, 6]));
         let rhs = Buffer::from((&device, &[-1, 2, 9, 1, -2]));
 
-        let mut out = Buffer::new(&device, 5);
+        let mut out = Buffer::<_, _>::new(&device, 5);
 
         cl_binary_ew(&device, &lhs, &rhs, &mut out, |a, b| a.add(b))?;
 

@@ -1,10 +1,10 @@
 use std::{iter::Sum, ops::{AddAssign, Deref}};
 
-use custos::{Buffer, Device, Shape, CPU, Retriever};
+use custos::{Buffer, Device, Shape, CPU, Retriever, OnDropBuffer, Retrieve};
 
 use crate::{SumCols, SumRows};
 
-impl<T, S, D> crate::Sum<T, S, D> for CPU
+impl<T, S, D, Mods: OnDropBuffer> crate::Sum<T, S, D> for CPU<Mods>
 where
     T: Copy + Sum,
     S: Shape,
@@ -17,7 +17,7 @@ where
     }
 }
 
-impl<T, IS, OS, D> SumRows<T, IS, OS, D> for CPU
+impl<T, IS, OS, D, Mods: Retrieve<Self, T>> SumRows<T, IS, OS, D> for CPU<Mods>
 where
     T: Copy + Sum + AddAssign,
     IS: Shape,
@@ -33,7 +33,7 @@ where
     }
 }
 
-impl<T, IS, OS, D> SumCols<T, IS, OS, D> for CPU
+impl<T, IS, OS, D, Mods: Retrieve<Self, T>> SumCols<T, IS, OS, D> for CPU<Mods>
 where
     T: Copy + Sum,
     IS: Shape,

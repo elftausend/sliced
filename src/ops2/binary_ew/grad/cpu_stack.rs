@@ -1,6 +1,6 @@
-use std::ops::{AddAssign, Mul};
+use std::ops::{AddAssign, Mul, DerefMut, Deref};
 
-use custos::{impl_stack, Buffer, Eval, MainMemory, MayToCLSource, Resolve, Shape, ToVal, CPU};
+use custos::{impl_stack, Buffer, Eval, MayToCLSource, Resolve, Shape, ToVal, CPU, OnDropBuffer, Device};
 
 use crate::AddElementWiseGrad;
 
@@ -10,11 +10,12 @@ use super::BinaryElementWiseGrad;
 use custos::Stack;
 
 #[impl_stack]
-impl<T, S, D> BinaryElementWiseGrad<T, S, D> for CPU
+impl<T, S, D, Mods: OnDropBuffer> BinaryElementWiseGrad<T, S, D> for CPU<Mods>
 where
     T: Copy + AddAssign + Mul<Output = T>,
     S: Shape,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, S>: Deref<Target = [T]> + DerefMut
 {
     #[inline]
     fn binary_ew_grad<LO, RO>(
@@ -60,7 +61,8 @@ impl<T, S, D> AddElementWiseGrad<T, S, D> for CPU
 where
     T: Copy + AddAssign + Mul<Output = T>,
     S: Shape,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, S>: Deref<Target = [T]> + DerefMut
 {
     #[inline]
     fn add_ew_grad(

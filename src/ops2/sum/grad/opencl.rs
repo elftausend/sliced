@@ -1,6 +1,6 @@
 use std::ops::AddAssign;
 
-use custos::{prelude::CLBuffer, CDatatype, OpenCL, Shape};
+use custos::{prelude::CLBuffer, CDatatype, OpenCL, Shape, OnDropBuffer};
 
 use crate::SumRowsGrad;
 
@@ -83,7 +83,7 @@ pub fn cl_sum_rows_grad_modulo<T: CDatatype>(
     )
 }
 
-impl<T, IS, OS> SumRowsGrad<T, IS, OS> for OpenCL
+impl<T, IS, OS, Mods: OnDropBuffer> SumRowsGrad<T, IS, OS> for OpenCL<Mods>
 where
     T: Default + Copy + AddAssign,
     IS: Shape,

@@ -6,7 +6,7 @@ use std::{
 use custos::{
     prelude::{Float, One, Two},
     Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeActions, MayToCLSource, Shape,
-    UnaryGrad, WriteBuf,
+    UnaryGrad, WriteBuf, HasId,
 };
 
 use crate::{
@@ -176,10 +176,10 @@ where
         #[cfg(feature = "autograd")]
         {
             let ids = (lhs.id(), rhs.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, _, lhs_grad, rhs_grad, out_grad) = grads.get_triple::<T, S>(device, ids);
+            self.add_grad_fn(move |grads| {
+                let (_, _, lhs_grad, rhs_grad, out_grad) = grads.get_triple::<T, S, D>(ids);
 
-                device.add_ew_grad(lhs_grad, rhs_grad, out_grad);
+                lhs_grad.device().add_ew_grad(lhs_grad, rhs_grad, out_grad);
             });
         }
         out

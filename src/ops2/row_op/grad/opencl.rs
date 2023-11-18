@@ -1,6 +1,6 @@
 use std::ops::{AddAssign, Mul};
 
-use crate::RowOpGrad;
+use crate::{RowOpGrad, slice_add_row_op_grad};
 use custos::{
     opencl::CLBuffer,
     prelude::{cpu_exec_binary_may_unified_mut, One},
@@ -57,7 +57,8 @@ where
                 lhs_grad, lhs_grad_cpu,
                 rhs_grad, rhs_grad_cpu
             >
-            self.cpu.add_row_grad(rows, cols, &mut lhs_grad_cpu, &mut rhs_grad_cpu, &out_grad)
+            slice_add_row_op_grad(rows, cols, &mut lhs_grad_cpu, &mut rhs_grad_cpu, &out_grad)
+            // self.cpu.add_row_grad(rows, cols, &mut lhs_grad_cpu, &mut rhs_grad_cpu, &out_grad)
         );
     }
 
