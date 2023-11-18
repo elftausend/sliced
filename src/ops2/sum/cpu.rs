@@ -1,6 +1,9 @@
-use std::{iter::Sum, ops::{AddAssign, Deref}};
+use std::{
+    iter::Sum,
+    ops::{AddAssign, Deref},
+};
 
-use custos::{Buffer, Device, Shape, CPU, Retriever, OnDropBuffer, Retrieve};
+use custos::{Buffer, Device, OnDropBuffer, Retrieve, Retriever, Shape, CPU};
 
 use crate::{SumCols, SumRows};
 

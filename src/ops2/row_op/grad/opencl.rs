@@ -1,13 +1,13 @@
 use std::ops::{AddAssign, Mul};
 
-use crate::{RowOpGrad, slice_add_row_op_grad};
+use crate::{slice_add_row_op_grad, RowOpGrad};
 use custos::{
     opencl::CLBuffer,
     prelude::{cpu_exec_binary_may_unified_mut, One},
-    Base, OpenCL, Buffer, Retrieve,
+    Base, Buffer, OpenCL, Retrieve,
 };
 
-impl<T, Mods: Retrieve<Self, T>> RowOpGrad<T> for OpenCL<Mods>
+impl<T, Mods: Retrieve<Self, T> + 'static> RowOpGrad<T> for OpenCL<Mods>
 where
     T: Copy + Default + AddAssign + One + Mul<Output = T>,
 {

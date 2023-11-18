@@ -1,5 +1,5 @@
 use crate::Diagflat;
-use custos::{Buffer, Device, Shape, CPU, Retriever};
+use custos::{Buffer, Device, Retriever, Shape, CPU};
 
 // TODO stack impl
 impl<T: Copy, IS: Shape, OS: Shape> Diagflat<T, IS, OS> for CPU {

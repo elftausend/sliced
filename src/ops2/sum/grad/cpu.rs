@@ -1,6 +1,6 @@
 use std::ops::AddAssign;
 
-use custos::{Buffer, Shape, CPU, OnDropBuffer};
+use custos::{Buffer, OnDropBuffer, Shape, CPU};
 
 use crate::{SumColsGrad, SumRowsGrad};
 

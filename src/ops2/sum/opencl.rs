@@ -19,7 +19,7 @@ where
 
 impl<T> SumRows<T> for OpenCL
 where
-    T: Default + Copy + Sum + AddAssign,
+    T: Default + Copy + Sum + AddAssign + 'static,
 {
     #[inline]
     fn sum_rows(&self, cols: usize, x: &Buffer<T, Self>) -> Buffer<T, Self> {
@@ -29,7 +29,7 @@ where
 
 impl<T> SumCols<T> for OpenCL
 where
-    T: Default + Copy + Sum,
+    T: Default + Copy + Sum + 'static,
 {
     #[inline]
     fn sum_cols(&self, cols: usize, x: &Buffer<T, Self>) -> Buffer<T, Self> {

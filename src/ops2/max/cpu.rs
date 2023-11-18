@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use custos::{prelude::Number, Buffer, Device, Shape, CPU, Retriever, OnDropBuffer, Retrieve};
+use custos::{prelude::Number, Buffer, Device, OnDropBuffer, Retrieve, Retriever, Shape, CPU};
 
 use crate::{Max, MaxCols, MaxRows};
 

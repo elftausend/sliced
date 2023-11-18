@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 use custos::{prelude::Float, Buffer, Device, Shape, CPU};
 
@@ -17,7 +17,7 @@ where
     T: Float,
     S: Shape,
     D: Device,
-    D::Data<T, S>: Deref<Target = [T]>,
+    D::Data<T, S>: Deref<Target = [T]> + DerefMut,
 {
     #[inline]
     fn rand(&self, x: &mut Buffer<T, D, S>, lo: T, hi: T) {

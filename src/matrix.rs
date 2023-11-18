@@ -8,8 +8,8 @@ use std::{fmt::Display, ops::Mul};
 
 use custos::{
     prelude::{Float, Number, Numeric, Two},
-    Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep, MayTapeActions, Shape,
-    UnaryElementWiseMayGrad, UnaryGrad, CPU, OnNewBuffer,
+    AddGradFn, Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep,
+    MayTapeActions, OnNewBuffer, Shape, UnaryElementWiseMayGrad, UnaryGrad, CPU,
 };
 
 use crate::{
@@ -141,18 +141,17 @@ impl<'a, T, D: Device + OnNewBuffer<T, D, S>, S: Shape> Matrix<'a, T, D, S> {
             + MayTapeActions
             + UnaryGrad<T, S>
             + Alloc<T>
+            + AddGradFn
             + 'static,
     {
-        let out = self.device().apply_fn(self, |x| x.geq(T::zero()).mul(x));
+        let mut out = self.device().apply_fn(self, |x| x.geq(T::zero()).mul(x));
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (self.id(), out.id());
-            self.device().tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, mut lhs_grad, out_grad) = grads.get_double(device, ids);
-                device.add_unary_grad(&lhs, &mut lhs_grad, &out_grad, |x| x.geq(T::zero()));
+        self.device()
+            .add_grad_fn((self.as_buf(), &mut out), |(lhs, out)| {
+                lhs.device()
+                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| x.geq(T::zero()));
+                Ok(())
             });
-        }
 
         (out, self.rows, self.cols).into()
 
@@ -180,7 +179,13 @@ impl<'a, T, D: Device + OnNewBuffer<T, D, S>, S: Shape> Matrix<'a, T, D, S> {
     pub fn squared(&self) -> Matrix<'a, T, D, S>
     where
         T: Numeric + Mul<Output = T> + Copy + Two + Combiner + 'static,
-        D: SquareMayGrad<T, S> + ApplyFunction<T, S> + UnaryGrad<T, S> + Alloc<T> + MayTapeActions,
+        D: SquareMayGrad<T, S>
+            + ApplyFunction<T, S>
+            + UnaryGrad<T, S>
+            + Alloc<T>
+            + MayTapeActions
+            + AddGradFn
+            + 'static,
     {
         (self.device().square(self), self.rows, self.cols).into()
     }
@@ -238,8 +243,10 @@ impl<'a, T, D: Device + OnNewBuffer<T, D, S>, S: Shape> Matrix<'a, T, D, S> {
             + UnaryGrad<T, S>
             + Alloc<T>
             + MayTapeActions
+            + AddGradFn
             + SumColsMayGrad<T, S, OS>,
     {
+        // todo!()
         self.squared().sum_cols().pow(T::one() / T::two())
     }
 

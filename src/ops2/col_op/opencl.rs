@@ -2,7 +2,7 @@ use custos::{prelude::cpu_exec_binary_may_unified, Buffer, OpenCL};
 
 use super::ColOp;
 
-impl<T: Copy + Default> ColOp<T> for OpenCL {
+impl<T: Copy + Default + 'static> ColOp<T> for OpenCL {
     #[inline]
     fn col_op<F>(
         &self,

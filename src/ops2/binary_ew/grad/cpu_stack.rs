@@ -1,6 +1,8 @@
-use std::ops::{AddAssign, Mul, DerefMut, Deref};
+use std::ops::{AddAssign, Deref, DerefMut, Mul};
 
-use custos::{impl_stack, Buffer, Eval, MayToCLSource, Resolve, Shape, ToVal, CPU, OnDropBuffer, Device};
+use custos::{
+    impl_stack, Buffer, Device, Eval, MayToCLSource, OnDropBuffer, Resolve, Shape, ToVal, CPU,
+};
 
 use crate::AddElementWiseGrad;
 
@@ -15,7 +17,7 @@ where
     T: Copy + AddAssign + Mul<Output = T>,
     S: Shape,
     D: Device,
-    D::Data<T, S>: Deref<Target = [T]> + DerefMut
+    D::Data<T, S>: Deref<Target = [T]> + DerefMut,
 {
     #[inline]
     fn binary_ew_grad<LO, RO>(
@@ -62,7 +64,7 @@ where
     T: Copy + AddAssign + Mul<Output = T>,
     S: Shape,
     D: Device,
-    D::Data<T, S>: Deref<Target = [T]> + DerefMut
+    D::Data<T, S>: Deref<Target = [T]> + DerefMut,
 {
     #[inline]
     fn add_ew_grad(

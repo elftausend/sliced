@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use custos::{impl_stack, Buffer, Device, Shape, CPU, Retriever};
+use custos::{impl_stack, Buffer, Device, Retriever, Shape, CPU};
 
 use crate::{
     assign_or_set::{AssignOrSet, Set},

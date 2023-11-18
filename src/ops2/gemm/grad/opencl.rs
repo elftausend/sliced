@@ -1,6 +1,6 @@
 use std::ops::AddAssign;
 
-use custos::{prelude::CLBuffer, CDatatype, OpenCL, Buffer};
+use custos::{prelude::CLBuffer, Buffer, CDatatype, OpenCL};
 
 use crate::{assign_or_set::Assign, cl_gemm, GemmGrad, Transpose};
 

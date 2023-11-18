@@ -1,6 +1,9 @@
 use std::ops::AddAssign;
 
-use custos::{prelude::{Buffer, CLBuffer}, CDatatype, OpenCL};
+use custos::{
+    prelude::{Buffer, CLBuffer},
+    CDatatype, OpenCL,
+};
 
 use crate::{MaxColsGrad, MaxRowsGrad};
 

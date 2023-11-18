@@ -1,4 +1,8 @@
-use custos::{opencl::{enqueue_kernel, CLDevice}, prelude::CLBuffer, CDatatype, Device, Error, OpenCL, Retriever, Buffer};
+use custos::{
+    opencl::{enqueue_kernel, CLDevice},
+    prelude::CLBuffer,
+    Buffer, CDatatype, Device, Error, OpenCL, Retriever,
+};
 
 use std::fmt::Write;
 

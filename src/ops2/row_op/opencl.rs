@@ -9,7 +9,7 @@ use crate::RowOp;
 
 impl<T> RowOp<T> for OpenCL
 where
-    T: Copy + Default + Add<Output = T> + AddAssign,
+    T: Copy + Default + Add<Output = T> + AddAssign + 'static,
 {
     #[inline]
     fn row_op<F: Fn(&mut T, T, T) + Copy>(

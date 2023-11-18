@@ -1,6 +1,6 @@
 use core::ops::{AddAssign, Mul};
 
-use custos::{prelude::One, Buffer, Shape, CPU, Retrieve};
+use custos::{prelude::One, Buffer, Retrieve, Shape, CPU};
 
 use crate::{slice_sum_rows, RowOpGrad};
 

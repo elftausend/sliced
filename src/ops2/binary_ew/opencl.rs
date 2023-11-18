@@ -1,6 +1,8 @@
 use custos::{
-    prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, MayToCLSource, OpenCL, Resolve,
-    Shape, ToMarker, Retriever, UnifiedMemChain, opencl::{CLPtr, CLDevice}, OnDropBuffer, Retrieve
+    opencl::{CLDevice, CLPtr},
+    prelude::enqueue_kernel,
+    Buffer, CDatatype, Device, Eval, MayToCLSource, OnDropBuffer, OpenCL, Resolve, Retrieve,
+    Retriever, Shape, ToMarker, UnifiedMemChain,
 };
 
 use super::BinaryElementWise;
@@ -76,7 +78,7 @@ mod tests {
 
     #[test]
     fn test_cpu_exec_macro() -> custos::Result<()> {
-        use crate::{BinaryElementWise, Buffer, CPU, custos::Base};
+        use crate::{custos::Base, BinaryElementWise, Buffer, CPU};
 
         let device = crate::OpenCL::<custos::Base>::new(0)?;
 

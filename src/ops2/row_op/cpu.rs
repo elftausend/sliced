@@ -1,6 +1,6 @@
-use std::ops::{Add, AddAssign, Deref};
+use std::ops::{Add, AddAssign, Deref, DerefMut};
 
-use custos::{Alloc, Buffer, Device, Shape, CPU, Retriever, Retrieve};
+use custos::{Alloc, Buffer, Device, Retrieve, Retriever, Shape, CPU};
 
 use crate::RowOp;
 
@@ -47,7 +47,7 @@ where
     D::Data<T, LS>: Deref<Target = [T]>,
     D::Data<T, RS>: Deref<Target = [T]>,
     Host: Alloc<T> + Retriever<T>,
-    Host::Data<T, LS>: Deref<Target = [T]>,
+    Host::Data<T, LS>: Deref<Target = [T]> + DerefMut,
 {
     debug_assert_eq!(rhs.len(), cols);
 

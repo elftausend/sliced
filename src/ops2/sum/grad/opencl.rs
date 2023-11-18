@@ -1,6 +1,6 @@
 use std::ops::AddAssign;
 
-use custos::{prelude::CLBuffer, CDatatype, OpenCL, Shape, OnDropBuffer};
+use custos::{prelude::CLBuffer, CDatatype, OnDropBuffer, OpenCL, Shape};
 
 use crate::SumRowsGrad;
 
@@ -83,7 +83,7 @@ pub fn cl_sum_rows_grad_modulo<T: CDatatype>(
     )
 }
 
-impl<T, IS, OS, Mods: OnDropBuffer> SumRowsGrad<T, IS, OS> for OpenCL<Mods>
+impl<T, IS, OS, Mods: OnDropBuffer + 'static> SumRowsGrad<T, IS, OS> for OpenCL<Mods>
 where
     T: Default + Copy + AddAssign,
     IS: Shape,
@@ -96,7 +96,7 @@ where
         x_grad: &mut custos::Buffer<T, Self, IS>,
         out_grad: &custos::Buffer<T, Self, OS>,
     ) {
-        use custos::{Buffer, WriteBuf, CPU, Base};
+        use custos::{Base, Buffer, WriteBuf, CPU};
         let cpu = custos::CPU::<custos::Base>::new();
 
         #[rustfmt::skip]

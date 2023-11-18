@@ -1,4 +1,4 @@
-use std::ops::{AddAssign, Deref};
+use std::ops::{AddAssign, Deref, DerefMut};
 
 use custos::{Buffer, Device, Shape, CPU};
 
@@ -10,7 +10,7 @@ where
     IS: Shape,
     OS: Shape,
     D: Device,
-    D::Data<T, IS>: Deref<Target = [T]>,
+    D::Data<T, IS>: Deref<Target = [T]> + DerefMut,
     D::Data<T, OS>: Deref<Target = [T]>,
 {
     #[inline]

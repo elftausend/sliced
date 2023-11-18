@@ -1,6 +1,9 @@
 use std::ops::Deref;
 
-use custos::{impl_stack, Buffer, Device, Eval, MayToCLSource, Resolve, Shape, ToVal, CPU, Retriever, Retrieve};
+use custos::{
+    impl_stack, Buffer, Device, Eval, MayToCLSource, Resolve, Retrieve, Retriever, Shape, ToVal,
+    CPU,
+};
 
 use super::BinaryElementWise;
 

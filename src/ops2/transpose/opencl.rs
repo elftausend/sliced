@@ -1,4 +1,7 @@
-use custos::{CDatatype, OpenCL, Retriever, opencl::{CLPtr, CLDevice}, Buffer};
+use custos::{
+    opencl::{CLDevice, CLPtr},
+    Buffer, CDatatype, OpenCL, Retriever,
+};
 
 use crate::{
     assign_or_set::{AssignOrSet, Set},
