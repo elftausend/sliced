@@ -162,17 +162,43 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
 
         (out, self.rows, self.cols).into()
 
-        /*// TODO may inline
-        // -> huge performance difference?
+        // TODO may inline
+        // -> huge performance difference (when using backward)?
         // -> look at profiler again
-        (
-            self.device()
-                .unary_ew(self, |x| x.geq(T::zero()).mul(x), |x| x.geq(T::zero())),
-            self.rows,
-            self.cols,
-        )
-            .into()*/
+        // (
+        //     self.device()
+        //         .unary_ew(self, |x| x.geq(T::zero()).mul(x), |x| x.geq(T::zero())),
+        //     self.rows,
+        //     self.cols,
+        // )
+        //     .into()
     }
+
+    #[inline]
+    #[track_caller]
+    pub fn tanh(&self) -> Matrix<'a, T, D, S>
+    where
+        T: Float + 'static,
+        D: UnaryElementWiseMayGrad<T, D, S>
+            + ApplyFunction<T, S>
+            + MayTapeActions
+            + UnaryGrad<T, S>
+            + Alloc<T>
+            + AddGradFn
+            + 'static,
+    {
+        let mut out = self.device().apply_fn(self, |x| x.tanh());
+
+        self.device()
+            .add_grad_fn((self.as_buf(), &mut out), |(lhs, out)| {
+                lhs.device()
+                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| T::one().identity().sub(x.tanh().pow(T::two())));
+                Ok(())
+            });
+
+        (out, self.rows, self.cols).into()
+    }
+
 
     #[inline]
     #[track_caller]
