@@ -3,7 +3,7 @@
 fn test_mean_rows_cpu() {
     use sliced::{BinaryOpsMayGrad, Buffer, MeanRowsMayGrad, CPU};
 
-    let device = CPU::new();
+    let device = CPU::<custos::Base>::new();
 
     let lhs = Buffer::from((&device, [2., 3., 4.]));
 
@@ -25,9 +25,9 @@ fn test_mean_rows_cpu() {
 
         assert_eq!(
             [-0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25, -0.25],
-            &**to_mean_rows.grad()
+            &***to_mean_rows.grad()
         );
 
-        assert_eq!([1., 1., 1.], &**lhs.grad());
+        assert_eq!([1., 1., 1.], &***lhs.grad());
     }
 }

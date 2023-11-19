@@ -8,8 +8,8 @@ use std::{fmt::Display, ops::Mul};
 
 use custos::{
     prelude::{Float, Number, Numeric, Two},
-    Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep, MayTapeReturn, Shape,
-    UnaryElementWiseMayGrad, UnaryGrad, CPU,
+    AddGradFn, Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep,
+    MayTapeActions, OnNewBuffer, Shape, UnaryElementWiseMayGrad, UnaryGrad, CPU,
 };
 
 use crate::{
@@ -28,7 +28,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn new(device: &'a D, rows: usize, cols: usize) -> Matrix<'a, T, D, S>
     where
-        D: Alloc<'a, T, S>,
+        D: Alloc<T> + OnNewBuffer<T, D>,
     {
         Matrix {
             data: Buffer::new(device, rows * cols),
@@ -68,6 +68,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
 
     #[allow(non_snake_case)]
     #[inline]
+    #[track_caller]
     pub fn T<OS: Shape>(&self) -> Matrix<'a, T, D, OS>
     where
         D: TransposeMayGrad<T, S, OS>,
@@ -80,6 +81,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    #[track_caller]
     pub fn gemm<RS: Shape, OS: Shape>(&self, rhs: &Matrix<'a, T, D, RS>) -> Matrix<'a, T, D, OS>
     where
         D: GemmMayGrad<T, S, RS, OS>,
@@ -94,6 +96,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    #[track_caller]
     // TODO Add trait
     pub fn add(&self, rhs: &Matrix<'a, T, D, S>) -> Matrix<'a, T, D, S>
     where
@@ -103,6 +106,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    #[track_caller]
     // TODO Mul trait
     pub fn mul(&self, rhs: &Matrix<'a, T, D, S>) -> Matrix<'a, T, D, S>
     where
@@ -112,6 +116,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    #[track_caller]
     pub fn add_row<RS: Shape>(&self, rhs: &Matrix<'a, T, D, RS>) -> Matrix<'a, T, D, S>
     where
         D: RowOpMayGrad<T, S, RS>,
@@ -125,6 +130,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    #[track_caller]
     pub fn add_row_mut<RS: Shape>(&mut self, rhs: &Matrix<'a, T, D, RS>)
     where
         D: RowOpMayGrad<T, S, RS>,
@@ -133,42 +139,69 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    #[track_caller]
     pub fn relu(&self) -> Matrix<'a, T, D, S>
     where
         T: Number + 'static,
         D: UnaryElementWiseMayGrad<T, D, S>
             + ApplyFunction<T, S>
-            + MayTapeReturn
+            + MayTapeActions
             + UnaryGrad<T, S>
-            + for<'b> Alloc<'b, T, S>
+            + Alloc<T>
+            + AddGradFn
             + 'static,
     {
-        let out = self.device().apply_fn(self, |x| x.geq(T::zero()).mul(x));
+        let mut out = self.device().apply_fn(self, |x| x.geq(T::zero()).mul(x));
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (self.id(), out.id());
-            self.device().tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, mut lhs_grad, out_grad) = grads.get_double(device, ids);
-                device.add_unary_grad(&lhs, &mut lhs_grad, &out_grad, |x| x.geq(T::zero()));
+        self.device()
+            .add_grad_fn((self.as_buf(), &mut out), |(lhs, out)| {
+                lhs.device()
+                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| x.geq(T::zero()));
+                Ok(())
             });
-        }
 
         (out, self.rows, self.cols).into()
 
-        /*// TODO may inline
-        // -> huge performance difference?
+        // TODO may inline
+        // -> huge performance difference (when using backward)?
         // -> look at profiler again
-        (
-            self.device()
-                .unary_ew(self, |x| x.geq(T::zero()).mul(x), |x| x.geq(T::zero())),
-            self.rows,
-            self.cols,
-        )
-            .into()*/
+        // (
+        //     self.device()
+        //         .unary_ew(self, |x| x.geq(T::zero()).mul(x), |x| x.geq(T::zero())),
+        //     self.rows,
+        //     self.cols,
+        // )
+        //     .into()
     }
 
     #[inline]
+    #[track_caller]
+    pub fn tanh(&self) -> Matrix<'a, T, D, S>
+    where
+        T: Float + 'static,
+        D: UnaryElementWiseMayGrad<T, D, S>
+            + ApplyFunction<T, S>
+            + MayTapeActions
+            + UnaryGrad<T, S>
+            + Alloc<T>
+            + AddGradFn
+            + 'static,
+    {
+        let mut out = self.device().apply_fn(self, |x| x.tanh());
+
+        self.device()
+            .add_grad_fn((self.as_buf(), &mut out), |(lhs, out)| {
+                lhs.device()
+                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| T::one().identity().sub(x.tanh().pow(T::two())));
+                Ok(())
+            });
+
+        (out, self.rows, self.cols).into()
+    }
+
+
+    #[inline]
+    #[track_caller]
     pub fn rand(&mut self, lo: T, hi: T)
     where
         D: RandOp<T, S>,
@@ -177,19 +210,23 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    #[track_caller]
     pub fn squared(&self) -> Matrix<'a, T, D, S>
     where
-        T: Numeric + Mul<Output = T> + Copy + Two + 'static,
+        T: Numeric + Mul<Output = T> + Copy + Two + Combiner + 'static,
         D: SquareMayGrad<T, S>
             + ApplyFunction<T, S>
             + UnaryGrad<T, S>
-            + for<'b> Alloc<'b, T, S>
-            + MayTapeReturn,
+            + Alloc<T>
+            + MayTapeActions
+            + AddGradFn
+            + 'static,
     {
         (self.device().square(self), self.rows, self.cols).into()
     }
 
     #[inline]
+    #[track_caller]
     pub fn pow(&self, rhs: T) -> Matrix<'a, T, D, S>
     where
         D: PowMayGrad<T, S>,
@@ -198,6 +235,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    #[track_caller]
     pub fn max_rows<OS: Shape>(&self) -> Matrix<'a, T, D, OS>
     where
         D: MaxRowsMayGrad<T, S, OS>,
@@ -211,6 +249,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    #[track_caller]
     pub fn max_cols<OS: Shape>(&self) -> Matrix<'a, T, D, OS>
     where
         D: MaxColsMayGrad<T, S, OS>,
@@ -224,6 +263,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    #[track_caller]
     pub fn sum_cols<OS: Shape>(&self) -> Matrix<'a, T, D, OS>
     where
         D: SumColsMayGrad<T, S, OS>,
@@ -231,24 +271,29 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         (self.device().sum_cols(self.cols, self), self.rows, 1).into()
     }
 
+    #[track_caller]
     #[inline]
     pub fn l2_norm_cols<OS>(&self) -> Matrix<'a, T, D, OS>
     where
-        T: Float + 'static,
+        T: Combiner + Float + 'static,
         OS: Shape + 'static,
         D: ApplyFunction<T, OS>
             + UnaryGrad<T, OS>
             + ApplyFunction<T, S>
             + UnaryGrad<T, S>
-            + for<'b> Alloc<'b, T, S>
-            + for<'b> Alloc<'b, T, OS>
-            + MayTapeReturn
-            + SumColsMayGrad<T, S, OS>,
+            + Alloc<T>
+            + MayTapeActions
+            + AddGradFn
+            + SumColsMayGrad<T, S, OS>
+            + PowMayGrad<T, OS>
+            + PowMayGrad<T, S>
+            + 'static
     {
         self.squared().sum_cols().pow(T::one() / T::two())
     }
 
     #[inline]
+    #[track_caller]
     pub fn diagflat<OS: Shape>(&self) -> Matrix<'a, T, D, OS>
     where
         D: DiagflatMayGrad<T, S, OS>,
@@ -257,6 +302,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 
     #[inline]
+    #[track_caller]
     pub fn softmax(&self) -> Matrix<'a, T, D, S>
     where
         D: SoftmaxMayGrad<T, S>,
@@ -302,6 +348,7 @@ impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Sub for &Matrix<'a, T
     type Output = Matrix<'a, T, D, S>;
 
     #[inline]
+    #[track_caller]
     fn sub(self, rhs: Self) -> Self::Output {
         (self.device().sub(self, rhs), self.rows, self.cols).into()
     }
@@ -311,6 +358,7 @@ impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Add for &Matrix<'a, T
     type Output = Matrix<'a, T, D, S>;
 
     #[inline]
+    #[track_caller]
     fn add(self, rhs: Self) -> Self::Output {
         (self.device().add(self, rhs), self.rows, self.cols).into()
     }
@@ -320,6 +368,7 @@ impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Add for Matrix<'a, T,
     type Output = Matrix<'a, T, D, S>;
 
     #[inline]
+    #[track_caller]
     fn add(self, rhs: Self) -> Self::Output {
         (self.device().add(&self, &rhs), self.rows, self.cols).into()
     }

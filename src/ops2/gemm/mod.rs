@@ -21,6 +21,7 @@ use custos::nnapi::nnapi_sys::OperationCode;
 pub trait Gemm<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
     Device
 {
+    #[track_caller]
     fn gemm(
         &self,
         m: usize,

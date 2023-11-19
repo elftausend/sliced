@@ -53,6 +53,7 @@ use custos::nnapi::{nnapi_sys::OperationCode, Operand};
     ANEURALNETWORKS_SUB
 )]
 pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn binary_ew<O>(
         &self,
         lhs: &Buffer<T, D, S>,
@@ -63,33 +64,37 @@ pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
         O: Eval<T> + MayToCLSource;
 
     #[inline]
+    #[track_caller]
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
     where
-        T: MayToCLSource + Eval<T> + core::ops::Add<T, Output = T>,
+        T: core::ops::Add<T, Output = T>,
     {
         self.binary_ew(lhs, rhs, |lhs, rhs| lhs.add(rhs))
     }
 
     #[inline]
+    #[track_caller]
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
     where
-        T: MayToCLSource + Eval<T> + core::ops::Mul<T, Output = T>,
+        T: core::ops::Mul<T, Output = T>,
     {
         self.binary_ew(lhs, rhs, |lhs, rhs| lhs.mul(rhs))
     }
 
     #[inline]
+    #[track_caller]
     fn div(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
     where
-        T: MayToCLSource + Eval<T> + core::ops::Div<T, Output = T>,
+        T: core::ops::Div<T, Output = T>,
     {
         self.binary_ew(lhs, rhs, |lhs, rhs| lhs.div(rhs))
     }
 
     #[inline]
+    #[track_caller]
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
     where
-        T: MayToCLSource + Eval<T> + core::ops::Sub<T, Output = T>,
+        T: core::ops::Sub<T, Output = T>,
     {
         self.binary_ew(lhs, rhs, |lhs, rhs| lhs.sub(rhs))
     }

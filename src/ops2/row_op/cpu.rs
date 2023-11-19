@@ -1,10 +1,10 @@
-use std::ops::{Add, AddAssign};
+use std::ops::{Add, AddAssign, Deref, DerefMut};
 
-use custos::{Alloc, Buffer, MainMemory, Shape, CPU};
+use custos::{Alloc, Buffer, Device, Retrieve, Retriever, Shape, CPU};
 
 use crate::RowOp;
 
-impl<T, LS, RS> RowOp<T, LS, RS> for CPU
+impl<T, LS, RS, Mods: Retrieve<Self, T>> RowOp<T, LS, RS> for CPU<Mods>
 where
     T: Add<Output = T> + Copy + AddAssign,
     LS: Shape,
@@ -43,8 +43,11 @@ pub fn row_op<'a, T, F, D, Host, LS: Shape, RS: Shape>(
 where
     T: Copy,
     F: Fn(&mut T, T, T),
-    D: MainMemory,
-    Host: for<'b> Alloc<'b, T, LS> + MainMemory,
+    D: Device,
+    D::Data<T, LS>: Deref<Target = [T]>,
+    D::Data<T, RS>: Deref<Target = [T]>,
+    Host: Alloc<T> + Retriever<T>,
+    Host::Data<T, LS>: Deref<Target = [T]> + DerefMut,
 {
     debug_assert_eq!(rhs.len(), cols);
 

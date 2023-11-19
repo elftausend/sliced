@@ -4,7 +4,7 @@ fn test_row_op_cpu() {
     use custos::{Buffer, CPU};
     use sliced::RowOpMayGrad;
 
-    let device = CPU::new();
+    let device = CPU::<custos::Base>::new();
 
     // 3 x 5
     #[rustfmt::skip]
@@ -43,7 +43,7 @@ fn test_row_op_mut_cpu() {
     use custos::{Buffer, CPU};
     use sliced::RowOpMayGrad;
 
-    let device = CPU::new();
+    let device = CPU::<custos::Base>::new();
 
     // 3 x 5
     #[rustfmt::skip]
@@ -84,7 +84,7 @@ fn test_row_op_cl() -> custos::Result<()> {
     use custos::{Buffer, OpenCL};
     use sliced::RowOpMayGrad;
 
-    let device = OpenCL::new(0)?;
+    let device = OpenCL::<custos::Base>::new(0)?;
 
     // 3 x 5
     #[rustfmt::skip]
@@ -122,7 +122,7 @@ fn test_row_op_mut_cl() -> custos::Result<()> {
     use custos::{Buffer, OpenCL};
     use sliced::RowOpMayGrad;
 
-    let device = OpenCL::new(0)?;
+    let device = OpenCL::<custos::Base>::new(0)?;
 
     // 3 x 5
     #[rustfmt::skip]

@@ -15,7 +15,7 @@ fastrand = "1.8.0"
 debug = true
 
 [features]
-default = ["cpu",  "matrix", "opencl", "stack"]
+default = ["cpu",  "matrix", "opencl", "stack", "autograd", "blas"]
 #default = ["blas", "stack", "cpu", "matrix", "opencl", "autograd"]
 #default = ["stack", "cpu", "opencl", "blas", "matrix", "static-api"]
 autograd = ["custos/autograd"]
@@ -24,8 +24,6 @@ stack = ["custos/stack"]
 cpu = ["custos/cpu"]
 opencl = ["custos/opencl", "cpu"]
 blas = ["custos/blas"]
-opt-cache = ["custos/opt-cache"]
-realloc = ["custos/realloc"]
 matrix = []
 #nnapi = ["custos/nnapi"]
 

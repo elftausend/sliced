@@ -21,6 +21,7 @@ use custos::{Eval, MayToCLSource, Resolve};
 
 #[using_autograd]
 pub trait BinaryElementWiseGrad<T, S: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn binary_ew_grad<LO, RO>(
         &self,
         lhs: &Buffer<T, D, S>,
@@ -36,6 +37,7 @@ pub trait BinaryElementWiseGrad<T, S: Shape = (), D: Device = Self>: Device {
 }
 
 pub trait AddElementWiseGrad<T, S: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn add_ew_grad(
         &self,
         lhs_grad: &mut Buffer<T, D, S>,

@@ -10,6 +10,7 @@ use custos::{Buffer, Device, Shape};
 pub use opencl::*;
 
 pub trait SumRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    #[track_caller]
     fn sum_rows_grad(
         &self,
         cols: usize,
@@ -19,6 +20,7 @@ pub trait SumRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
 }
 
 pub trait SumColsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    #[track_caller]
     fn sum_cols_grad(
         &self,
         cols: usize,

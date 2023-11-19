@@ -5,8 +5,8 @@ use std::{
 
 use custos::{
     prelude::{Float, One, Two},
-    Alloc, ApplyFunction, Buffer, Combiner, Device, Eval, MayTapeReturn, MayToCLSource, Shape,
-    UnaryGrad, WriteBuf,
+    AddGradFn, Alloc, ApplyFunction, AsNoId, Buffer, Combiner, Device, Eval, HasId, MayTapeActions,
+    MayToCLSource, Shape, UnaryGrad, WriteBuf, number::Numeric,
 };
 
 use crate::{
@@ -21,30 +21,31 @@ where
     T: 'static,
     S: Shape,
 {
+    #[track_caller]
     fn square(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S>
     where
         T: MayToCLSource + Eval<T> + Mul<Output = T> + Copy + Two,
         Self: ApplyFunction<T, S, Self>
             + UnaryGrad<T, S, Self>
-            + MayTapeReturn
-            + for<'b> Alloc<'b, T, S>,
+            + MayTapeActions
+            + Alloc<T>
+            + AddGradFn
+            + 'static,
     {
         let out = self.apply_fn(x, |x| x.mul(x));
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, lhs_grad, out_grad) = grads.get_double(device, ids);
+        self.add_grad_fn((x, &out), |(x, out)| {
+            x.device()
+                .add_unary_grad(x, x.grad_mut(), out.grad(), |x| x.mul(T::two()));
+            Ok(())
+        });
 
-                device.add_unary_grad(&lhs, lhs_grad, out_grad, |x| x.mul(T::two()));
-            });
-        }
         out
     }
 }
 
 pub trait PowMayGrad<T, S: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn pow(&self, x: &Buffer<T, D, S>, rhs: T) -> Buffer<T, D, S>;
 }
 
@@ -52,20 +53,24 @@ impl<T, S, D> PowMayGrad<T, S, D> for D
 where
     T: Display + Eval<T> + Mul<Output = T> + Float + 'static,
     S: Shape + 'static,
-    D: ApplyFunction<T, S, Self> + UnaryGrad<T, S, Self> + MayTapeReturn + for<'b> Alloc<'b, T, S>,
+    D: ApplyFunction<T, S, Self>
+        + UnaryGrad<T, S, Self>
+        + MayTapeActions
+        + Alloc<T>
+        + AddGradFn
+        + 'static,
 {
     fn pow(&self, x: &Buffer<T, D, S>, rhs: T) -> Buffer<T, D, S> {
-        let out = self.apply_fn(x, |x| x.pow(rhs));
+        let out = self.apply_fn(x, move |x| x.pow(rhs));
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, lhs_grad, out_grad) = grads.get_double(device, ids);
-
-                device.add_unary_grad(&lhs, lhs_grad, out_grad, |x| x.pow(rhs - T::one()).mul(rhs))
-            });
-        }
+        self.add_grad_fn((x, rhs.no_id(), &out), |(x, rhs, out)| {
+            let rhs = **rhs;
+            x.device()
+                .add_unary_grad(x, x.grad_mut(), out.grad(), move |x| {
+                    x.pow(rhs - T::one()).mul(rhs)
+                });
+            Ok(())
+        });
 
         out
     }
@@ -74,11 +79,15 @@ where
 impl<T: 'static, S: Shape, D: Device> SquareMayGrad<T, S> for D {}
 
 pub trait BinaryOpsMayGrad<T, S: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
+    #[track_caller]
     fn add2(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>
     where
         D: AddElementWiseGrad<T, S>;
+    #[track_caller]
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
+    #[track_caller]
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
 }
 
@@ -87,63 +96,55 @@ where
     S: Shape + 'static,
     D: BinaryElementWise<T, S, D>
         + BinaryElementWiseGrad<T, S, D>
-        + MayTapeReturn
-        + for<'b> Alloc<'b, T, S>,
+        + MayTapeActions
+        + Alloc<T>
+        + AddGradFn
+        + 'static,
     T: Mul<Output = T>
         + Sub<Output = T>
         + Add<Output = T>
         + Neg<Output = T>
-        + MayToCLSource
+        // + MayToCLSource
         + One
-        + Eval<T>
+        // + Eval<T>
+        + Numeric
         + 'static,
 {
     #[inline]
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.add(lhs, rhs);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (lhs.id(), rhs.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, rhs, lhs_grad, rhs_grad, out_grad) =
-                    grads.get_triple::<T, S>(device, ids);
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| {
+            lhs.device().binary_ew_grad(
+                lhs,
+                rhs,
+                lhs.grad_mut(),
+                rhs.grad_mut(),
+                out.grad(),
+                |_, _| T::one(),
+                |_, _| T::one(),
+            );
+            Ok(())
+        });
 
-                device.binary_ew_grad(
-                    &lhs,
-                    &rhs,
-                    lhs_grad,
-                    rhs_grad,
-                    out_grad,
-                    |_, _| T::one(),
-                    |_, _| T::one(),
-                );
-            });
-        }
         out
     }
 
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.sub(lhs, rhs);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (lhs.id(), rhs.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, rhs, lhs_grad, rhs_grad, out_grad) =
-                    grads.get_triple::<T, S>(device, ids);
-
-                device.binary_ew_grad(
-                    &lhs,
-                    &rhs,
-                    lhs_grad,
-                    rhs_grad,
-                    out_grad,
-                    |_, _| T::one(),
-                    |_, _| -T::one(),
-                );
-            });
-        }
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| {
+            lhs.device().binary_ew_grad(
+                lhs,
+                rhs,
+                lhs.grad_mut(),
+                rhs.grad_mut(),
+                out.grad(),
+                |_, _| T::one(),
+                |_, _| -T::one(),
+            );
+            Ok(())
+        });
 
         out
     }
@@ -151,24 +152,19 @@ where
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.mul(lhs, rhs);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (lhs.id(), rhs.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, rhs, lhs_grad, rhs_grad, out_grad) =
-                    grads.get_triple::<T, S>(device, ids);
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| {
+            lhs.device().binary_ew_grad(
+                lhs,
+                rhs,
+                lhs.grad_mut(),
+                rhs.grad_mut(),
+                out.grad(),
+                |_, rhs| rhs,
+                |lhs, _| lhs,
+            );
 
-                device.binary_ew_grad(
-                    &lhs,
-                    &rhs,
-                    lhs_grad,
-                    rhs_grad,
-                    out_grad,
-                    |_, rhs| rhs,
-                    |lhs, _| lhs,
-                );
-            });
-        }
+            Ok(())
+        });
 
         out
     }
@@ -179,20 +175,18 @@ where
     {
         let out = self.binary_ew(lhs, rhs, |a, b| a.add(b));
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (lhs.id(), rhs.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, _, lhs_grad, rhs_grad, out_grad) = grads.get_triple::<T, S>(device, ids);
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| {
+            lhs.device()
+                .add_ew_grad(lhs.grad_mut(), rhs.grad_mut(), out.grad());
+            Ok(())
+        });
 
-                device.add_ew_grad(lhs_grad, rhs_grad, out_grad);
-            });
-        }
         out
     }
 }
 
 pub trait TransposeMayGrad<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, D, OS>;
 }
 
@@ -201,20 +195,26 @@ where
     T: Clone + 'static,
     IS: Shape,
     OS: Shape,
-    D: Transpose<T, IS, OS> + TranposeGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T> + WriteBuf<T>,
+    D: Transpose<T, IS, OS>
+        + TranposeGrad<T, IS, OS>
+        + MayTapeActions
+        + Alloc<T>
+        + WriteBuf<T>
+        + AddGradFn
+        + 'static,
 {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.transpose(rows, cols, x);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, lhs_grad, out_grad) = grads.get_double(device, ids);
+        self.add_grad_fn(
+            (rows.no_id(), cols.no_id(), x, &out),
+            |(rows, cols, x, out)| {
+                x.device()
+                    .transpose_grad(**cols, **rows, x.grad_mut(), out.grad());
+                Ok(())
+            },
+        );
 
-                device.transpose_grad(cols, rows, lhs_grad, out_grad);
-            });
-        }
         out
     }
 }
@@ -222,6 +222,7 @@ where
 pub trait GemmMayGrad<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
     Device
 {
+    #[track_caller]
     fn gemm(
         &self,
         m: usize,
@@ -238,7 +239,12 @@ where
     LS: Shape,
     RS: Shape,
     OS: Shape,
-    D: Gemm<T, LS, RS, OS> + GemmGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+    D: Gemm<T, LS, RS, OS>
+        + GemmGrad<T, LS, RS, OS>
+        + MayTapeActions
+        + Alloc<T>
+        + AddGradFn
+        + 'static,
 {
     fn gemm(
         &self,
@@ -250,22 +256,40 @@ where
     ) -> Buffer<T, Self, OS> {
         let out = self.gemm(m, k, n, lhs, rhs);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (lhs.id(), rhs.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, rhs, lhs_grad, rhs_grad, out_grad) =
-                    grads.get_triple::<T, ()>(device, ids);
+        self.add_grad_fn(
+            (m.no_id(), k.no_id(), n.no_id(), lhs, rhs, &out),
+            |(m, k, n, lhs, rhs, out)| {
+                lhs.device().gemm_grad(
+                    **m,
+                    **k,
+                    **n,
+                    lhs,
+                    rhs,
+                    lhs.grad_mut(),
+                    rhs.grad_mut(),
+                    out.grad(),
+                );
+                Ok(())
+            },
+        );
 
-                device.gemm_grad(m, k, n, &lhs, &rhs, lhs_grad, rhs_grad, out_grad);
-            });
-        }
+        // #[cfg(feature = "autograd")]
+        // {
+        //     let ids = (lhs.id(), rhs.id(), out.id());
+        //     self.tape_mut().add_grad_fn(move |grads, device| {
+        //         let (lhs, rhs, lhs_grad, rhs_grad, out_grad) =
+        //             grads.get_triple::<T, ()>(device, ids);
+
+        //         device.gemm_grad(m, k, n, &lhs, &rhs, lhs_grad, rhs_grad, out_grad);
+        //     });
+        // }
 
         out
     }
 }
 
 pub trait RowOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn add_row(
         &self,
         rows: usize,
@@ -274,6 +298,7 @@ pub trait RowOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Dev
         rhs: &Buffer<T, D, RS>,
     ) -> Buffer<T, D, LS>;
 
+    #[track_caller]
     fn add_row_mut(
         &self,
         rows: usize,
@@ -288,7 +313,7 @@ where
     T: 'static + Add<Output = T>,
     LS: Shape,
     RS: Shape,
-    D: RowOp<T, LS, RS> + RowOpGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+    D: RowOp<T, LS, RS> + RowOpGrad<T, LS, RS> + MayTapeActions + Alloc<T> + AddGradFn + 'static,
 {
     fn add_row(
         &self,
@@ -299,15 +324,29 @@ where
     ) -> Buffer<T, D, LS> {
         let out = self.add_row(cols, lhs, rhs);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (lhs.id(), rhs.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, _, lhs_grad, rhs_grad, out_grad) = grads.get_triple::<T, ()>(device, ids);
+        self.add_grad_fn(
+            (rows.no_id(), cols.no_id(), lhs, rhs, &out),
+            |(rows, cols, lhs, rhs, out)| {
+                lhs.device().add_row_grad(
+                    **rows,
+                    **cols,
+                    lhs.grad_mut(),
+                    rhs.grad_mut(),
+                    out.grad(),
+                );
+                Ok(())
+            },
+        );
 
-                device.add_row_grad(rows, cols, lhs_grad, rhs_grad, out_grad);
-            });
-        }
+        // #[cfg(feature = "autograd")]
+        // {
+        //     let ids = (lhs.id(), rhs.id(), out.id());
+        //     self.tape_mut().add_grad_fn(move |grads, device| {
+        //         let (_, _, lhs_grad, rhs_grad, out_grad) = grads.get_triple::<T, ()>(device, ids);
+
+        //         device.add_row_grad(rows, cols, lhs_grad, rhs_grad, out_grad);
+        //     });
+        // }
         out
     }
 
@@ -320,35 +359,42 @@ where
     ) {
         self.add_row_mut(rows, cols, lhs, rhs);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (rhs.id(), lhs.id());
-            // FIXME may not work
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, rhs_grad, out_grad) = grads.get_double(device, ids);
-                device.add_row_mut_grad(rows, cols, rhs_grad, out_grad);
-            });
-        }
+        self.add_grad_fn((rows.no_id(), cols.no_id(), lhs, rhs), |(rows, cols, lhs, rhs)| {
+            lhs.device().add_row_mut_grad(**rows, **cols, rhs.grad_mut(), lhs.grad());
+            Ok(())
+        });
+
+        // #[cfg(feature = "autograd")]
+        // {
+        //     let ids = (rhs.id(), lhs.id());
+        //     // FIXME may not work
+        //     self.tape_mut().add_grad_fn(move |grads, device| {
+        //         let (_, rhs_grad, out_grad) = grads.get_double(device, ids);
+        //         device.add_row_mut_grad(rows, cols, rhs_grad, out_grad);
+        //     });
+        // }
     }
 }
 
 pub trait ExpMayGrad<T, S>
 where
-    Self: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+    Self: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeActions + Alloc<T>,
     T: Float + 'static,
     S: Shape,
 {
+    #[track_caller]
     fn exp(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S> {
         let out = self.apply_fn(x, |x| x.exp());
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (lhs, lhs_grad, out_grad) = grads.get_double::<T, _, _>(device, ids);
-                device.add_unary_grad(&lhs, lhs_grad, out_grad, |x| x.exp());
-            });
-        }
+        unimplemented!();
+        // #[cfg(feature = "autograd")]
+        // {
+        //     let ids = (x.id(), out.id());
+        //     self.tape_mut().add_grad_fn(move |grads, device| {
+        //         let (lhs, lhs_grad, out_grad) = grads.get_double::<T, _, _>(device, ids);
+        //         device.add_unary_grad(&lhs, lhs_grad, out_grad, |x| x.exp());
+        //     });
+        // }
 
         out
     }
@@ -358,12 +404,13 @@ impl<T, S, D> ExpMayGrad<T, S> for D
 where
     T: Float + 'static,
     S: Shape,
-    D: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeReturn + for<'b> Alloc<'b, T>,
+    D: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeActions + Alloc<T>,
 {
 }
 
 pub trait Exp<T: Float, S: Shape>: ApplyFunction<T, S> {
     #[inline]
+    #[track_caller]
     fn exp(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S> {
         self.apply_fn(x, |x| x.exp())
     }
@@ -382,6 +429,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -390,20 +438,22 @@ where
     T: 'static,
     IS: Shape,
     OS: Shape,
-    D: MaxCols<T, IS, OS> + MayTapeReturn + for<'a> Alloc<'a, T> + MaxColsGrad<T>,
+    D: MaxCols<T, IS, OS> + MayTapeActions + Alloc<T> + MaxColsGrad<T>,
 {
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.max_cols(rows, cols, x);
+        
+        unimplemented!();
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let out = unsafe { device.get_existing_buf::<T, ()>(ids.1) };
-                let (x, x_grad, out_grad) = grads.get_double(device, ids);
-                device.max_cols_grad(cols, &out, &x, x_grad, out_grad);
-            })
-        }
+        // #[cfg(feature = "autograd")]
+        // {
+        //     let ids = (x.id(), out.id());
+        //     self.tape_mut().add_grad_fn(move |grads, device| {
+        //         let out = unsafe { device.get_existing_buf::<T, ()>(ids.1) };
+        //         let (x, x_grad, out_grad) = grads.get_double(device, ids);
+        //         device.max_cols_grad(cols, &out, &x, x_grad, out_grad);
+        //     })
+        // }
 
         out
     }
@@ -414,6 +464,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn max_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -422,20 +473,21 @@ where
     T: 'static,
     IS: Shape,
     OS: Shape,
-    D: MaxRows<T, IS, OS> + MayTapeReturn + for<'a> Alloc<'a, T> + MaxRowsGrad<T>,
+    D: MaxRows<T, IS, OS> + MayTapeActions + Alloc<T> + MaxRowsGrad<T>,
 {
     fn max_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.max_rows(cols, x);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let out = unsafe { device.get_existing_buf::<T, ()>(ids.1) };
-                let (x, x_grad, out_grad) = grads.get_double(device, ids);
-                device.max_rows_grad(cols, &out, &x, x_grad, out_grad);
-            })
-        }
+        unimplemented!();
+        // #[cfg(feature = "autograd")]
+        // {
+        //     let ids = (x.id(), out.id());
+        //     self.tape_mut().add_grad_fn(move |grads, device| {
+        //         let out = unsafe { device.get_existing_buf::<T, ()>(ids.1) };
+        //         let (x, x_grad, out_grad) = grads.get_double(device, ids);
+        //         device.max_rows_grad(cols, &out, &x, x_grad, out_grad);
+        //     })
+        // }
 
         out
     }
@@ -447,6 +499,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn sum_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -455,20 +508,21 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeReturn + SumRows<T, IS, OS> + SumRowsGrad<T> + for<'a> Alloc<'a, T>,
+    D: MayTapeActions + SumRows<T, IS, OS> + SumRowsGrad<T> + Alloc<T>,
 {
     fn sum_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.sum_rows(cols, x);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, x_grad, out_grad) = grads.get_double(device, ids);
+        unimplemented!();
+        // #[cfg(feature = "autograd")]
+        // {
+        //     let ids = (x.id(), out.id());
+        //     self.tape_mut().add_grad_fn(move |grads, device| {
+        //         let (_, x_grad, out_grad) = grads.get_double(device, ids);
 
-                device.sum_rows_grad(cols, x_grad, out_grad);
-            })
-        }
+        //         device.sum_rows_grad(cols, x_grad, out_grad);
+        //     })
+        // }
         out
     }
 }
@@ -478,6 +532,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn sum_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -486,20 +541,21 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeReturn + SumCols<T, IS, OS> + SumColsGrad<T> + for<'a> Alloc<'a, T>,
+    D: MayTapeActions + SumCols<T, IS, OS> + SumColsGrad<T> + Alloc<T>,
 {
     fn sum_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.sum_cols(cols, x);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, x_grad, out_grad) = grads.get_double(device, ids);
+        unimplemented!();
+        // #[cfg(feature = "autograd")]
+        // {
+        //     let ids = (x.id(), out.id());
+        //     self.tape_mut().add_grad_fn(move |grads, device| {
+        //         let (_, x_grad, out_grad) = grads.get_double(device, ids);
 
-                device.sum_cols_grad(cols, x_grad, out_grad);
-            })
-        }
+        //         device.sum_cols_grad(cols, x_grad, out_grad);
+        //     })
+        // }
         out
     }
 }
@@ -509,6 +565,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -517,19 +574,20 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeReturn + MeanCols<T, IS, OS> + MeanColsGrad<T> + for<'a> Alloc<'a, T>,
+    D: MayTapeActions + MeanCols<T, IS, OS> + MeanColsGrad<T> + Alloc<T>,
 {
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.mean_cols(cols, x);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, x_grad, out_grad) = grads.get_double(device, ids);
-                device.mean_cols_grad(cols, x_grad, out_grad);
-            })
-        }
+        unimplemented!();
+        // #[cfg(feature = "autograd")]
+        // {
+        //     let ids = (x.id(), out.id());
+        //     self.tape_mut().add_grad_fn(move |grads, device| {
+        //         let (_, x_grad, out_grad) = grads.get_double(device, ids);
+        //         device.mean_cols_grad(cols, x_grad, out_grad);
+        //     })
+        // }
         out
     }
 }
@@ -539,6 +597,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -547,19 +606,21 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeReturn + MeanRows<T, IS, OS> + MeanRowsGrad<T> + for<'a> Alloc<'a, T>,
+    D: MayTapeActions
+        + MeanRows<T, IS, OS>
+        + MeanRowsGrad<T, IS, OS>
+        + Alloc<T>
+        + AddGradFn
+        + 'static,
 {
     fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.mean_rows(cols, x);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, x_grad, out_grad) = grads.get_double(device, ids);
-                device.mean_rows_grad(cols, x_grad, out_grad);
-            })
-        }
+        self.add_grad_fn((cols.no_id(), x, &out), |(cols, x, out)| {
+            x.device().mean_rows_grad(**cols, x.grad_mut(), out.grad());
+            Ok(())
+        });
+
         out
     }
 }
@@ -569,30 +630,37 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
 impl<T, IS: Shape, OS: Shape, D> DiagflatMayGrad<T, IS, OS> for D
 where
     T: Copy + 'static,
-    D: Diagflat<T, IS, OS>
+    D: AddGradFn
+        + Diagflat<T, IS, OS>
         + DiagflatGrad<T, IS, OS>
-        + for<'a> Alloc<'a, T, IS>
-        + for<'a> Alloc<'a, T, OS>
-        + MayTapeReturn,
+        + Alloc<T>
+        + MayTapeActions
+        + 'static,
 {
     #[inline]
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.diagflat(x);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let (_, x_grad, out_grad) = grads.get_double(device, ids);
-                device.diagflat_grad(x_grad, out_grad);
-            })
-        }
+        self.add_grad_fn((x, &out), |(x, out)| {
+            x.device().diagflat_grad(x.grad_mut(), out.grad());
+            Ok(())
+        });
+
+        // #[cfg(feature = "autograd")]
+        // {
+        //     let ids = (x.id(), out.id());
+        //     self.tape_mut().add_grad_fn(move |grads, device| {
+        //         let (_, x_grad, out_grad) = grads.get_double(device, ids);
+        //         device.diagflat_grad(x_grad, out_grad);
+        //     })
+        // }
         out
     }
 }
@@ -601,6 +669,7 @@ pub trait SoftmaxMayGrad<T, S>: Device
 where
     S: Shape,
 {
+    #[track_caller]
     fn softmax(
         &self,
         samples: usize,
@@ -613,7 +682,7 @@ impl<T, S, D> SoftmaxMayGrad<T, S> for D
 where
     T: Copy + 'static,
     S: Shape,
-    D: Softmax<T, S> + SoftmaxGrad<T, S> + for<'a> Alloc<'a, T, S> + MayTapeReturn,
+    D: Softmax<T, S> + SoftmaxGrad<T, S> + AddGradFn + Alloc<T> + MayTapeActions + 'static,
 {
     fn softmax(
         &self,
@@ -621,17 +690,26 @@ where
         features: usize,
         x: &Buffer<T, Self, S>,
     ) -> Buffer<T, Self, S> {
-        let out = self.softmax(samples, features, x);
+        let mut out = self.softmax(samples, features, x);
 
-        #[cfg(feature = "autograd")]
-        {
-            let ids = (x.id(), out.id());
-            self.tape_mut().add_grad_fn(move |grads, device| {
-                let out = unsafe { device.get_existing_buf(ids.1) };
-                let (_, x_grad, out_grad) = grads.get_double(device, ids);
-                device.softmax_grad(samples, features, x_grad, &out, out_grad);
-            })
-        }
+        self.add_grad_fn(
+            (samples.no_id(), features.no_id(), x, &out),
+            |(samples, features, x, out)| {
+                x.device()
+                    .softmax_grad(**samples, **features, x.grad_mut(), out, out.grad());
+                Ok(())
+            },
+        );
+
+        // #[cfg(feature = "autograd")]
+        // {
+        //     let ids = (x.id(), out.id());
+        //     self.tape_mut().add_grad_fn(move |grads, device| {
+        //         let out = unsafe { device.get_existing_buf(ids.1) };
+        //         let (_, x_grad, out_grad) = grads.get_double(device, ids);
+        //         device.softmax_grad(samples, features, x_grad, &out, out_grad);
+        //     })
+        // }
         out
     }
 }

@@ -4,7 +4,7 @@ use sliced::SquareMayGrad;
 #[cfg(feature = "cpu")]
 #[test]
 fn test_square() {
-    let device = CPU::new();
+    let device = CPU::<custos::Base>::new();
 
     let buf = Buffer::from((&device, [1, 2, 3, 4, 5]));
 
@@ -25,7 +25,7 @@ fn test_square() {
 fn test_square_cl() -> custos::Result<()> {
     use custos::OpenCL;
 
-    let device = OpenCL::new(0)?;
+    let device = OpenCL::<custos::Base>::new(0)?;
 
     let buf = Buffer::from((&device, [1, 2, 3, 4, 5]));
 

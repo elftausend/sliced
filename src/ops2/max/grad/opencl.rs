@@ -1,6 +1,9 @@
 use std::ops::AddAssign;
 
-use custos::{prelude::CLBuffer, CDatatype, OpenCL};
+use custos::{
+    prelude::{Buffer, CLBuffer},
+    CDatatype, OpenCL,
+};
 
 use crate::{MaxColsGrad, MaxRowsGrad};
 
@@ -12,10 +15,10 @@ where
     fn max_rows_grad(
         &self,
         cols: usize,
-        out: &CLBuffer<T>,
-        x: &CLBuffer<T>,
-        x_grad: &mut CLBuffer<T>,
-        out_grad: &CLBuffer<T>,
+        out: &Buffer<T, Self>,
+        x: &Buffer<T, Self>,
+        x_grad: &mut Buffer<T, Self>,
+        out_grad: &Buffer<T, Self>,
     ) {
         cl_max_rows_grad(self, cols, out, x, x_grad, out_grad).unwrap();
     }
@@ -29,10 +32,10 @@ where
     fn max_cols_grad(
         &self,
         cols: usize,
-        out: &CLBuffer<T>,
-        x: &CLBuffer<T>,
-        x_grad: &mut CLBuffer<T>,
-        out_grad: &CLBuffer<T>,
+        out: &Buffer<T, Self>,
+        x: &Buffer<T, Self>,
+        x_grad: &mut Buffer<T, Self>,
+        out_grad: &Buffer<T, Self>,
     ) {
         cl_max_cols_grad(self, cols, out, x, x_grad, out_grad).unwrap();
     }
@@ -59,7 +62,7 @@ pub fn cl_max_rows_grad<T: CDatatype>(
             }}
         }}
         "#,
-        dtype = T::as_c_type_str()
+        dtype = T::C_DTYPE_STR
     );
 
     device.launch_kernel(
@@ -90,7 +93,7 @@ pub fn cl_max_cols_grad<T: CDatatype>(
             }}
         }}
         "#,
-        dtype = T::as_c_type_str()
+        dtype = T::C_DTYPE_STR
     );
 
     device.launch_kernel(
@@ -109,7 +112,7 @@ mod tests {
 
     #[test]
     fn test_max_rows_grad() -> custos::Result<()> {
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         #[rustfmt::skip]
         let x = [-3, 2, 3, 1,
@@ -117,7 +120,7 @@ mod tests {
                             -9, -2, -4, -1];
 
         let x = device.buffer(x);
-        let mut x_grad = device.buffer(x.len());
+        let mut x_grad = device.buffer::<_, (), _>(x.len());
 
         let out = device.max_rows(4, &x);
 
@@ -137,7 +140,7 @@ mod tests {
 
     #[test]
     fn test_max_cols_grad() -> custos::Result<()> {
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         #[rustfmt::skip]
         let x = [-3, 2, 3, 1,
@@ -145,7 +148,7 @@ mod tests {
                             -9, -2, -4, -1];
 
         let x = device.buffer(x);
-        let mut x_grad = device.buffer(x.len());
+        let mut x_grad = device.buffer::<_, (), _>(x.len());
 
         let out = device.max_cols(3, 4, &x);
 

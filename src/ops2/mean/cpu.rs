@@ -1,15 +1,15 @@
-use custos::{prelude::Number, Buffer, Device, Shape, CPU};
+use custos::{prelude::Number, Buffer, Device, Retriever, Shape, CPU, OnDropBuffer, Retrieve};
 
 use crate::{slice_sum_rows2, Mean, MeanCols, MeanRows};
 
-impl<T: Number, IS: Shape> Mean<T, IS> for CPU {
+impl<T: Number, IS: Shape, Mods: OnDropBuffer> Mean<T, IS> for CPU<Mods> {
     #[inline]
     fn mean(&self, x: &Buffer<T, Self, IS>) -> T {
         mean(x)
     }
 }
 
-impl<T: Number, IS: Shape, OS: Shape> MeanRows<T, IS, OS> for CPU {
+impl<T: Number, IS: Shape, OS: Shape, Mods: Retrieve<Self, T>> MeanRows<T, IS, OS> for CPU<Mods> {
     #[inline]
     fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(cols, x);
@@ -18,7 +18,7 @@ impl<T: Number, IS: Shape, OS: Shape> MeanRows<T, IS, OS> for CPU {
     }
 }
 
-impl<T: Number, IS: Shape, OS: Shape> MeanCols<T, IS, OS> for CPU {
+impl<T: Number, IS: Shape, OS: Shape, Mods: Retrieve<Self, T>> MeanCols<T, IS, OS> for CPU<Mods> {
     #[inline]
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(x.len() / cols, x);

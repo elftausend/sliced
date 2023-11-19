@@ -1,4 +1,7 @@
-use custos::{prelude::CLBuffer, CDatatype, Device, OpenCL, Shape};
+use custos::{
+    opencl::{CLDevice, CLPtr},
+    Buffer, CDatatype, OpenCL, Retriever,
+};
 
 use crate::{
     assign_or_set::{AssignOrSet, Set},
@@ -6,17 +9,17 @@ use crate::{
 };
 
 impl<T: CDatatype> Transpose<T> for OpenCL {
-    fn transpose(&self, rows: usize, cols: usize, x: &CLBuffer<T>) -> CLBuffer<T> {
+    fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, OpenCL>) -> Buffer<T, OpenCL> {
         let mut out = self.retrieve(x.len(), x);
-        cl_transpose::<T, Set, _, _>(self, x, &mut out, rows, cols).unwrap();
+        cl_transpose::<T, Set>(self, x, &mut out, rows, cols).unwrap();
         out
     }
 }
 
-pub fn cl_transpose<T: CDatatype, AOS: AssignOrSet<T>, IS: Shape, OS: Shape>(
-    device: &OpenCL,
-    x: &CLBuffer<T, IS>,
-    out: &mut CLBuffer<T, OS>,
+pub fn cl_transpose<T: CDatatype, AOS: AssignOrSet<T>>(
+    device: &CLDevice,
+    x: &CLPtr<T>,
+    out: &mut CLPtr<T>,
     rows: usize,
     cols: usize,
 ) -> custos::Result<()> {
@@ -44,7 +47,7 @@ pub fn cl_transpose<T: CDatatype, AOS: AssignOrSet<T>, IS: Shape, OS: Shape>(
     
    ",
         aos = AOS::STR_OP,
-        datatype = T::as_c_type_str()
+        datatype = T::C_DTYPE_STR
     );
 
     let gws = [x.len(), 0, 0];

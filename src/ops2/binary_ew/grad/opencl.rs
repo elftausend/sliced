@@ -1,21 +1,23 @@
 use custos::{
-    prelude::enqueue_kernel, Buffer, CDatatype, Eval, MayToCLSource, OpenCL, Resolve, ToMarker,
+    opencl::{CLDevice, CLPtr},
+    prelude::enqueue_kernel,
+    Buffer, CDatatype, Eval, MayToCLSource, OnDropBuffer, OpenCL, Resolve, ToMarker,
 };
 
 use super::BinaryElementWiseGrad;
 
-impl<T> BinaryElementWiseGrad<T> for OpenCL
+impl<T, Mods: OnDropBuffer> BinaryElementWiseGrad<T> for OpenCL<Mods>
 where
     T: CDatatype + Default,
 {
     #[inline]
     fn binary_ew_grad<LO, RO>(
         &self,
-        lhs: &Buffer<T, OpenCL>,
-        rhs: &Buffer<T, OpenCL>,
-        lhs_grad: &mut Buffer<T, OpenCL>,
-        rhs_grad: &mut Buffer<T, OpenCL>,
-        out: &Buffer<T, OpenCL>,
+        lhs: &Buffer<T, Self>,
+        rhs: &Buffer<T, Self>,
+        lhs_grad: &mut Buffer<T, Self>,
+        rhs_grad: &mut Buffer<T, Self>,
+        out: &Buffer<T, Self>,
         lhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> LO,
         rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> RO,
     ) where
@@ -37,12 +39,12 @@ where
 }
 
 pub fn cl_binary_grad<T, LO, RO>(
-    device: &OpenCL,
-    lhs: &Buffer<T, OpenCL>,
-    rhs: &Buffer<T, OpenCL>,
-    lhs_grad: &mut Buffer<T, OpenCL>,
-    rhs_grad: &mut Buffer<T, OpenCL>,
-    out: &Buffer<T, OpenCL>,
+    device: &CLDevice,
+    lhs: &CLPtr<T>,
+    rhs: &CLPtr<T>,
+    lhs_grad: &mut CLPtr<T>,
+    rhs_grad: &mut CLPtr<T>,
+    out: &CLPtr<T>,
     lhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> LO,
     rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> RO,
 ) -> custos::Result<()>
@@ -66,7 +68,7 @@ where
             rhs_grad[id] += {rhs_grad_op} * out[id];
         }}
     ",
-        ty = T::as_c_type_str(),
+        ty = T::C_DTYPE_STR,
         lhs_grad_op = lhs_grad_fn("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_cl_source(),
         rhs_grad_op = rhs_grad_fn("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_cl_source()
     );

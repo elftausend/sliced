@@ -1,6 +1,6 @@
-use std::ops::{AddAssign, Mul};
+use std::ops::{AddAssign, Deref, DerefMut, Mul};
 
-use custos::{Buffer, Eval, MainMemory, Resolve, Shape, ToVal, CPU};
+use custos::{Buffer, Device, Eval, Resolve, Shape, ToVal, CPU};
 
 use crate::ColOpGrad;
 
@@ -9,7 +9,9 @@ where
     T: Copy + AddAssign + Mul<Output = T>,
     LS: Shape,
     RS: Shape,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, LS>: Deref<Target = [T]> + DerefMut,
+    D::Data<T, RS>: Deref<Target = [T]> + DerefMut,
 {
     #[inline]
     fn row_op_grad<LhsGrad, RhsGrad>(

@@ -1,4 +1,8 @@
-use custos::{opencl::enqueue_kernel, prelude::CLBuffer, CDatatype, Device, Error, OpenCL};
+use custos::{
+    opencl::{enqueue_kernel, CLDevice},
+    prelude::CLBuffer,
+    Buffer, CDatatype, Device, Error, OpenCL, Retriever,
+};
 
 use std::fmt::Write;
 
@@ -13,9 +17,9 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
         m: usize,
         k: usize,
         n: usize,
-        lhs: &CLBuffer<T>,
-        rhs: &CLBuffer<T>,
-    ) -> CLBuffer<T> {
+        lhs: &Buffer<T, Self>,
+        rhs: &Buffer<T, Self>,
+    ) -> Buffer<T, Self> {
         let mut out = self.retrieve(m * n, (lhs, rhs));
         cl_gemm::<T, Set>(self, m, k, n, lhs, rhs, &mut out).unwrap();
         out
@@ -28,7 +32,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
 /// use sliced::{cl_gemm, OpenCL, Buffer, custos::Read, assign_or_set::Set};
 ///
 /// fn main() -> Result<(), custos::Error> {
-///     let device = OpenCL::new(0)?;
+///     let device = OpenCL::<custos::Base>::new(0)?;
 ///     let lhs = Buffer::from((&device, [15i16, 30, 21, 5, 8, 5]));
 ///     let rhs = Buffer::from((&device, [3i16, 2, 7, 1, 9, 20]));
 ///     let mut out = Buffer::new(&device, 4);
@@ -39,7 +43,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
 /// }
 /// ```
 pub fn cl_gemm<T: CDatatype, AOS: AssignOrSet<T>>(
-    device: &OpenCL,
+    device: &CLDevice,
     m: usize,
     k: usize,
     n: usize,
@@ -73,19 +77,19 @@ pub fn cl_gemm<T: CDatatype, AOS: AssignOrSet<T>>(
 
     let mut float_mw = String::new();
     if mw == 1 {
-        write!(&mut float_mw, "{}", T::as_c_type_str()).unwrap();
+        write!(&mut float_mw, "{}", T::C_DTYPE_STR).unwrap();
     } else {
-        write!(&mut float_mw, "{}{}", T::as_c_type_str(), mw).unwrap();
+        write!(&mut float_mw, "{}{}", T::C_DTYPE_STR, mw).unwrap();
     }
 
     let mut float_kw = String::new();
     if kw == 1 {
-        write!(&mut float_kw, "{}", T::as_c_type_str()).unwrap();
+        write!(&mut float_kw, "{}", T::C_DTYPE_STR).unwrap();
     } else {
-        write!(&mut float_kw, "{}{}", T::as_c_type_str(), kw).unwrap();
+        write!(&mut float_kw, "{}{}", T::C_DTYPE_STR, kw).unwrap();
     }
 
-    let dt = T::as_c_type_str();
+    let dt = T::C_DTYPE_STR;
 
     let src = format!("
         #define K {k}

@@ -1,13 +1,13 @@
-use custos::{get_count, range, ApplyFunction, Buffer, Combiner, OpenCL, TapeReturn, CPU};
+use custos::{ApplyFunction, Buffer, Combiner, OpenCL, CPU};
 use sliced::{BinaryOpsMayGrad, Matrix, SquareMayGrad};
 
 #[test]
 fn test_comb() {
-    let device = CPU::new();
+    let device = CPU::<custos::Base>::new();
 
     let mut x = Buffer::from((&device, [10f32, -10., 10., -5., 6., 3., 1.]));
 
-    for i in range(100) {
+    for i in 0..100 {
         let squared = device.square(&x);
 
         let sum = squared.iter().sum::<f32>();
@@ -15,7 +15,7 @@ fn test_comb() {
 
         squared.backward();
 
-        let mut x_grad = x.grad_mut_unbound();
+        let mut x_grad = x.grad_mut();
         rawsliced::ew_assign_scalar(&mut x_grad, &0.1, |x, r| *x *= r);
         rawsliced::ew_assign_binary(&mut x, &x_grad, |x, y| *x -= y);
         x_grad.clear();
@@ -24,8 +24,8 @@ fn test_comb() {
 
 #[test]
 fn test_perf_min_this() {
-    //let device = OpenCL::new(0).unwrap();
-    let device = CPU::new();
+    //let device = OpenCL::<custos::Base>::new(0).unwrap();
+    let device = CPU::<custos::Base>::new();
 
     // let mut x = Matrix::from((&device, 1, 7, [10f32, -10., 10., -5., 6., 3., 1.]));
 
@@ -36,7 +36,7 @@ fn test_perf_min_this() {
     const TIMES: usize = 100;
 
     for _ in 0..TIMES {
-        for _ in range(100) {
+        for _ in 0..100 {
             let squared = x.squared();
             let mul = squared.mul(&x);
 
@@ -64,8 +64,8 @@ fn test_perf_min_this() {
 
 #[test]
 fn test_2perf_min_this() {
-    //let device = OpenCL::new(0).unwrap();
-    let device = CPU::new();
+    //let device = OpenCL::<custos::Base>::new(0).unwrap();
+    let device = CPU::<custos::Base>::new();
     //device.tape_mut().disable();
 
     let mut x: Buffer = Buffer::from((&device, vec![1.3f32; 1312])); // 123412
@@ -75,7 +75,7 @@ fn test_2perf_min_this() {
     const TIMES: usize = 100;
 
     for _ in 0..TIMES {
-        for _ in range(100) {
+        for _ in 0..100 {
             let squared = device.square(&x);
             let mul = device.mul(&squared, &x);
             let add = device.add(&b, &x);
@@ -105,8 +105,8 @@ fn test_2perf_min_this() {
 // FxHash: 49us
 #[test]
 fn test_small_2perf_min_this() {
-    //let device = OpenCL::new(0).unwrap();
-    let device = CPU::new();
+    //let device = OpenCL::<custos::Base>::new(0).unwrap();
+    let device = CPU::<custos::Base>::new();
 
     let mut x = Buffer::from((&device, [1.3f32; 100]));
     let mut b = Buffer::from((&device, [2.1f32; 100]));
@@ -115,7 +115,7 @@ fn test_small_2perf_min_this() {
     const TIMES: usize = 100;
 
     for _ in 0..TIMES {
-        for _ in range(100) {
+        for _ in 0..100 {
             let squared = device.square(&x);
             let mul = device.mul(&squared, &x);
             let add = device.add(&b, &x);

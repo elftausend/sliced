@@ -1,9 +1,13 @@
-use std::{hint::black_box, ops::{Mul, Add}};
+use std::{
+    hint::black_box,
+    ops::{Add, Mul, DerefMut, Deref},
+};
 
 use custos::{
-    range, Alloc, CacheReturn, Device, Dim1, GraphReturn, MainMemory, Resolve, Shape, WithShape, Combiner,
+    Alloc, Combiner, Device, Dim1, Resolve, Shape,
+    WithShape, Retriever, Base, Cached, Autograd,
 };
-use sliced::{BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU, slice_binary_ew};
+use sliced::{slice_binary_ew, BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU};
 
 pub fn op<'b, T, D, S>(
     lhs: &Buffer<'b, T, D, S>,
@@ -11,7 +15,8 @@ pub fn op<'b, T, D, S>(
     op: impl Fn(T, T) -> T,
 ) -> Buffer<'b, T, D, S>
 where
-    D: for<'a> Alloc<'a, T, S> + MainMemory,
+    D: Alloc<T> + Retriever<T>,
+    D::Data<T, S>: Deref<Target = [T]> + DerefMut,
     S: Shape,
     T: Copy,
 {
@@ -24,13 +29,8 @@ where
     out
 }
 
-
-pub fn slice_binary_ew2<T>(
-    lhs: &[T],
-    rhs: &[T],
-    out: &mut [T],
-    f: impl Fn(T, T) -> T,
-) where
+pub fn slice_binary_ew2<T>(lhs: &[T], rhs: &[T], out: &mut [T], f: impl Fn(T, T) -> T)
+where
     T: Copy + Add<Output = T>,
 {
     for i in 0..out.len() {
@@ -49,12 +49,12 @@ pub fn slice_binary_ew2<T>(
 // 80MB, 110 MB
 // dur: 434 ms
 fn main() {
-    let device = custos::OpenCL::new(0).unwrap();
+    // let device = custos::OpenCL::<custos::Base>::new(0).unwrap();
     // let device = custos::Stack;
-    // let device = CPU::new();
+    let device = CPU::<Autograd<Cached<Base>>>::new();
     //device.tape_mut().disable();
 
-    const SIZE: usize = 123412; // 123412
+    const SIZE: usize = 2; // 123412
 
     // if with fails with CPU -> backwards operation may use () shape, Box<dyn Any> does not like this
     let mut x = Buffer::with(&device, [1.3f32; SIZE]);
@@ -62,14 +62,14 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    const TIMES: usize = 100;
+    const TIMES: usize = 1;
 
     let mut already = false;
 
     /*let x_slice = &*x;
     let b_slice = &*b;*/
     for _ in 0..TIMES {
-        for epoch in range(100) {
+        for epoch in 0..100 {
             //let mut out = device.retrieve::<_, Dim1<SIZE>>(SIZE, (&x, &b));
             /*for idx in 0..SIZE {
                 let x = x_slice[idx];
@@ -82,7 +82,6 @@ fn main() {
                 out[idx] = mul + mul_b;
             }*/
 
-
             let squared = device.square(&x);
             let add = device.add(&b, &x);
             let mul_b = device.mul(&add, &b);
@@ -90,26 +89,23 @@ fn main() {
             let out = device.add(&mul, &mul_b);
             assert_eq!(out.read()[0], 9.336999);
 
+            out.backward();
 
             // let squared = device.mul(&x, &x);
             // let mut squared: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(x.len(), (&x, &x));
             // slice_binary_ew2(&x, &x, &mut squared, |x, _| x.mul(x));
-
 
             // let mut add: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(b.len(), (&b, &x));
             // slice_binary_ew2(&b, &x, &mut add, |b, x| b.add(x));
 
             // let mut mul_b: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(add.len(), (&add, &b));
             // slice_binary_ew2(&add, &b, &mut mul_b, |add, b| add.mul(b));
-            
 
-            
             // let mut mul: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(squared.len(), (&squared, &x));
             // slice_binary_ew2(&squared, &x, &mut mul, |squared, x| squared.mul(x));
 
             // let mut out: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(mul.len(), (&mul, &mul_b));
             // slice_binary_ew2(&mul, &mul_b, &mut out, |mul, mul_b| mul.add(mul_b));
-
 
             if !already {
                 // println!("cache traces: {:?}", &device.graph().cache_traces());
@@ -139,5 +135,8 @@ fn main() {
         // println!("next")
     }
 
-    println!("elapsed (custos/sliced): {:?}", start.elapsed() / TIMES as u32);
+    println!(
+        "elapsed (custos/sliced): {:?}",
+        start.elapsed() / TIMES as u32
+    );
 }

@@ -4,7 +4,7 @@ use sliced::BinaryOpsMayGrad;
 #[cfg(feature = "cpu")]
 #[test]
 fn test_mul() {
-    let device = CPU::new();
+    let device = CPU::<custos::Base>::new();
 
     let lhs = Buffer::from((&device, [1, 2, 3, 4, 5]));
     let rhs = Buffer::from((&device, [6, 7, 8, 9, 10]));
@@ -29,7 +29,7 @@ fn test_mul() {
 fn test_mul_cl() -> custos::Result<()> {
     use custos::OpenCL;
 
-    let device = OpenCL::new(0)?;
+    let device = OpenCL::<custos::Base>::new(0)?;
 
     let lhs = Buffer::from((&device, [1, 2, 3, 4, 5]));
     let rhs = Buffer::from((&device, [6, 7, 8, 9, 10]));

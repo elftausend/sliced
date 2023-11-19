@@ -1,7 +1,7 @@
 use std::ops::AddAssign;
 
 use crate::{diagflat, diagflat_grad, Diagflat, DiagflatGrad};
-use custos::{Buffer, Device, Dim1, Dim2, Stack};
+use custos::{Buffer, Device, Dim1, Dim2, Retriever, Stack};
 
 impl<T: Copy + Default, const N: usize> Diagflat<T, Dim1<N>, Dim2<N, N>> for Stack {
     fn diagflat(&self, x: &Buffer<T, Self, Dim1<N>>) -> Buffer<T, Self, Dim2<N, N>> {

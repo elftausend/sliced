@@ -11,5 +11,6 @@ pub use opencl::*;
 use custos::{Buffer, Device, Shape};
 
 pub trait DiagflatGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    #[track_caller]
     fn diagflat_grad(&self, x_grad: &mut Buffer<T, Self, IS>, out_grad: &Buffer<T, Self, OS>);
 }

@@ -1,10 +1,10 @@
 use std::ops::AddAssign;
 
-use custos::{Buffer, Shape, CPU};
+use custos::{Buffer, OnDropBuffer, Shape, CPU};
 
 use crate::{SumColsGrad, SumRowsGrad};
 
-impl<T, IS, OS> SumRowsGrad<T, IS, OS> for CPU
+impl<T, IS, OS, Mods: OnDropBuffer> SumRowsGrad<T, IS, OS> for CPU<Mods>
 where
     T: Copy + AddAssign,
     IS: Shape,
@@ -21,7 +21,7 @@ where
     }
 }
 
-impl<T, IS, OS> SumColsGrad<T, IS, OS> for CPU
+impl<T, IS, OS, Mods: OnDropBuffer> SumColsGrad<T, IS, OS> for CPU<Mods>
 where
     T: Copy + AddAssign,
     IS: Shape,

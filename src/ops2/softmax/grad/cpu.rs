@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::{BinaryElementWise, Diagflat, Gemm, SoftmaxGrad, Transpose};
-use custos::{prelude::Number, range, Buffer, GenericBlas, MainMemory, Shape, CPU};
+use custos::{prelude::Number, Buffer, GenericBlas, Shape, CPU};
 
 impl<T, S> SoftmaxGrad<T, S> for CPU
 where
@@ -17,7 +17,7 @@ where
         out: &Buffer<T, Self, S>,
         out_grad: &Buffer<T, Self, S>,
     ) {
-        for idx in range(samples) {
+        for idx in 0..samples {
             let index = idx * features;
 
             // ensure that data is only read
@@ -65,7 +65,7 @@ mod tests {
 
     #[test]
     fn test_softmax_grad() {
-        let device = CPU::new();
+        let device = CPU::<custos::Base>::new();
         let x = Buffer::from((&device, &[1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
         let out = device.softmax(2, 3, &x);
         crate::test_utils::roughly_equals(
@@ -96,7 +96,7 @@ mod tests {
     fn test_matrix_forward_softmax_grad() {
         use crate::{Matrix, MaxColsMayGrad};
 
-        let device = CPU::new();
+        let device = CPU::<custos::Base>::new();
 
         let x = Matrix::from((&device, 2, 3, [1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
 

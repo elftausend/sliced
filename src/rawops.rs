@@ -22,6 +22,7 @@ mod opencl;
 pub use opencl::*;
 
 pub trait BinaryEWMayGrad<T, S: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn binary_ew_w_grad<FO, LO, RO>(
         &self,
         lhs: &Buffer<T, D, S>,
@@ -37,6 +38,7 @@ pub trait BinaryEWMayGrad<T, S: Shape = (), D: Device = Self>: Device {
 }
 
 pub trait RandOp<T, S: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn rand(&self, x: &mut Buffer<T, D, S>, lo: T, hi: T);
 }
 

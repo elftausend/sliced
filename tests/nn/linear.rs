@@ -1,4 +1,4 @@
-use custos::{prelude::Float, Alloc, Buffer, Device, IsShapeIndep};
+use custos::{prelude::Float, Alloc, Buffer, Device, IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions};
 
 use sliced::{GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
 
@@ -7,10 +7,10 @@ pub struct Linear<'a, T, D: Device, const I: usize, const O: usize> {
     bias: Matrix<'a, T, D>,
 }
 
-impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I, O> {
+impl<'a, T: Float, D: Device + OnNewBuffer<T, D>, const I: usize, const O: usize> Linear<'a, T, D, I, O> {
     pub fn new(device: &'a D) -> Self
     where
-        D: RandOp<T> + Alloc<'a, T>,
+        D: RandOp<T> + Alloc<T>,
     {
         let mut weights = Matrix::new(device, I, O);
         device.rand(&mut weights, -T::one() / T::two(), T::one() / T::two());
@@ -41,7 +41,7 @@ impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I
     }
 }
 
-pub fn create_sine<'a, D: Alloc<'a, f32> + IsShapeIndep>(
+pub fn create_sine<'a, D: Alloc<f32> + IsShapeIndep + OnNewBuffer<f32, D>>(
     device: &'a D,
     min: usize,
     max: usize,
@@ -76,16 +76,17 @@ pub struct SGD<T> {
 }
 
 #[cfg(feature = "autograd")]
-use custos::prelude::{ClearBuf, MainMemory, MayTapeReturn, One, WriteBuf};
+use custos::prelude::{ClearBuf, One, WriteBuf};
 
 #[cfg(feature = "autograd")]
 use core::ops::{Mul, SubAssign};
+use std::ops::{DerefMut, Deref};
 
 #[cfg(feature = "autograd")]
 impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: MayTapeReturn + WriteBuf<T> + for<'b> Alloc<'b, T> + ClearBuf<T> + 'static,
+        D: MayTapeActions + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
     {
         for param in params {
             param.param.grad_mut().clear();
@@ -94,10 +95,11 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
 
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: MainMemory + MayTapeReturn + WriteBuf<T> + for<'b> Alloc<'b, T> + 'static,
+        D: WriteBuf<T> + Alloc<T> + MayTapeActions + 'static,
+        D::Data<T, ()>: Deref<Target = [T]> + DerefMut
     {
         for param in params {
-            let grad = param.param.grad_unbound();
+            let grad = param.param.grad();
             for (value, grad) in param.param.iter_mut().zip(grad.iter()) {
                 *value -= *grad * self.lr
             }
@@ -112,7 +114,7 @@ fn test_mnist() {
     use custos::CPU;
     use purpur::CSVLoader;
 
-    let device = CPU::new();
+    let device = CPU::<custos::Base>::new();
 
     /*
     let loader = CSVLoader::new(true);
@@ -130,9 +132,9 @@ fn test_mnist() {
 fn test_nn() {
     use std::time::Instant;
 
-    use custos::{range, CPU};
+    use custos::CPU;
 
-    let device = CPU::new();
+    let device = CPU::<custos::Base>::new();
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
     let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);
@@ -142,9 +144,12 @@ fn test_nn() {
 
     let start = Instant::now();
 
-    for _ in range(1000) {
+    for _ in 0..1000 {
         #[cfg(feature = "autograd")]
-        custos::TapeReturn::tape_mut(&device).grads.zero_grad();
+        unsafe { 
+            device.gradients_mut().unwrap().zero_grad();
+        };
+        // custos::TapeReturn::tape_mut(&device).grads.zero_grad();
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
         // sgd.zero_grad(lin3.params());

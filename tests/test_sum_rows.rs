@@ -2,7 +2,7 @@
 fn test_sum_rows() {
     use sliced::{BinaryOpsMayGrad, Buffer, SumRowsMayGrad, CPU};
 
-    let device = CPU::new();
+    let device = CPU::<custos::Base>::new();
     let rhs = Buffer::from((&device, [1, 4, 2, 3]));
 
     #[rustfmt::skip]
@@ -26,7 +26,7 @@ fn test_sum_rows() {
             1, 4, 2, 3,
         ];
 
-        assert_eq!(&**to_sum_rows.grad(), expected);
-        assert_eq!(&**rhs.grad(), [15, 7, 5, 5]);
+        assert_eq!(&***to_sum_rows.grad(), expected);
+        assert_eq!(&***rhs.grad(), [15, 7, 5, 5]);
     }
 }

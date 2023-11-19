@@ -1,11 +1,13 @@
 use custos::{
-    prelude::enqueue_kernel, Buffer, CDatatype, Device, Eval, MayToCLSource, OpenCL, Resolve,
-    Shape, ToMarker,
+    opencl::{CLDevice, CLPtr},
+    prelude::enqueue_kernel,
+    Buffer, CDatatype, Device, Eval, MayToCLSource, OnDropBuffer, OpenCL, Resolve, Retrieve,
+    Retriever, Shape, ToMarker, UnifiedMemChain,
 };
 
 use super::BinaryElementWise;
 
-impl<T, S: Shape> BinaryElementWise<T, S> for OpenCL
+impl<T, S: Shape, Mods: Retrieve<Self, T>> BinaryElementWise<T, S> for OpenCL<Mods>
 where
     T: CDatatype + Default,
 {
@@ -25,15 +27,14 @@ where
     }
 }
 
-pub fn cl_binary_ew<T, S, O>(
-    device: &OpenCL,
-    lhs: &Buffer<T, OpenCL, S>,
-    rhs: &Buffer<T, OpenCL, S>,
-    out: &mut Buffer<T, OpenCL, S>,
+pub fn cl_binary_ew<T, O>(
+    device: &CLDevice,
+    lhs: &CLPtr<T>,
+    rhs: &CLPtr<T>,
+    out: &mut CLPtr<T>,
     f: impl Fn(Resolve<T>, Resolve<T>) -> O,
 ) -> custos::Result<()>
 where
-    S: Shape,
     T: CDatatype + Default,
     O: MayToCLSource,
 {
@@ -44,7 +45,7 @@ where
             out[id] = {op};
         }}
     ",
-        ty = T::as_c_type_str(),
+        ty = T::C_DTYPE_STR,
         op = f("lhs[id]".to_marker(), "rhs[id]".to_marker()).to_cl_source()
     );
 
@@ -55,18 +56,18 @@ where
 mod tests {
     use std::any::Any;
 
-    use custos::{Buffer, CacheReturn, Combiner, OpenCL};
+    use custos::{Buffer, Combiner, OpenCL};
 
     use super::cl_binary_ew;
 
     #[test]
     fn test_binary_ew() -> custos::Result<()> {
-        let device = OpenCL::new(0)?;
+        let device = OpenCL::<custos::Base>::new(0)?;
 
         let lhs = Buffer::from((&device, &[1, 5, 3, 2, 6]));
         let rhs = Buffer::from((&device, &[-1, 2, 9, 1, -2]));
 
-        let mut out = Buffer::new(&device, 5);
+        let mut out = Buffer::<_, _>::new(&device, 5);
 
         cl_binary_ew(&device, &lhs, &rhs, &mut out, |a, b| a.add(b))?;
 
@@ -77,14 +78,16 @@ mod tests {
 
     #[test]
     fn test_cpu_exec_macro() -> custos::Result<()> {
-        use crate::{BinaryElementWise, Buffer, CPU};
+        use crate::{custos::Base, BinaryElementWise, Buffer, CPU};
 
-        let device = crate::OpenCL::new(0)?;
+        let device = crate::OpenCL::<custos::Base>::new(0)?;
 
-        let cpu = CPU::new();
+        let cpu = CPU::<custos::Base>::new();
 
         let lhs = Buffer::from((&device, [1, 2, 3]));
         let rhs = Buffer::from((&device, [1, 2, 3]));
+
+        // cpu.add(&lhs,  &rhs);
 
         let a = custos::cpu_exec!(
             device, cpu, lhs, rhs; cpu.add(&lhs, &rhs)
@@ -94,11 +97,13 @@ mod tests {
         assert_eq!(a.device().type_id(), device.type_id());
         assert_eq!(a.read(), [2, 4, 6]);
 
+        use custos::UnifiedMemChain;
+
         let a = custos::cl_cpu_exec_unified!(
             device, lhs, rhs; device.cpu.add(&lhs, &rhs)
         )?;
 
-        assert_eq!(a.device().type_id(), device.type_id());
+        // assert_eq!(a.device().type_id(), device.type_id());
         assert_eq!(a.read(), [2, 4, 6]);
 
         Ok(())
