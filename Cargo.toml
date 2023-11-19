@@ -15,7 +15,7 @@ fastrand = "1.8.0"
 debug = true
 
 [features]
-default = ["cpu",  "matrix", "opencl", "stack", "autograd"]
+default = ["cpu",  "matrix", "opencl", "stack", "autograd", "blas"]
 #default = ["blas", "stack", "cpu", "matrix", "opencl", "autograd"]
 #default = ["stack", "cpu", "opencl", "blas", "matrix", "static-api"]
 autograd = ["custos/autograd"]
@@ -29,8 +29,8 @@ matrix = []
 
 [dev-dependencies]
 rawsliced = { path = "../rawsliced" }
-#graplot = "0.1.22"
-#purpur = "0.1.0"
+graplot = "0.1.22"
+purpur = "0.1.0"
 
 [[test]]
 name = "test_combination"

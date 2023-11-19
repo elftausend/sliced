@@ -1,16 +1,21 @@
+use std::ops::{Deref, DerefMut};
+
 #[cfg(feature = "stack")]
 use custos::Stack;
-use custos::{impl_stack, Buffer, GenericBlas, Shape, CPU};
+use custos::{impl_stack, Buffer, GenericBlas, Shape, CPU, Device, OnDropBuffer};
 
 use super::GemmGrad;
 
 #[cfg(feature = "blas")]
 #[cfg(not(feature = "matrixmultiply"))]
 #[impl_stack]
-impl<T, D, LS, RS, OS> GemmGrad<T, LS, RS, OS, D> for CPU
+impl<T, D, LS, RS, OS, Mods: OnDropBuffer> GemmGrad<T, LS, RS, OS, D> for CPU<Mods>
 where
     T: GenericBlas + Default + Copy,
-    D: MainMemory,
+    D: Device,
+    D::Data<T, LS>: Deref<Target = [T]> + DerefMut,
+    D::Data<T, RS>: Deref<Target = [T]> + DerefMut,
+    D::Data<T, OS>: Deref<Target = [T]>,
     LS: Shape,
     RS: Shape,
     OS: Shape,

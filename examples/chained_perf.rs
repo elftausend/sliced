@@ -5,7 +5,7 @@ use std::{
 
 use custos::{
     Alloc, Combiner, Device, Dim1, Resolve, Shape,
-    WithShape, Retriever, Base, Cached,
+    WithShape, Retriever, Base, Cached, Autograd,
 };
 use sliced::{slice_binary_ew, BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU};
 
@@ -51,10 +51,10 @@ where
 fn main() {
     // let device = custos::OpenCL::<custos::Base>::new(0).unwrap();
     // let device = custos::Stack;
-    let device = CPU::<Cached<Base>>::new();
+    let device = CPU::<Autograd<Cached<Base>>>::new();
     //device.tape_mut().disable();
 
-    const SIZE: usize = 123412; // 123412
+    const SIZE: usize = 2; // 123412
 
     // if with fails with CPU -> backwards operation may use () shape, Box<dyn Any> does not like this
     let mut x = Buffer::with(&device, [1.3f32; SIZE]);
@@ -62,7 +62,7 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    const TIMES: usize = 100;
+    const TIMES: usize = 1;
 
     let mut already = false;
 
@@ -88,6 +88,8 @@ fn main() {
             let mul = device.mul(&squared, &x);
             let out = device.add(&mul, &mul_b);
             assert_eq!(out.read()[0], 9.336999);
+
+            out.backward();
 
             // let squared = device.mul(&x, &x);
             // let mut squared: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(x.len(), (&x, &x));

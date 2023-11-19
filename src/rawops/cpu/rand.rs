@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use custos::{prelude::Float, Buffer, Device, Shape, CPU};
+use custos::{prelude::Float, Buffer, Device, Shape, CPU, OnDropBuffer};
 
 use crate::RandOp;
 
@@ -12,7 +12,7 @@ pub fn rand_slice<T: PartialOrd + Copy + Float>(slice: &mut [T], lo: T, hi: T) {
 }
 
 //#[impl_stack]
-impl<T, D, S> RandOp<T, S, D> for CPU
+impl<Mods: OnDropBuffer, T, D, S> RandOp<T, S, D> for CPU<Mods>
 where
     T: Float,
     S: Shape,

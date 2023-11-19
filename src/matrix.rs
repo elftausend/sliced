@@ -28,7 +28,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn new(device: &'a D, rows: usize, cols: usize) -> Matrix<'a, T, D, S>
     where
-        D: Alloc<T> + OnNewBuffer<T, D, S>,
+        D: Alloc<T> + OnNewBuffer<T, D>,
     {
         Matrix {
             data: Buffer::new(device, rows * cols),
@@ -307,14 +307,14 @@ impl<'a, T, D: Device, S: Shape> core::ops::Deref for Matrix<'a, T, D, S> {
 
     #[inline]
     fn deref(&self) -> &Self::Target {
-        &*self
+        self.as_buf()
     }
 }
 
 impl<'a, T, D: Device, S: Shape> core::ops::DerefMut for Matrix<'a, T, D, S> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut *self
+        self.as_buf_mut()
     }
 }
 

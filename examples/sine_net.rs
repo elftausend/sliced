@@ -1,4 +1,4 @@
-use custos::{prelude::Float, Alloc, Buffer, Device, IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions};
+use custos::{prelude::Float, Alloc, Buffer, Device, IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions, Autograd, Base};
 
 use sliced::{GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
 
@@ -127,14 +127,13 @@ fn test_mnist() {
     let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);*/
 }
 
-#[test]
-#[cfg_attr(miri, ignore)]
-fn test_nn() {
+fn main() {
     use std::time::Instant;
 
     use custos::CPU;
 
-    let device = CPU::<custos::Base>::new();
+
+    let device = CPU::<Autograd<Base>>::new();
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
     let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);
@@ -164,7 +163,7 @@ fn test_nn() {
         {
             loss.backward();
 
-            //println!("lin1 dweights grad: {:?}", lin1.weights.grad());
+            // println!("lin1 dweights grad: {:?}", lin1.weights.grad());
 
             sgd.step(lin1.params());
             sgd.step(lin2.params());
@@ -180,6 +179,6 @@ fn test_nn() {
     // println!("out: {:?}", out.read());
 
     let mut plot = graplot::Plot::new((x.read(), y.read()));
-    //plot.add((x.read(), out.read(), "-r"));
-    //    plot.show()
+    plot.add((x.read(), out.read(), "-r"));
+    plot.show()
 }

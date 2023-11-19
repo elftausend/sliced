@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
 use crate::{BinaryElementWise, Diagflat, Gemm, SoftmaxGrad, Transpose};
-use custos::{prelude::Number, range, Buffer, GenericBlas, MainMemory, Shape, CPU};
+use custos::{prelude::Number, Buffer, GenericBlas, Shape, CPU};
 
 impl<T, S> SoftmaxGrad<T, S> for CPU
 where
@@ -17,7 +17,7 @@ where
         out: &Buffer<T, Self, S>,
         out_grad: &Buffer<T, Self, S>,
     ) {
-        for idx in range(samples) {
+        for idx in 0..samples {
             let index = idx * features;
 
             // ensure that data is only read
