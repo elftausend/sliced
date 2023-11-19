@@ -65,7 +65,7 @@ pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
     #[inline]
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
     where
-        T: MayToCLSource + Eval<T> + core::ops::Add<T, Output = T>,
+        T: core::ops::Add<T, Output = T>,
     {
         self.binary_ew(lhs, rhs, |lhs, rhs| lhs.add(rhs))
     }
@@ -73,7 +73,7 @@ pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
     #[inline]
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
     where
-        T: MayToCLSource + Eval<T> + core::ops::Mul<T, Output = T>,
+        T: core::ops::Mul<T, Output = T>,
     {
         self.binary_ew(lhs, rhs, |lhs, rhs| lhs.mul(rhs))
     }
@@ -81,7 +81,7 @@ pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
     #[inline]
     fn div(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
     where
-        T: MayToCLSource + Eval<T> + core::ops::Div<T, Output = T>,
+        T: core::ops::Div<T, Output = T>,
     {
         self.binary_ew(lhs, rhs, |lhs, rhs| lhs.div(rhs))
     }
@@ -89,7 +89,7 @@ pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
     #[inline]
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, Self, S>
     where
-        T: MayToCLSource + Eval<T> + core::ops::Sub<T, Output = T>,
+        T: core::ops::Sub<T, Output = T>,
     {
         self.binary_ew(lhs, rhs, |lhs, rhs| lhs.sub(rhs))
     }

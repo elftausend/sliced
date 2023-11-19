@@ -24,11 +24,11 @@ pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
     cols: usize,
 }
 
-impl<'a, T, D: Device + OnNewBuffer<T, D, S>, S: Shape> Matrix<'a, T, D, S> {
+impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn new(device: &'a D, rows: usize, cols: usize) -> Matrix<'a, T, D, S>
     where
-        D: Alloc<T>,
+        D: Alloc<T> + OnNewBuffer<T, D, S>,
     {
         Matrix {
             data: Buffer::new(device, rows * cols),
@@ -244,9 +244,11 @@ impl<'a, T, D: Device + OnNewBuffer<T, D, S>, S: Shape> Matrix<'a, T, D, S> {
             + Alloc<T>
             + MayTapeActions
             + AddGradFn
-            + SumColsMayGrad<T, S, OS>,
+            + SumColsMayGrad<T, S, OS>
+            + PowMayGrad<T, OS>
+            + PowMayGrad<T, S>
+            + 'static
     {
-        // todo!()
         self.squared().sum_cols().pow(T::one() / T::two())
     }
 

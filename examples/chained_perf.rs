@@ -1,11 +1,11 @@
 use std::{
     hint::black_box,
-    ops::{Add, Mul},
+    ops::{Add, Mul, DerefMut, Deref},
 };
 
 use custos::{
-    range, Alloc, CacheReturn, Combiner, Device, Dim1, GraphReturn, MainMemory, Resolve, Shape,
-    WithShape,
+    Alloc, Combiner, Device, Dim1, Resolve, Shape,
+    WithShape, Retriever,
 };
 use sliced::{slice_binary_ew, BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU};
 
@@ -15,7 +15,8 @@ pub fn op<'b, T, D, S>(
     op: impl Fn(T, T) -> T,
 ) -> Buffer<'b, T, D, S>
 where
-    D: for<'a> Alloc<'a, T, S> + MainMemory,
+    D: Alloc<T> + Retriever<T>,
+    D::Data<T, S>: Deref<Target = [T]> + DerefMut,
     S: Shape,
     T: Copy,
 {
@@ -61,14 +62,14 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    const TIMES: usize = 1000000;
+    const TIMES: usize = 100;
 
     let mut already = false;
 
     /*let x_slice = &*x;
     let b_slice = &*b;*/
     for _ in 0..TIMES {
-        for epoch in range(100) {
+        for epoch in 0..100 {
             //let mut out = device.retrieve::<_, Dim1<SIZE>>(SIZE, (&x, &b));
             /*for idx in 0..SIZE {
                 let x = x_slice[idx];

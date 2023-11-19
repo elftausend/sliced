@@ -6,7 +6,7 @@ use std::{
 use custos::{
     prelude::{Float, One, Two},
     AddGradFn, Alloc, ApplyFunction, AsNoId, Buffer, Combiner, Device, Eval, HasId, MayTapeActions,
-    MayToCLSource, Shape, UnaryGrad, WriteBuf,
+    MayToCLSource, Shape, UnaryGrad, WriteBuf, number::Numeric,
 };
 
 use crate::{
@@ -98,9 +98,10 @@ where
         + Sub<Output = T>
         + Add<Output = T>
         + Neg<Output = T>
-        + MayToCLSource
+        // + MayToCLSource
         + One
-        + Eval<T>
+        // + Eval<T>
+        + Numeric
         + 'static,
 {
     #[inline]

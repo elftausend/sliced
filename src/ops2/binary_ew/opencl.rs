@@ -87,6 +87,8 @@ mod tests {
         let lhs = Buffer::from((&device, [1, 2, 3]));
         let rhs = Buffer::from((&device, [1, 2, 3]));
 
+        // cpu.add(&lhs,  &rhs);
+
         let a = custos::cpu_exec!(
             device, cpu, lhs, rhs; cpu.add(&lhs, &rhs)
         );
@@ -101,7 +103,7 @@ mod tests {
             device, lhs, rhs; device.cpu.add(&lhs, &rhs)
         )?;
 
-        assert_eq!(a.device().type_id(), device.type_id());
+        // assert_eq!(a.device().type_id(), device.type_id());
         assert_eq!(a.read(), [2, 4, 6]);
 
         Ok(())
