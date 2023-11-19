@@ -1,10 +1,10 @@
-use custos::{prelude::Number, Buffer, Device, Retriever, CPU};
+use custos::{prelude::Number, Buffer, Device, Retriever, CPU, Retrieve};
 
 use crate::{max, Onehot};
 
-impl<T: PartialOrd + Number> Onehot<T> for CPU {
+impl<T: PartialOrd + Number, Mods: Retrieve<Self, T>> Onehot<T> for CPU<Mods> {
     #[inline]
-    fn onehot(&self, classes: &Buffer<T>) -> Buffer<T> {
+    fn onehot(&self, classes: &Buffer<T, Self>) -> Buffer<T, Self> {
         let highest_class = max(classes).unwrap().as_usize() + 1;
 
         let mut out = self.retrieve(classes.len() * highest_class, classes);

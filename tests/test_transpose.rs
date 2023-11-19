@@ -10,7 +10,7 @@ fn test_transpose_cpu() {
     let x = Buffer::from((&device, [1, 2, 3, 4, 5, 6]));
 
     let out: Buffer<i32, _> = device.transpose(2, 3, &x);
-    assert_eq!(&*out, [1, 4, 2, 5, 3, 6]);
+    assert_eq!(&**out, [1, 4, 2, 5, 3, 6]);
 
     /*let y = Buffer::from((&device, [-2, 3, -4, -2, -3, -1]));
 

@@ -1,4 +1,4 @@
-use custos::{get_count, range, ApplyFunction, Buffer, Combiner, OpenCL, TapeReturn, CPU};
+use custos::{ApplyFunction, Buffer, Combiner, OpenCL, CPU};
 use sliced::{BinaryOpsMayGrad, Matrix, SquareMayGrad};
 
 #[test]
@@ -7,7 +7,7 @@ fn test_comb() {
 
     let mut x = Buffer::from((&device, [10f32, -10., 10., -5., 6., 3., 1.]));
 
-    for i in range(100) {
+    for i in 0..100 {
         let squared = device.square(&x);
 
         let sum = squared.iter().sum::<f32>();
@@ -15,7 +15,7 @@ fn test_comb() {
 
         squared.backward();
 
-        let mut x_grad = x.grad_mut_unbound();
+        let mut x_grad = x.grad_mut();
         rawsliced::ew_assign_scalar(&mut x_grad, &0.1, |x, r| *x *= r);
         rawsliced::ew_assign_binary(&mut x, &x_grad, |x, y| *x -= y);
         x_grad.clear();
@@ -36,7 +36,7 @@ fn test_perf_min_this() {
     const TIMES: usize = 100;
 
     for _ in 0..TIMES {
-        for _ in range(100) {
+        for _ in 0..100 {
             let squared = x.squared();
             let mul = squared.mul(&x);
 
@@ -75,7 +75,7 @@ fn test_2perf_min_this() {
     const TIMES: usize = 100;
 
     for _ in 0..TIMES {
-        for _ in range(100) {
+        for _ in 0..100 {
             let squared = device.square(&x);
             let mul = device.mul(&squared, &x);
             let add = device.add(&b, &x);
@@ -115,7 +115,7 @@ fn test_small_2perf_min_this() {
     const TIMES: usize = 100;
 
     for _ in 0..TIMES {
-        for _ in range(100) {
+        for _ in 0..100 {
             let squared = device.square(&x);
             let mul = device.mul(&squared, &x);
             let add = device.add(&b, &x);

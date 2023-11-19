@@ -26,7 +26,7 @@ fn test_gemm_cpu() {
     let out: Buffer = device.gemm(m, k, n, &lhs, &rhs);
 
     assert_eq!(
-        &*out,
+        &**out,
         [9.0, 12.0, 15.0, 19.0, 26.0, 33.0, 24.0, 33.0, 42.0, 26.0, 37.0, 48.0]
     );
 
@@ -35,10 +35,10 @@ fn test_gemm_cpu() {
         out.backward();
 
         let lhs_grad = lhs.grad();
-        assert_eq!(&**lhs_grad, [6.0, 15.0, 6.0, 15.0, 6.0, 15.0, 6.0, 15.0]);
+        assert_eq!(&***lhs_grad, [6.0, 15.0, 6.0, 15.0, 6.0, 15.0, 6.0, 15.0]);
 
         let rhs_grad = rhs.grad();
-        assert_eq!(&**rhs_grad, [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]);
+        assert_eq!(&***rhs_grad, [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]);
     }
 }
 

@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use custos::{impl_stack, Buffer, Device, Retriever, Shape, CPU};
+use custos::{impl_stack, Buffer, Device, Retriever, Shape, CPU, Retrieve};
 
 use crate::{
     assign_or_set::{AssignOrSet, Set},
@@ -29,7 +29,7 @@ pub fn slice_transpose<T: Clone, AOS: AssignOrSet<T>>(
 use custos::Stack;
 
 #[impl_stack]
-impl<T, IS, OS, D> Transpose<T, IS, OS, D> for CPU
+impl<T, IS, OS, D, Mods: Retrieve<Self, T>> Transpose<T, IS, OS, D> for CPU<Mods>
 where
     T: Copy + Default,
     IS: Shape,

@@ -1,6 +1,6 @@
 use custos::{prelude::Float, Alloc, Buffer, Device, IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions, Autograd, Base};
 
-use sliced::{GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
+use sliced::{GemmMayGrad, Matrix, RandOp, RowOpMayGrad, Mean};
 
 pub struct Linear<'a, T, D: Device, const I: usize, const O: usize> {
     weights: Matrix<'a, T, D>,
@@ -158,6 +158,8 @@ fn main() {
         let out = lin3.forward(&out);
 
         let loss = (&out - &y).squared();
+        let loss_val = device.mean(&loss);
+        println!("loss: {loss_val}");
 
         #[cfg(feature = "autograd")]
         {

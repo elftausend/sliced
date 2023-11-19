@@ -15,7 +15,7 @@ fn test_max_cols_cpu() {
     ]));
 
     let max_cols = device.max_cols(3, 4, &lhs);
-    assert_eq!(&*max_cols, [3, 5, -1]);
+    assert_eq!(&**max_cols, [3, 5, -1]);
 
     let _out = device.add(&max_cols, &rhs);
 
@@ -30,7 +30,7 @@ fn test_max_cols_cpu() {
             0, 0, 0, 1
         ];
 
-        assert_eq!(&**lhs.grad(), expected);
-        assert_eq!([1, 1, 1], &**rhs.grad());
+        assert_eq!(&***lhs.grad(), expected);
+        assert_eq!([1, 1, 1], &***rhs.grad());
     }
 }

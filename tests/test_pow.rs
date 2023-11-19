@@ -10,11 +10,11 @@ fn test_pow() {
 
     let out = device.pow(&x, 3.);
 
-    assert_eq!(&*out, [1., 8., 27., 64., 125.,]);
+    assert_eq!(&**out, [1., 8., 27., 64., 125.,]);
 
     #[cfg(feature = "autograd")]
     {
         out.backward();
-        assert_eq!(&**x.grad(), [3., 12., 27., 48., 75.]);
+        assert_eq!(&***x.grad(), [3., 12., 27., 48., 75.]);
     }
 }

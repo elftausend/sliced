@@ -359,6 +359,11 @@ where
     ) {
         self.add_row_mut(rows, cols, lhs, rhs);
 
+        self.add_grad_fn((rows.no_id(), cols.no_id(), lhs, rhs), |(rows, cols, lhs, rhs)| {
+            lhs.device().add_row_mut_grad(**rows, **cols, rhs.grad_mut(), lhs.grad());
+            Ok(())
+        });
+
         // #[cfg(feature = "autograd")]
         // {
         //     let ids = (rhs.id(), lhs.id());
@@ -381,6 +386,7 @@ where
     fn exp(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S> {
         let out = self.apply_fn(x, |x| x.exp());
 
+        unimplemented!();
         // #[cfg(feature = "autograd")]
         // {
         //     let ids = (x.id(), out.id());
@@ -436,6 +442,8 @@ where
 {
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.max_cols(rows, cols, x);
+        
+        unimplemented!();
 
         // #[cfg(feature = "autograd")]
         // {
@@ -470,6 +478,7 @@ where
     fn max_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.max_rows(cols, x);
 
+        unimplemented!();
         // #[cfg(feature = "autograd")]
         // {
         //     let ids = (x.id(), out.id());
@@ -504,6 +513,7 @@ where
     fn sum_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.sum_rows(cols, x);
 
+        unimplemented!();
         // #[cfg(feature = "autograd")]
         // {
         //     let ids = (x.id(), out.id());
@@ -536,6 +546,7 @@ where
     fn sum_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.sum_cols(cols, x);
 
+        unimplemented!();
         // #[cfg(feature = "autograd")]
         // {
         //     let ids = (x.id(), out.id());
@@ -568,6 +579,7 @@ where
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.mean_cols(cols, x);
 
+        unimplemented!();
         // #[cfg(feature = "autograd")]
         // {
         //     let ids = (x.id(), out.id());
