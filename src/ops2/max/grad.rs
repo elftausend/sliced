@@ -11,6 +11,7 @@ pub use opencl::*;
 use custos::{Buffer, Device, Shape};
 
 pub trait MaxRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    #[track_caller]
     fn max_rows_grad(
         &self,
         cols: usize,
@@ -22,6 +23,7 @@ pub trait MaxRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
 }
 
 pub trait MaxColsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+    #[track_caller]
     fn max_cols_grad(
         &self,
         cols: usize,

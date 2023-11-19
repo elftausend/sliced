@@ -13,6 +13,7 @@ pub use opencl::*;
 
 use custos::{Buffer, Device, Shape};
 pub trait Mean<T, S: Shape>: Device {
+    #[track_caller]
     fn mean(&self, x: &Buffer<T, Self, S>) -> T;
 }
 
@@ -36,6 +37,7 @@ pub trait MeanRows<T, IS: Shape = (), OS: Shape = ()>: Device {
     /// assert_eq!(&*mean_rows, [2, 2, 2]);
     ///
     /// ```
+    #[track_caller]
     fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -58,5 +60,6 @@ pub trait MeanCols<T, IS: Shape = (), OS: Shape = ()>: Device {
     /// let mean_cols: Buffer<_>  = device.mean_cols(4, &to_mean_cols);
     /// assert_eq!(&*mean_cols, [2, 2, 3])
     /// ```
+    #[track_caller]
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }

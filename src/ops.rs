@@ -21,6 +21,7 @@ where
     T: 'static,
     S: Shape,
 {
+    #[track_caller]
     fn square(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S>
     where
         T: MayToCLSource + Eval<T> + Mul<Output = T> + Copy + Two,
@@ -44,6 +45,7 @@ where
 }
 
 pub trait PowMayGrad<T, S: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn pow(&self, x: &Buffer<T, D, S>, rhs: T) -> Buffer<T, D, S>;
 }
 
@@ -77,11 +79,15 @@ where
 impl<T: 'static, S: Shape, D: Device> SquareMayGrad<T, S> for D {}
 
 pub trait BinaryOpsMayGrad<T, S: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
+    #[track_caller]
     fn add2(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>
     where
         D: AddElementWiseGrad<T, S>;
+    #[track_caller]
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
+    #[track_caller]
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
 }
 
@@ -180,6 +186,7 @@ where
 }
 
 pub trait TransposeMayGrad<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, D, OS>;
 }
 
@@ -215,6 +222,7 @@ where
 pub trait GemmMayGrad<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
     Device
 {
+    #[track_caller]
     fn gemm(
         &self,
         m: usize,
@@ -281,6 +289,7 @@ where
 }
 
 pub trait RowOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+    #[track_caller]
     fn add_row(
         &self,
         rows: usize,
@@ -289,6 +298,7 @@ pub trait RowOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Dev
         rhs: &Buffer<T, D, RS>,
     ) -> Buffer<T, D, LS>;
 
+    #[track_caller]
     fn add_row_mut(
         &self,
         rows: usize,
@@ -367,6 +377,7 @@ where
     T: Float + 'static,
     S: Shape,
 {
+    #[track_caller]
     fn exp(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S> {
         let out = self.apply_fn(x, |x| x.exp());
 
@@ -393,6 +404,7 @@ where
 
 pub trait Exp<T: Float, S: Shape>: ApplyFunction<T, S> {
     #[inline]
+    #[track_caller]
     fn exp(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S> {
         self.apply_fn(x, |x| x.exp())
     }
@@ -411,6 +423,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -443,6 +456,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn max_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -476,6 +490,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn sum_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -507,6 +522,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn sum_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -538,6 +554,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -568,6 +585,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -600,6 +618,7 @@ where
     IS: Shape,
     OS: Shape,
 {
+    #[track_caller]
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -638,6 +657,7 @@ pub trait SoftmaxMayGrad<T, S>: Device
 where
     S: Shape,
 {
+    #[track_caller]
     fn softmax(
         &self,
         samples: usize,

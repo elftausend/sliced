@@ -38,5 +38,6 @@ pub trait Diagflat<T, IS: Shape = (), OS: Shape = ()>: Device {
     /// ]);
     ///
     /// ```
+    #[track_caller]
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }

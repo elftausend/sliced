@@ -5,7 +5,7 @@ use std::{
 
 use custos::{
     Alloc, Combiner, Device, Dim1, Resolve, Shape,
-    WithShape, Retriever,
+    WithShape, Retriever, Base, Cached,
 };
 use sliced::{slice_binary_ew, BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU};
 
@@ -51,7 +51,7 @@ where
 fn main() {
     // let device = custos::OpenCL::<custos::Base>::new(0).unwrap();
     // let device = custos::Stack;
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<Cached<Base>>::new();
     //device.tape_mut().disable();
 
     const SIZE: usize = 123412; // 123412

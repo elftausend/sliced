@@ -36,5 +36,6 @@ pub trait Onehot<T, IS: Shape = (), OS: Shape = ()>: Device {
     ///     0, 0, 1, 0
     /// ], &*onehot);
     /// ```
+    #[track_caller]
     fn onehot(&self, classes: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
