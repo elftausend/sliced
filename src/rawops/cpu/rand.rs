@@ -1,6 +1,6 @@
 use std::ops::{Deref, DerefMut};
 
-use custos::{prelude::Float, Buffer, Device, Shape, CPU, OnDropBuffer};
+use custos::{prelude::Float, Buffer, Device, OnDropBuffer, Shape, CPU};
 
 use crate::RandOp;
 

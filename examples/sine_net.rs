@@ -1,13 +1,18 @@
-use custos::{prelude::Float, Alloc, Buffer, Device, IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions, Autograd, Base};
+use custos::{
+    prelude::Float, Alloc, Autograd, Base, Buffer, Device, IsShapeIndep, MayTapeActions,
+    OnNewBuffer, TapeActions,
+};
 
-use sliced::{GemmMayGrad, Matrix, RandOp, RowOpMayGrad, Mean};
+use sliced::{GemmMayGrad, Matrix, Mean, RandOp, RowOpMayGrad};
 
 pub struct Linear<'a, T, D: Device, const I: usize, const O: usize> {
     weights: Matrix<'a, T, D>,
     bias: Matrix<'a, T, D>,
 }
 
-impl<'a, T: Float, D: Device + OnNewBuffer<T, D>, const I: usize, const O: usize> Linear<'a, T, D, I, O> {
+impl<'a, T: Float, D: Device + OnNewBuffer<T, D>, const I: usize, const O: usize>
+    Linear<'a, T, D, I, O>
+{
     pub fn new(device: &'a D) -> Self
     where
         D: RandOp<T> + Alloc<T>,
@@ -80,7 +85,7 @@ use custos::prelude::{ClearBuf, One, WriteBuf};
 
 #[cfg(feature = "autograd")]
 use core::ops::{Mul, SubAssign};
-use std::ops::{DerefMut, Deref};
+use std::ops::{Deref, DerefMut};
 
 #[cfg(feature = "autograd")]
 impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
@@ -96,7 +101,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
         D: WriteBuf<T> + Alloc<T> + MayTapeActions + 'static,
-        D::Data<T, ()>: Deref<Target = [T]> + DerefMut
+        D::Data<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
             let grad = param.param.grad();
@@ -132,7 +137,6 @@ fn main() {
 
     use custos::CPU;
 
-
     let device = CPU::<Autograd<Base>>::new();
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
@@ -145,7 +149,7 @@ fn main() {
 
     for _ in 0..1000 {
         #[cfg(feature = "autograd")]
-        unsafe { 
+        unsafe {
             device.gradients_mut().unwrap().zero_grad();
         };
         // custos::TapeReturn::tape_mut(&device).grads.zero_grad();

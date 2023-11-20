@@ -192,13 +192,14 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         self.device()
             .add_grad_fn((self.as_buf(), &mut out), |(lhs, out)| {
                 lhs.device()
-                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| T::one().identity().sub(x.tanh().pow(T::two())));
+                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| {
+                        T::one().identity().sub(x.tanh().pow(T::two()))
+                    });
                 Ok(())
             });
 
         (out, self.rows, self.cols).into()
     }
-
 
     #[inline]
     #[track_caller]
@@ -287,7 +288,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + SumColsMayGrad<T, S, OS>
             + PowMayGrad<T, OS>
             + PowMayGrad<T, S>
-            + 'static
+            + 'static,
     {
         self.squared().sum_cols().pow(T::one() / T::two())
     }

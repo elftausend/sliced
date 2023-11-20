@@ -1,7 +1,7 @@
 mod grad;
 use std::ops::Add;
 
-use custos::{Buffer, Device, Shape};
+use custos::{Buffer, Device, Shape, Resolve, Eval, MayToCLSource, Combiner};
 pub use grad::*;
 
 #[cfg(feature = "cpu")]
@@ -16,12 +16,12 @@ pub use opencl::*;
 
 pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     #[track_caller]
-    fn row_op<F: Fn(&mut T, T, T) + Copy>(
+    fn row_op<O: Eval<T> + MayToCLSource>(
         &self,
         cols: usize,
         lhs: &Buffer<T, D, LS>,
         rhs: &Buffer<T, D, RS>,
-        f: F,
+        f: impl Fn(Resolve<T>, Resolve<T>) -> O,
     ) -> Buffer<T, Self, LS>;
 
     #[inline]
@@ -35,7 +35,7 @@ pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     where
         T: Add<Output = T>,
     {
-        self.row_op(cols, lhs, rhs, |c, a, b| *c = a + b)
+        self.row_op(cols, lhs, rhs, |a, b| a.add(b))
     }
     #[track_caller]
     fn add_row_mut(

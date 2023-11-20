@@ -1,7 +1,7 @@
 #[cfg(feature = "autograd")]
 #[test]
 fn test_min_fn() {
-    use custos::{Buffer, CPU, Base, Autograd};
+    use custos::{Autograd, Base, Buffer, CPU};
     use sliced::Matrix;
 
     let device = CPU::<Autograd<Base>>::new();

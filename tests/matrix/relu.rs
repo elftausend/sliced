@@ -26,14 +26,14 @@ fn test_relu_cpu() {
 fn test_relu_cpu_perf() {
     use std::time::Instant;
 
-    use custos::{CPU, Autograd};
+    use custos::{Autograd, CPU};
     use sliced::Matrix;
 
     let device = CPU::<Autograd<custos::Base>>::new();
 
     let buf = Matrix::from((&device, 1, 50000, [-1., -3., 2., 5., -1.3].repeat(10000)));
 
-    let should = [0., 0., 2., 5., 0.,].repeat(10000);
+    let should = [0., 0., 2., 5., 0.].repeat(10000);
 
     let start = Instant::now();
 

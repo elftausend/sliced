@@ -1,11 +1,10 @@
 use std::{
     hint::black_box,
-    ops::{Add, Mul, DerefMut, Deref},
+    ops::{Add, Deref, DerefMut, Mul},
 };
 
 use custos::{
-    Alloc, Combiner, Device, Dim1, Resolve, Shape,
-    WithShape, Retriever, Base, Cached, Autograd,
+    Alloc, Autograd, Base, Cached, Combiner, Device, Dim1, Resolve, Retriever, Shape, WithShape,
 };
 use sliced::{slice_binary_ew, BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU};
 

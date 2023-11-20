@@ -1,7 +1,7 @@
 use std::ops::{AddAssign, Mul};
 
 use crate::{MeanColsGrad, MeanRowsGrad};
-use custos::{prelude::Number, Buffer, Shape, CPU, OnDropBuffer};
+use custos::{prelude::Number, Buffer, OnDropBuffer, Shape, CPU};
 
 impl<T: Number, IS: Shape, OS: Shape, Mods: OnDropBuffer> MeanRowsGrad<T, IS, OS> for CPU<Mods> {
     #[inline]

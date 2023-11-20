@@ -1,6 +1,6 @@
 use std::ops::{AddAssign, Deref, DerefMut};
 
-use custos::{Buffer, Device, Shape, CPU, OnDropBuffer};
+use custos::{Buffer, Device, OnDropBuffer, Shape, CPU};
 
 use crate::{assign_or_set::Assign, slice_transpose, TranposeGrad};
 
