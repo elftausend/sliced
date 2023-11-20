@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 #[cfg(feature = "stack")]
 use custos::Stack;
-use custos::{impl_stack, Buffer, GenericBlas, Shape, CPU, Device, OnDropBuffer};
+use custos::{impl_stack, Buffer, Device, GenericBlas, OnDropBuffer, Shape, CPU};
 
 use super::GemmGrad;
 

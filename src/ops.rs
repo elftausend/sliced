@@ -4,9 +4,10 @@ use std::{
 };
 
 use custos::{
+    number::Numeric,
     prelude::{Float, One, Two},
     AddGradFn, Alloc, ApplyFunction, AsNoId, Buffer, Combiner, Device, Eval, HasId, MayTapeActions,
-    MayToCLSource, Shape, UnaryGrad, WriteBuf, number::Numeric,
+    MayToCLSource, Shape, UnaryGrad, WriteBuf,
 };
 
 use crate::{
@@ -359,10 +360,14 @@ where
     ) {
         self.add_row_mut(rows, cols, lhs, rhs);
 
-        self.add_grad_fn((rows.no_id(), cols.no_id(), lhs, rhs), |(rows, cols, lhs, rhs)| {
-            lhs.device().add_row_mut_grad(**rows, **cols, rhs.grad_mut(), lhs.grad());
-            Ok(())
-        });
+        self.add_grad_fn(
+            (rows.no_id(), cols.no_id(), lhs, rhs),
+            |(rows, cols, lhs, rhs)| {
+                lhs.device()
+                    .add_row_mut_grad(**rows, **cols, rhs.grad_mut(), lhs.grad());
+                Ok(())
+            },
+        );
 
         // #[cfg(feature = "autograd")]
         // {
@@ -442,7 +447,7 @@ where
 {
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.max_cols(rows, cols, x);
-        
+
         unimplemented!();
 
         // #[cfg(feature = "autograd")]

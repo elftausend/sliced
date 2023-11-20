@@ -1,4 +1,4 @@
-use custos::{prelude::Number, Buffer, Device, Retriever, CPU, Retrieve};
+use custos::{prelude::Number, Buffer, Device, Retrieve, Retriever, CPU};
 
 use crate::{max, Onehot};
 

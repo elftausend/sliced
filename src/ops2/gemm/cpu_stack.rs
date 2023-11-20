@@ -1,6 +1,8 @@
 use std::ops::Deref;
 
-use custos::{impl_stack, Buffer, Device, GenericBlas, Shape, CPU, Retriever, OnDropBuffer, Retrieve};
+use custos::{
+    impl_stack, Buffer, Device, GenericBlas, OnDropBuffer, Retrieve, Retriever, Shape, CPU,
+};
 
 use super::Gemm;
 

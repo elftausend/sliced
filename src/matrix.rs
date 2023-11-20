@@ -192,13 +192,45 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         self.device()
             .add_grad_fn((self.as_buf(), &mut out), |(lhs, out)| {
                 lhs.device()
-                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| T::one().identity().sub(x.tanh().pow(T::two())));
+                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| {
+                        T::one().identity().sub(x.tanh().pow(T::two()))
+                    });
                 Ok(())
             });
 
         (out, self.rows, self.cols).into()
     }
 
+    #[inline]
+    #[track_caller]
+    pub fn sigmoid(&self) -> Matrix<'a, T, D, S>
+    where
+        T: Float + 'static,
+        D: UnaryElementWiseMayGrad<T, D, S>
+            + ApplyFunction<T, S>
+            + MayTapeActions
+            + UnaryGrad<T, S>
+            + Alloc<T>
+            + AddGradFn
+            + 'static,
+    {
+        let mut out = self.device().apply_fn(self, |x| {
+            T::one()
+                .identity()
+                .div(T::one().identity().add(x.neg().exp()))
+        });
+
+        self.device()
+            .add_grad_fn((self.as_buf(), &mut out), |(lhs, out)| {
+                lhs.device()
+                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| {
+                        (x.neg().exp()).div((T::one().identity().add(x.neg().exp())).pow(T::two()))
+                    });
+                Ok(())
+            });
+
+        (out, self.rows, self.cols).into()
+    }
 
     #[inline]
     #[track_caller]
@@ -287,7 +319,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + SumColsMayGrad<T, S, OS>
             + PowMayGrad<T, OS>
             + PowMayGrad<T, S>
-            + 'static
+            + 'static,
     {
         self.squared().sum_cols().pow(T::one() / T::two())
     }
