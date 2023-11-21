@@ -76,3 +76,41 @@ where
         .unwrap();
     }
 }
+
+pub fn try_cl_row_op_grad_rhs<T: CDatatype + Default, O: MayToCLSource>(
+    device: &CLDevice,
+    lhs: &CLPtr<T>,
+    rhs: &CLPtr<T>,
+    out: &mut CLPtr<T>,
+    //lhs_grad: &mut Buffer<T, Self>,
+    rhs_grad: &mut Buffer<T, Self>,
+    out_grad: &Buffer<T, Self>,
+    //lhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> O,
+    rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> O,
+    rows: usize,
+    cols: usize,
+    //op: impl Fn(Resolve<T>, Resolve<T>) -> O,
+) -> custos::Result<()> {
+    let src = format!("
+        __kernel void cl_rop_op(__global const {dtype}* lhs, global const {dtype}* rhs, global {dtype}* out_grad, int rows, int cols) {{
+            size_t c = get_global_id(0);
+
+            if (c >= cols) {{
+                return;
+            }}
+            
+            {dtype} rhs_val = rhs[c];
+            {dtype} acc = 0;
+            for (int r = 0; r < rows; r++) {{
+                {dtype} lhs_val = lhs[r * cols + c];
+                acc += {op} * out_grad[r * cols + c];
+            }}
+            
+            rhs_grad[c] = acc;
+
+        }}
+    ", dtype = T::C_DTYPE_STR, op = op("lhs_val".to_marker(), "rhs_val".to_marker()).to_cl_source());
+
+    let gws = [((rows + 32) / 32) * 32, ((cols + 32) / 32) * 32, 0];
+    enqueue_kernel(device, &src, gws, Some([32, 4, 0]), &[lhs, rhs, out, &rows, &cols])
+}
