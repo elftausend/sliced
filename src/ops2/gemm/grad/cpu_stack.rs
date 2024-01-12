@@ -13,9 +13,9 @@ impl<T, D, LS, RS, OS, Mods: OnDropBuffer> GemmGrad<T, LS, RS, OS, D> for CPU<Mo
 where
     T: GenericBlas + Default + Copy,
     D: Device,
-    D::Data<T, LS>: Deref<Target = [T]> + DerefMut,
-    D::Data<T, RS>: Deref<Target = [T]> + DerefMut,
-    D::Data<T, OS>: Deref<Target = [T]>,
+    D::Base<T, LS>: Deref<Target = [T]> + DerefMut,
+    D::Base<T, RS>: Deref<Target = [T]> + DerefMut,
+    D::Base<T, OS>: Deref<Target = [T]>,
     LS: Shape,
     RS: Shape,
     OS: Shape,

@@ -18,6 +18,7 @@ impl<'a, T: Float, D: Device + OnNewBuffer<T, D>, const I: usize, const O: usize
         D: RandOp<T> + Alloc<T>,
     {
         let mut weights = Matrix::new(device, I, O);
+        // device.rand(&mut weights, T::from_f64(-0.1), T::from);
         device.rand(&mut weights, -T::one() / T::two(), T::one() / T::two());
         //let mut weights = Matrix::from((device, I, O, vec![T::one(); I*O]));
 
@@ -101,7 +102,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
         D: WriteBuf<T> + Alloc<T> + MayTapeActions + 'static,
-        D::Data<T, ()>: Deref<Target = [T]> + DerefMut,
+        D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
             let grad = param.param.grad();
@@ -110,26 +111,6 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
             }
         }
     }
-}
-
-#[cfg(feature = "autograd")]
-#[test]
-#[cfg_attr(miri, ignore)]
-fn test_mnist() {
-    use custos::CPU;
-    use purpur::CSVLoader;
-
-    let device = CPU::<custos::Base>::new();
-
-    /*
-    let loader = CSVLoader::new(true);
-    let Ok(loaded_data) = loader.load::<f32, _>("../gradients-fallback/datasets/digit-recognizer/train.csv") else {
-        return;
-    };
-
-    let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
-    let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
-    let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);*/
 }
 
 fn main() {
@@ -157,8 +138,8 @@ fn main() {
         // sgd.zero_grad(lin2.params());
         // sgd.zero_grad(lin3.params());
 
-        let out = lin1.forward(&x).relu();
-        let out = lin2.forward(&out).relu();
+        let out = lin1.forward(&x).tanh();
+        let out = lin2.forward(&out).tanh();
         let out = lin3.forward(&out);
 
         let loss = (&out - &y).squared();

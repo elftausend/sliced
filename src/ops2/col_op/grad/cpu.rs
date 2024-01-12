@@ -10,8 +10,8 @@ where
     LS: Shape,
     RS: Shape,
     D: Device,
-    D::Data<T, LS>: Deref<Target = [T]> + DerefMut,
-    D::Data<T, RS>: Deref<Target = [T]> + DerefMut,
+    D::Base<T, LS>: Deref<Target = [T]> + DerefMut,
+    D::Base<T, RS>: Deref<Target = [T]> + DerefMut,
 {
     #[inline]
     fn row_op_grad<LhsGrad, RhsGrad>(

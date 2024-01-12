@@ -12,7 +12,7 @@ where
     T: Copy + Sum,
     S: Shape,
     D: Device,
-    D::Data<T, S>: Deref<Target = [T]>,
+    D::Base<T, S>: Deref<Target = [T]>,
 {
     #[inline]
     fn sum(&self, x: &Buffer<T, D, S>) -> T {
@@ -20,13 +20,13 @@ where
     }
 }
 
-impl<T, IS, OS, D, Mods: Retrieve<Self, T>> SumRows<T, IS, OS, D> for CPU<Mods>
+impl<T, IS, OS, D, Mods: Retrieve<Self, T, OS>> SumRows<T, IS, OS, D> for CPU<Mods>
 where
     T: Copy + Sum + AddAssign,
     IS: Shape,
     OS: Shape,
     D: Device,
-    D::Data<T, IS>: Deref<Target = [T]>,
+    D::Base<T, IS>: Deref<Target = [T]>,
 {
     #[inline]
     fn sum_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
@@ -36,13 +36,13 @@ where
     }
 }
 
-impl<T, IS, OS, D, Mods: Retrieve<Self, T>> SumCols<T, IS, OS, D> for CPU<Mods>
+impl<T, IS, OS, D, Mods: Retrieve<Self, T, OS>> SumCols<T, IS, OS, D> for CPU<Mods>
 where
     T: Copy + Sum,
     IS: Shape,
     OS: Shape,
     D: Device,
-    D::Data<T, IS>: Deref<Target = [T]>,
+    D::Base<T, IS>: Deref<Target = [T]>,
 {
     #[inline]
     fn sum_cols(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {

@@ -28,7 +28,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn new(device: &'a D, rows: usize, cols: usize) -> Matrix<'a, T, D, S>
     where
-        D: Alloc<T> + OnNewBuffer<T, D>,
+        D: Alloc<T> + OnNewBuffer<T, D, S>,
     {
         Matrix {
             data: Buffer::new(device, rows * cols),

@@ -17,7 +17,7 @@ where
     T: Copy + AddAssign + Mul<Output = T>,
     S: Shape,
     D: Device,
-    D::Data<T, S>: Deref<Target = [T]> + DerefMut,
+    D::Base<T, S>: Deref<Target = [T]> + DerefMut,
 {
     #[inline]
     fn binary_ew_grad<LO, RO>(
@@ -64,7 +64,7 @@ where
     T: Copy + AddAssign + Mul<Output = T>,
     S: Shape,
     D: Device,
-    D::Data<T, S>: Deref<Target = [T]> + DerefMut,
+    D::Base<T, S>: Deref<Target = [T]> + DerefMut,
 {
     #[inline]
     fn add_ew_grad(

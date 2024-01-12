@@ -9,7 +9,7 @@ pub struct Linear<'a, T, D: Device, const I: usize, const O: usize> {
     bias: Matrix<'a, T, D>,
 }
 
-impl<'a, T: Float, D: Device + OnNewBuffer<T, D>, const I: usize, const O: usize>
+impl<'a, T: Float, D: Device + OnNewBuffer<T, D, ()>, const I: usize, const O: usize>
     Linear<'a, T, D, I, O>
 {
     pub fn new(device: &'a D) -> Self
@@ -100,7 +100,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
         D: WriteBuf<T> + Alloc<T> + MayTapeActions + 'static,
-        D::Data<T, ()>: Deref<Target = [T]> + DerefMut,
+        D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
             let grad = param.param.grad();
@@ -120,7 +120,6 @@ fn test_mnist() {
 
     let device = CPU::<custos::Base>::new();
 
-    /*
     let loader = CSVLoader::new(true);
     let Ok(loaded_data) = loader.load::<f32, _>("../gradients-fallback/datasets/digit-recognizer/train.csv") else {
         return;
@@ -128,7 +127,7 @@ fn test_mnist() {
 
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
-    let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);*/
+    let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);
 }
 
 #[test]

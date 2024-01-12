@@ -7,7 +7,7 @@ use custos::{
     Base, Buffer, OpenCL, Retrieve,
 };
 
-impl<T, Mods: Retrieve<Self, T> + 'static> RowOpGrad<T> for OpenCL<Mods>
+impl<T: 'static, Mods: Retrieve<Self, T> + 'static> RowOpGrad<T> for OpenCL<Mods>
 where
     T: Copy + Default + AddAssign + One + Mul<Output = T>,
 {

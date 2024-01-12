@@ -4,7 +4,7 @@ use custos::{Alloc, Buffer, Device, Retrieve, Retriever, Shape, CPU};
 
 use crate::RowOp;
 
-impl<T, LS, RS, Mods: Retrieve<Self, T>> RowOp<T, LS, RS> for CPU<Mods>
+impl<T, LS, RS, Mods: Retrieve<Self, T, LS>> RowOp<T, LS, RS> for CPU<Mods>
 where
     T: Add<Output = T> + Copy + AddAssign,
     LS: Shape,
@@ -44,10 +44,10 @@ where
     T: Copy,
     F: Fn(&mut T, T, T),
     D: Device,
-    D::Data<T, LS>: Deref<Target = [T]>,
-    D::Data<T, RS>: Deref<Target = [T]>,
-    Host: Alloc<T> + Retriever<T>,
-    Host::Data<T, LS>: Deref<Target = [T]> + DerefMut,
+    D::Base<T, LS>: Deref<Target = [T]>,
+    D::Base<T, RS>: Deref<Target = [T]>,
+    Host: Alloc<T> + Retriever<T, LS>,
+    Host::Base<T, LS>: Deref<Target = [T]> + DerefMut,
 {
     debug_assert_eq!(rhs.len(), cols);
 

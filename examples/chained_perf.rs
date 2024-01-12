@@ -15,7 +15,7 @@ pub fn op<'b, T, D, S>(
 ) -> Buffer<'b, T, D, S>
 where
     D: Alloc<T> + Retriever<T>,
-    D::Data<T, S>: Deref<Target = [T]> + DerefMut,
+    D::Base<T, S>: Deref<Target = [T]> + DerefMut,
     S: Shape,
     T: Copy,
 {

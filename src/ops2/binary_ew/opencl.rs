@@ -7,7 +7,7 @@ use custos::{
 
 use super::BinaryElementWise;
 
-impl<T, S: Shape, Mods: Retrieve<Self, T>> BinaryElementWise<T, S> for OpenCL<Mods>
+impl<T, S: Shape, Mods: Retrieve<Self, T, S>> BinaryElementWise<T, S> for OpenCL<Mods>
 where
     T: CDatatype + Default,
 {

@@ -10,8 +10,8 @@ where
     IS: Shape,
     OS: Shape,
     D: Device,
-    D::Data<T, IS>: Deref<Target = [T]> + DerefMut,
-    D::Data<T, OS>: Deref<Target = [T]>,
+    D::Base<T, IS>: Deref<Target = [T]> + DerefMut,
+    D::Base<T, OS>: Deref<Target = [T]>,
 {
     #[inline]
     fn transpose_grad(

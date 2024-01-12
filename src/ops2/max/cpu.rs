@@ -13,7 +13,7 @@ impl<T, D, S, Mods: OnDropBuffer> Max<T, S, D> for CPU<Mods>
 where
     T: Number,
     D: Device,
-    D::Data<T, S>: Deref<Target = [T]>,
+    D::Base<T, S>: Deref<Target = [T]>,
     S: Shape,
 {
     #[inline]
@@ -22,11 +22,11 @@ where
     }
 }
 
-impl<T, D, IS, OS, Mods: Retrieve<Self, T>> MaxRows<T, IS, OS, D> for CPU<Mods>
+impl<T, D, IS, OS, Mods: Retrieve<Self, T,OS>> MaxRows<T, IS, OS, D> for CPU<Mods>
 where
     T: Number,
     D: Device,
-    D::Data<T, IS>: Deref<Target = [T]>,
+    D::Base<T, IS>: Deref<Target = [T]>,
     IS: Shape,
     OS: Shape,
 {
@@ -54,7 +54,7 @@ impl<T, D, Mods: Retrieve<Self, T>> MaxCols<T, (), (), D> for CPU<Mods>
 where
     T: Number,
     D: Device,
-    D::Data<T, ()>: Deref<Target = [T]>,
+    D::Base<T, ()>: Deref<Target = [T]>,
 {
     #[inline]
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D>) -> Buffer<T, Self> {

@@ -29,13 +29,13 @@ pub fn slice_transpose<T: Clone, AOS: AssignOrSet<T>>(
 use custos::Stack;
 
 #[impl_stack]
-impl<T, IS, OS, D, Mods: Retrieve<Self, T>> Transpose<T, IS, OS, D> for CPU<Mods>
+impl<T, IS, OS, D, Mods: Retrieve<Self, T, OS>> Transpose<T, IS, OS, D> for CPU<Mods>
 where
     T: Copy + Default,
     IS: Shape,
     OS: Shape,
     D: Device,
-    D::Data<T, IS>: Deref<Target = [T]>,
+    D::Base<T, IS>: Deref<Target = [T]>,
 {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(x.len(), x);

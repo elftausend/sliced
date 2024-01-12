@@ -17,7 +17,7 @@ where
     T: Float,
     S: Shape,
     D: Device,
-    D::Data<T, S>: Deref<Target = [T]> + DerefMut,
+    D::Base<T, S>: Deref<Target = [T]> + DerefMut,
 {
     #[inline]
     fn rand(&self, x: &mut Buffer<T, D, S>, lo: T, hi: T) {

@@ -12,12 +12,12 @@ use custos::Stack;
 #[cfg(feature = "blas")]
 #[cfg(not(feature = "matrixmultiply"))]
 #[impl_stack]
-impl<T, D, LS, RS, OS, Mods: Retrieve<Self, T>> Gemm<T, LS, RS, OS, D> for CPU<Mods>
+impl<T, D, LS, RS, OS, Mods: Retrieve<Self, T, OS>> Gemm<T, LS, RS, OS, D> for CPU<Mods>
 where
     T: GenericBlas + Default + Copy,
     D: Device,
-    D::Data<T, LS>: Deref<Target = [T]>,
-    D::Data<T, RS>: Deref<Target = [T]>,
+    D::Base<T, LS>: Deref<Target = [T]>,
+    D::Base<T, RS>: Deref<Target = [T]>,
     LS: Shape,
     RS: Shape,
     OS: Shape,
@@ -67,8 +67,8 @@ impl<T, D, LS, RS, OS> Gemm<T, LS, RS, OS, D> for CPU
 where
     T: Default + Copy + core::ops::Mul<Output = T> + core::ops::AddAssign,
     D: Device,
-    D::Data<T, LS>: Deref<Target = [T]>,
-    D::Data<T, RS>: Deref<Target = [T]>,
+    D::Base<T, LS>: Deref<Target = [T]>,
+    D::Base<T, RS>: Deref<Target = [T]>,
     LS: Shape,
     RS: Shape,
     OS: Shape,

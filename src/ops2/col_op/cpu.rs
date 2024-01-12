@@ -9,7 +9,7 @@ impl<T, D, Mods: Retrieve<Self, T>> ColOp<T, (), (), D> for CPU<Mods>
 where
     T: Copy,
     D: Device,
-    D::Data<T, ()>: Deref<Target = [T]>,
+    D::Base<T, ()>: Deref<Target = [T]>,
 {
     #[inline]
     fn col_op<F>(
