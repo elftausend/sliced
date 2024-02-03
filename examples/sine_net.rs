@@ -138,8 +138,8 @@ fn main() {
         // sgd.zero_grad(lin2.params());
         // sgd.zero_grad(lin3.params());
 
-        let out = lin1.forward(&x).tanh();
-        let out = lin2.forward(&out).tanh();
+        let out = lin1.forward(&x).relu();
+        let out = lin2.forward(&out).relu();
         let out = lin3.forward(&out);
 
         let loss = (&out - &y).squared();

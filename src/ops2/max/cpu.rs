@@ -22,7 +22,7 @@ where
     }
 }
 
-impl<T, D, IS, OS, Mods: Retrieve<Self, T,OS>> MaxRows<T, IS, OS, D> for CPU<Mods>
+impl<T, D, IS, OS, Mods: Retrieve<Self, T, OS>> MaxRows<T, IS, OS, D> for CPU<Mods>
 where
     T: Number,
     D: Device,

@@ -2,3 +2,4 @@
 /Cargo.lock
 .idea
 *.svg
+.DS_Store

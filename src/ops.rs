@@ -413,6 +413,22 @@ where
 {
 }
 
+pub trait Clip<T: Float, S: Shape>: ApplyFunction<T, S> {
+    #[inline]
+    #[track_caller]
+    fn clip(&self, x: &Buffer<T, Self, S>, min: T, max: T) -> Buffer<T, Self, S> {
+        self.apply_fn(x, move |x| x.max(min).min(max))
+    }
+}
+
+impl<T, S, D> Clip<T, S> for D
+where
+    D: ApplyFunction<T, S>,
+    T: Float,
+    S: Shape,
+{
+}
+
 pub trait Exp<T: Float, S: Shape>: ApplyFunction<T, S> {
     #[inline]
     #[track_caller]

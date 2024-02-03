@@ -1,13 +1,15 @@
-use std::fmt::Display;
+use std::{fmt::Display, ops::Deref};
 
 use crate::{BinaryElementWise, Diagflat, Gemm, SoftmaxGrad, Transpose};
-use custos::{prelude::Number, Buffer, GenericBlas, Shape, CPU};
+use custos::{
+    prelude::Number, Base, Buffer, Device, GenericBlas, OnDropBuffer, Retrieve, Shape, CPU,
+};
 
-impl<T, S> SoftmaxGrad<T, S> for CPU
+impl<T, S, Mods: OnDropBuffer + Retrieve<Self, T, ()>> SoftmaxGrad<T, S> for CPU<Mods>
 where
     T: GenericBlas + Number,
     S: Shape,
-    CPU: Gemm<T>,
+    CPU: Gemm<T>, // for shape annotations
 {
     fn softmax_grad(
         &self,
@@ -17,6 +19,8 @@ where
         out: &Buffer<T, Self, S>,
         out_grad: &Buffer<T, Self, S>,
     ) {
+        let base_cpu = CPU::<Base>::new();
+
         for idx in 0..samples {
             let index = idx * features;
 
@@ -33,17 +37,17 @@ where
                 )
             };
 
-            let diagflat: Buffer<T> = self.diagflat(&single_out);
+            let diagflat: Buffer<T, _> = base_cpu.diagflat(&single_out);
 
             // cols 1 x 1 cols
-            let jacobian_matrix: Buffer<T> = self.sub(
+            let jacobian_matrix: Buffer<T, _> = base_cpu.sub(
                 &diagflat,
-                &self.gemm(
+                &base_cpu.gemm(
                     features,
                     1,
                     features,
                     &single_out,
-                    &self.transpose(features, 1, &single_out),
+                    &base_cpu.transpose(features, 1, &single_out),
                 ),
             );
             T::gemm(

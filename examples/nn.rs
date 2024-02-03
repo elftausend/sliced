@@ -1,29 +1,29 @@
+use std::time::Instant;
+
 use custos::{
-    prelude::{Float, Number, One},
-    range, Alloc, Buffer, ClearBuf, Device, GraphReturn, IsShapeIndep, MainMemory, MayTapeReturn,
-    TapeReturn, WriteBuf, CPU,
+    prelude::Float, Alloc, Autograd, Base, Buffer, Device, IsShapeIndep, MayTapeActions,
+    OnNewBuffer, TapeActions, CPU,
 };
+
 use graplot::Plot;
-use sliced::{Gemm, GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
-use std::{
-    ops::{Mul, SubAssign},
-    time::Instant,
-};
+use sliced::{GemmMayGrad, Matrix, Mean, RandOp, RowOpMayGrad};
 
 pub struct Linear<'a, T, D: Device, const I: usize, const O: usize> {
     weights: Matrix<'a, T, D>,
     bias: Matrix<'a, T, D>,
 }
 
-// TODO create separate implementation for Stack device? (IsShapeIndep trait)
-impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I, O> {
+impl<'a, T: Float, D: Device + OnNewBuffer<T, D>, const I: usize, const O: usize>
+    Linear<'a, T, D, I, O>
+{
     pub fn new(device: &'a D) -> Self
     where
-        D: RandOp<T> + Alloc<'a, T> + WriteBuf<T>,
+        D: RandOp<T> + Alloc<T>,
     {
         let mut weights = Matrix::new(device, I, O);
-        //weights.write(&vec![T::one(); I * O]);
+        // device.rand(&mut weights, T::from_f64(-0.1), T::from);
         device.rand(&mut weights, -T::one() / T::two(), T::one() / T::two());
+        //let mut weights = Matrix::from((device, I, O, vec![T::one(); I*O]));
 
         Linear {
             weights,
@@ -36,6 +36,7 @@ impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I
     where
         D: GemmMayGrad<T> + RowOpMayGrad<T>,
     {
+        //inputs.gemm(&self.weights).add_row(&self.bias)
         let mut out = inputs.gemm(&self.weights);
         out.add_row_mut(&self.bias);
         out
@@ -49,7 +50,7 @@ impl<'a, T: Float, D: Device, const I: usize, const O: usize> Linear<'a, T, D, I
     }
 }
 
-pub fn create_sine<'a, D: Alloc<'a, f32> + IsShapeIndep>(
+pub fn create_sine<'a, D: Alloc<f32> + IsShapeIndep + OnNewBuffer<f32, D>>(
     device: &'a D,
     min: usize,
     max: usize,
@@ -65,6 +66,7 @@ pub fn create_sine<'a, D: Alloc<'a, f32> + IsShapeIndep>(
 
     let x = Matrix::from((device, max - min, 1, x));
     let y = Matrix::from((device, max - min, 1, y));
+
     (x, y)
 }
 
@@ -83,10 +85,17 @@ pub struct SGD<T> {
 }
 
 #[cfg(feature = "autograd")]
+use custos::prelude::{ClearBuf, One, WriteBuf};
+
+#[cfg(feature = "autograd")]
+use core::ops::{Mul, SubAssign};
+use std::ops::{Deref, DerefMut};
+
+#[cfg(feature = "autograd")]
 impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: MayTapeReturn + WriteBuf<T> + for<'b> Alloc<'b, T> + ClearBuf<T> + 'static,
+        D: MayTapeActions + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
     {
         for param in params {
             param.param.grad_mut().clear();
@@ -95,10 +104,11 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
 
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: MainMemory + MayTapeReturn + WriteBuf<T> + for<'b> Alloc<'b, T> + 'static,
+        D: WriteBuf<T> + Alloc<T> + MayTapeActions + 'static,
+        D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
-            let grad = param.param.grad_unbound();
+            let grad = param.param.grad();
             for (value, grad) in param.param.iter_mut().zip(grad.iter()) {
                 *value -= *grad * self.lr
             }
@@ -106,8 +116,50 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     }
 }
 
+fn mnist() {
+    let device = CPU::<Autograd<Base>>::new();
+
+    let mut lin1 = Linear::<f32, _, { 28 * 28 }, 128>::new(&device);
+    let mut lin2 = Linear::<f32, _, 128, 10>::new(&device);
+    let mut lin3 = Linear::<f32, _, 10, 10>::new(&device);
+
+    let loader = purpur::CSVLoader::new(true);
+    let Ok(loaded_data) =
+        loader.load::<f32, _>("../gradients-fallback/datasets/digit-recognizer/train.csv")
+    else {
+        return;
+    };
+
+    let mut x = Matrix::from((&device, loaded_data.sample_count, 28 * 28, loaded_data.x));
+    for i in 0..x.len() {
+        x[i] /= 255.;
+    }
+
+    let y = Matrix::from((&device, loaded_data.sample_count, 28 * 28, loaded_data.y));
+
+    let sgd = SGD { lr: 0.0001 };
+    for epoch in 0..50 {
+        let out = lin1.forward(&x).relu();
+        let out = lin2.forward(&out).relu();
+        let out = lin3.forward(&out).softmax();
+
+        let loss = (&out - &y).pow(2.);
+
+        let avg_loss = device.mean(&loss);
+        println!("epoch: {epoch}, loss: {avg_loss}");
+
+        loss.backward();
+
+        sgd.step(lin1.params());
+        sgd.step(lin2.params());
+        sgd.step(lin3.params());
+    }
+}
+
 fn main() {
-    let device = CPU::<custos::Base>::new();
+    mnist();
+    return;
+    let device = CPU::<Autograd<custos::Base>>::new();
     // let mut device = custos::OpenCL::<custos::Base>::new(0).unwrap();
     // device.set_unified_mem(false);
 
@@ -131,9 +183,11 @@ fn main() {
 
     let mut already = false;
 
-    for i in range(18000) {
+    for i in 0..18000 {
         #[cfg(feature = "autograd")]
-        device.tape_mut().grads.zero_grad();
+        unsafe {
+            device.gradients_mut().unwrap().zero_grad();
+        };
 
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
@@ -157,7 +211,7 @@ fn main() {
         println!("i: {i}");
 
         if !already {
-            println!("traces: {:?}", device.graph().cache_traces());
+            // println!("traces: {:?}", device.graph().cache_traces());
             // device.optimize().unwrap();
             already = true;
         }

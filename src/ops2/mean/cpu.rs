@@ -9,7 +9,9 @@ impl<T: Number, IS: Shape, Mods: OnDropBuffer> Mean<T, IS> for CPU<Mods> {
     }
 }
 
-impl<T: Number, IS: Shape, OS: Shape, Mods: Retrieve<Self, T, OS>> MeanRows<T, IS, OS> for CPU<Mods> {
+impl<T: Number, IS: Shape, OS: Shape, Mods: Retrieve<Self, T, OS>> MeanRows<T, IS, OS>
+    for CPU<Mods>
+{
     #[inline]
     fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(cols, x);
@@ -18,7 +20,9 @@ impl<T: Number, IS: Shape, OS: Shape, Mods: Retrieve<Self, T, OS>> MeanRows<T, I
     }
 }
 
-impl<T: Number, IS: Shape, OS: Shape, Mods: Retrieve<Self, T, OS>> MeanCols<T, IS, OS> for CPU<Mods> {
+impl<T: Number, IS: Shape, OS: Shape, Mods: Retrieve<Self, T, OS>> MeanCols<T, IS, OS>
+    for CPU<Mods>
+{
     #[inline]
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(x.len() / cols, x);

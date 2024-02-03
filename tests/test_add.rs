@@ -4,7 +4,7 @@ use sliced::BinaryOpsMayGrad;
 #[cfg(feature = "cpu")]
 #[test]
 fn test_add() {
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
 
     let lhs = Buffer::from((&device, [1, 2, 3, 4, 5]));
     let rhs = Buffer::from((&device, [6, 7, 8, 9, 10]));
@@ -29,7 +29,7 @@ fn test_add() {
 fn test_add_cl() -> custos::Result<()> {
     use custos::OpenCL;
 
-    let device = OpenCL::<custos::Base>::new(0)?;
+    let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
     let lhs = Buffer::from((&device, [1, 2, 3, 4, 5]));
     let rhs = Buffer::from((&device, [6, 7, 8, 9, 10]));

@@ -3,7 +3,7 @@ use sliced::{BinaryOpsMayGrad, Matrix, SquareMayGrad};
 
 #[test]
 fn test_comb() {
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
 
     let mut x = Buffer::from((&device, [10f32, -10., 10., -5., 6., 3., 1.]));
 
@@ -25,7 +25,7 @@ fn test_comb() {
 #[test]
 fn test_perf_min_this() {
     //let device = OpenCL::<custos::Base>::new(0).unwrap();
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
 
     // let mut x = Matrix::from((&device, 1, 7, [10f32, -10., 10., -5., 6., 3., 1.]));
 
@@ -65,10 +65,10 @@ fn test_perf_min_this() {
 #[test]
 fn test_2perf_min_this() {
     //let device = OpenCL::<custos::Base>::new(0).unwrap();
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
     //device.tape_mut().disable();
 
-    let mut x: Buffer = Buffer::from((&device, vec![1.3f32; 1312])); // 123412
+    let mut x: Buffer<_, _> = Buffer::from((&device, vec![1.3f32; 1312])); // 123412
     let mut b = Buffer::from((&device, vec![2.1f32; 1312])); // 123412
     let start = std::time::Instant::now();
 
@@ -106,7 +106,7 @@ fn test_2perf_min_this() {
 #[test]
 fn test_small_2perf_min_this() {
     //let device = OpenCL::<custos::Base>::new(0).unwrap();
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
 
     let mut x = Buffer::from((&device, [1.3f32; 100]));
     let mut b = Buffer::from((&device, [2.1f32; 100]));

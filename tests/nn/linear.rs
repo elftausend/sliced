@@ -121,7 +121,9 @@ fn test_mnist() {
     let device = CPU::<custos::Base>::new();
 
     let loader = CSVLoader::new(true);
-    let Ok(loaded_data) = loader.load::<f32, _>("../gradients-fallback/datasets/digit-recognizer/train.csv") else {
+    let Ok(loaded_data) =
+        loader.load::<f32, _>("../gradients-fallback/datasets/digit-recognizer/train.csv")
+    else {
         return;
     };
 
