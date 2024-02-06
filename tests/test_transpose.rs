@@ -4,7 +4,7 @@ fn test_transpose_cpu() {
     use custos::{Buffer, CPU};
     use sliced::Transpose;
 
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
 
     // 2 x 3
     let x = Buffer::from((&device, [1, 2, 3, 4, 5, 6]));
@@ -28,7 +28,7 @@ fn test_transpose_cl() -> custos::Result<()> {
     use custos::{Buffer, OpenCL};
     use sliced::Transpose;
 
-    let device = OpenCL::<custos::Base>::new(0)?;
+    let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
     // 2 x 3
     let x = Buffer::from((&device, [1, 2, 3, 4, 5, 6]));

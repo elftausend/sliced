@@ -10,7 +10,6 @@ use custos::{Buffer, Device, Eval, Resolve, Shape};
 pub use opencl::*;
 
 pub trait ColOpGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
-    #[track_caller]
     fn row_op_grad<LhsGrad, RhsGrad>(
         &self,
         cols: usize,

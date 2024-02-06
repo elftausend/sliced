@@ -33,7 +33,7 @@ mod tests {
 
     #[test]
     fn test_onehot_cl() -> custos::Result<()> {
-        let device = OpenCL::<custos::Base>::new(0)?;
+        let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
         let x = Buffer::from((&device, [0i32, 1, 4, 3]));
 

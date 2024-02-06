@@ -32,7 +32,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
 /// use sliced::{cl_gemm, OpenCL, Buffer, custos::Read, assign_or_set::Set};
 ///
 /// fn main() -> Result<(), custos::Error> {
-///     let device = OpenCL::<custos::Base>::new(0)?;
+///     let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 ///     let lhs = Buffer::from((&device, [15i16, 30, 21, 5, 8, 5]));
 ///     let rhs = Buffer::from((&device, [3i16, 2, 7, 1, 9, 20]));
 ///     let mut out = Buffer::new(&device, 4);

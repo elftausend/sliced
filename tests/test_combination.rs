@@ -24,7 +24,7 @@ fn test_comb() {
 
 #[test]
 fn test_perf_min_this() {
-    //let device = OpenCL::<custos::Base>::new(0).unwrap();
+    //let device = OpenCL::<custos::Autograd<custos::Base>>::new(0).unwrap();
     let device = CPU::<custos::Autograd<custos::Base>>::new();
 
     // let mut x = Matrix::from((&device, 1, 7, [10f32, -10., 10., -5., 6., 3., 1.]));
@@ -64,7 +64,7 @@ fn test_perf_min_this() {
 
 #[test]
 fn test_2perf_min_this() {
-    //let device = OpenCL::<custos::Base>::new(0).unwrap();
+    //let device = OpenCL::<custos::Autograd<custos::Base>>::new(0).unwrap();
     let device = CPU::<custos::Autograd<custos::Base>>::new();
     //device.tape_mut().disable();
 
@@ -105,7 +105,7 @@ fn test_2perf_min_this() {
 // FxHash: 49us
 #[test]
 fn test_small_2perf_min_this() {
-    //let device = OpenCL::<custos::Base>::new(0).unwrap();
+    //let device = OpenCL::<custos::Autograd<custos::Base>>::new(0).unwrap();
     let device = CPU::<custos::Autograd<custos::Base>>::new();
 
     let mut x = Buffer::from((&device, [1.3f32; 100]));

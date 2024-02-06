@@ -62,7 +62,7 @@ mod tests {
 
     #[test]
     fn test_binary_ew() -> custos::Result<()> {
-        let device = OpenCL::<custos::Base>::new(0)?;
+        let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
         let lhs = Buffer::from((&device, &[1, 5, 3, 2, 6]));
         let rhs = Buffer::from((&device, &[-1, 2, 9, 1, -2]));
@@ -80,9 +80,9 @@ mod tests {
     fn test_cpu_exec_macro() -> custos::Result<()> {
         use crate::{custos::Base, BinaryElementWise, Buffer, CPU};
 
-        let device = crate::OpenCL::<custos::Base>::new(0)?;
+        let device = crate::OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
-        let cpu = CPU::<custos::Base>::new();
+        let cpu = CPU::<custos::Autograd<custos::Base>>::new();
 
         let lhs = Buffer::from((&device, [1, 2, 3]));
         let rhs = Buffer::from((&device, [1, 2, 3]));

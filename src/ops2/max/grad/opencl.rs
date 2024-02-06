@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn test_max_rows_grad() -> custos::Result<()> {
-        let device = OpenCL::<custos::Base>::new(0)?;
+        let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
         #[rustfmt::skip]
         let x = [-3, 2, 3, 1,
@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn test_max_cols_grad() -> custos::Result<()> {
-        let device = OpenCL::<custos::Base>::new(0)?;
+        let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
         #[rustfmt::skip]
         let x = [-3, 2, 3, 1,

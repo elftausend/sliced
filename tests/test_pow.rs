@@ -4,7 +4,9 @@ use sliced::PowMayGrad;
 #[cfg(feature = "cpu")]
 #[test]
 fn test_pow() {
-    let device = CPU::<custos::Base>::new();
+    use custos::Autograd;
+
+    let device = CPU::<Autograd<custos::Base>>::new();
 
     let x = Buffer::from((&device, [1., 2., 3., 4., 5.]));
 

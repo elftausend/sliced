@@ -9,7 +9,9 @@ where
 {
     #[inline]
     fn softmax(&self, samples: usize, sample_size: usize, x: &Buffer<T, Self>) -> Buffer<T, Self> {
-        let exp = self.exp(&self.sub_cols(sample_size, x, &self.max_cols(samples, sample_size, x)));
+        let max_cols = self.max_cols(samples, sample_size, x);
+        let x = &self.sub_cols(sample_size, x, &max_cols);
+        let exp = self.exp(x);
         self.div_cols(sample_size, &exp, &self.sum_cols(sample_size, &exp))
     }
 }
@@ -21,7 +23,7 @@ mod tests {
 
     #[test]
     fn test_softmax() {
-        let device = CPU::<custos::Base>::new();
+        let device = CPU::<custos::Autograd<custos::Base>>::new();
         let x = Buffer::from((&device, &[1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
         let out = device.softmax(2, 3, &x);
         crate::test_utils::roughly_equals(

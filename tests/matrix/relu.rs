@@ -4,7 +4,7 @@ fn test_relu_cpu() {
     use custos::CPU;
     use sliced::Matrix;
 
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
 
     let buf = Matrix::from((&device, 1, 5, [-1., -3., 2., 5., -1.3]));
     let out = buf.relu();
@@ -65,7 +65,7 @@ fn test_relu_cl() -> custos::Result<()> {
     use custos::OpenCL;
     use sliced::Matrix;
 
-    let device = OpenCL::<custos::Base>::new(0)?;
+    let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
     let buf = Matrix::from((&device, 1, 5, [-1., -3., 2., 5., -1.3]));
     let out = buf.relu();

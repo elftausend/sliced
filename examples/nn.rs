@@ -1,12 +1,14 @@
 use std::time::Instant;
 
 use custos::{
-    prelude::Float, Alloc, Autograd, Base, Buffer, Device, IsShapeIndep, MayTapeActions,
-    OnNewBuffer, TapeActions, CPU,
+    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cursor, Device, IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions, CPU
 };
 
 use graplot::Plot;
-use sliced::{GemmMayGrad, Matrix, Mean, RandOp, RowOpMayGrad};
+use sliced::{
+    BinaryElementWise, BinaryOpsMayGrad, Clip, GemmMayGrad, Matrix, Mean, Onehot, RandOp,
+    RowOpMayGrad, SumCols, SumColsMayGrad,
+};
 
 pub struct Linear<'a, T, D: Device, const I: usize, const O: usize> {
     weights: Matrix<'a, T, D>,
@@ -116,6 +118,34 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     }
 }
 
+use custos::Combiner;
+
+pub fn cce<
+    'a,
+    T: Float,
+    D: Device + Clip<T, ()> + AddOperation + BinaryElementWise<T> + SumCols<T>,
+>(
+    preds: &Buffer<'a, T, D>,
+    targets: &Buffer<T, D>,
+    cols: usize,
+) -> Buffer<'a, T, D> {
+    let device = preds.device();
+    let preds = device.clip(preds, T::as_generic(1E-7), T::as_generic(1. - 1E-7));
+    let preds = device.mul(&preds, &targets);
+    let preds = device.sum_cols(cols, &preds);
+    device.apply_fn(&preds, |v| v.ln().neg())
+}
+
+pub fn cce_grad<'a, T: Float, D: Device + Clip<T, ()> + AddOperation + BinaryElementWise<T>>(
+    preds: &Buffer<'a, T, D>,
+    targets: &Buffer<T, D>,
+    rows: usize,
+) -> Buffer<'a, T, D> {
+    let device = preds.device();
+    let grad = device.div(targets, preds);
+    device.apply_fn(&grad, move |v| v.neg().div(T::from_usize(rows)))
+}
+
 fn mnist() {
     let device = CPU::<Autograd<Base>>::new();
 
@@ -136,31 +166,49 @@ fn mnist() {
     }
 
     let y = Matrix::from((&device, loaded_data.sample_count, 28 * 28, loaded_data.y));
+    let y = device.onehot(&y);
+
+    let start = Instant::now();
 
     let sgd = SGD { lr: 0.0001 };
-    for epoch in 0..50 {
+    for epoch in device.range(0..50) {
         let out = lin1.forward(&x).relu();
         let out = lin2.forward(&out).relu();
         let out = lin3.forward(&out).softmax();
 
-        let loss = (&out - &y).pow(2.);
+        let loss = cce(&out, &y, out.cols());
+        let grad = cce_grad(&out, &y, out.rows());
+
+        // let preds = device.clip(&out, 1E-7, 1. - 1E-7 );
+        // let preds = device.mul(&preds, &y);
+        // let preds: Buffer<_, _> = device.sum_cols(10, &preds);
+
+        // let preds = preds.clip(T::as_generic(1E-7), T::as_generic(1. - 1E-7));
+
+        // let loss = (&out - &y).pow(2.);
 
         let avg_loss = device.mean(&loss);
         println!("epoch: {epoch}, loss: {avg_loss}");
 
-        loss.backward();
+        // device.add_op((out.as_buf(), &y), |(preds, targets)| {
+        //     let out = cce_grad(preds, targets);
+        //     preds.grad_mut().write_buf(&out);
+        //     Ok(())
+        // }).unwrap();
+        out.backward_with(&grad);
 
         sgd.step(lin1.params());
         sgd.step(lin2.params());
         sgd.step(lin3.params());
     }
+    println!("elapsed: {:?}", start.elapsed());
 }
 
 fn main() {
     mnist();
     return;
     let device = CPU::<Autograd<custos::Base>>::new();
-    // let mut device = custos::OpenCL::<custos::Base>::new(0).unwrap();
+    // let mut device = custos::OpenCL::<custos::Autograd<custos::Base>>::new(0).unwrap();
     // device.set_unified_mem(false);
 
     // let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
@@ -238,4 +286,18 @@ fn main() {
     let mut plot = Plot::new((x.read(), y.read()));
     plot.add((x.read(), out.read(), "-r"));
     plot.show()
+}
+
+#[test]
+fn test_softmax() {
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
+    let x = Buffer::from((&device, &[1.0f32, 2.0, 3.0, 4.0, 5.0, 6.0]));
+    use sliced::Softmax;
+    let out = device.softmax(2, 3, &x);
+    sliced::test_utils::roughly_equals(
+        &*out,
+        &[
+            0.09003057, 0.24472847, 0.66524096, 0.09003057, 0.24472847, 0.66524096,
+        ],
+    );
 }

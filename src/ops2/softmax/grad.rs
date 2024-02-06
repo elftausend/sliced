@@ -13,7 +13,6 @@ pub use opencl::*;
 use custos::{Buffer, Device, Shape};
 
 pub trait SoftmaxGrad<T, S: Shape = ()>: Device {
-    #[track_caller]
     fn softmax_grad(
         &self,
         samples: usize,

@@ -24,7 +24,7 @@ pub trait Onehot<T, IS: Shape = (), OS: Shape = ()>: Device {
     ///
     /// use sliced::{CPU, Onehot, Buffer};
     ///
-    /// let device = CPU::<custos::Base>::new();
+    /// let device = CPU::<custos::Autograd<custos::Base>>::new();
     ///
     /// let classes = Buffer::from((&device, [1, 0, 3, 2]));
     /// let onehot = device.onehot(&classes);
@@ -36,6 +36,6 @@ pub trait Onehot<T, IS: Shape = (), OS: Shape = ()>: Device {
     ///     0, 0, 1, 0
     /// ], &*onehot);
     /// ```
-    #[track_caller]
+
     fn onehot(&self, classes: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }

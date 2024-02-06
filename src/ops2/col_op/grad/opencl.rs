@@ -77,7 +77,7 @@ mod tests {
 
     #[test]
     fn test_cl_col_op_grad_lhs_div() -> custos::Result<()> {
-        let device = OpenCL::<custos::Base>::new(0)?;
+        let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
         #[rustfmt::skip]
         let lhs = [
@@ -125,7 +125,7 @@ mod tests {
 
     #[test]
     fn test_cl_col_op_grad_rhs_div() -> custos::Result<()> {
-        let device = OpenCL::<custos::Base>::new(0)?;
+        let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
         #[rustfmt::skip]
         let lhs = [

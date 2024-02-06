@@ -17,7 +17,6 @@ use crate::assign_or_set::{AssignOrSet, Set};
 pub trait Transpose<T, IS: Shape = (), OS: Shape = (), D: Device = Self, AOS: AssignOrSet<T> = Set>:
     Device
 {
-    #[track_caller]
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -30,6 +29,5 @@ pub trait Transpose2<
     D: Device = Self,
 >: Device
 {
-    #[track_caller]
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
 }

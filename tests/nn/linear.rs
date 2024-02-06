@@ -118,7 +118,7 @@ fn test_mnist() {
     use custos::CPU;
     use purpur::CSVLoader;
 
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
 
     let loader = CSVLoader::new(true);
     let Ok(loaded_data) =
@@ -139,7 +139,7 @@ fn test_nn() {
 
     use custos::CPU;
 
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
     let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);

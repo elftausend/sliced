@@ -4,7 +4,7 @@ use sliced::Matrix;
 #[test]
 #[cfg_attr(miri, ignore)]
 fn test_ops() {
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
 
     #[rustfmt::skip]
     let lhs = Matrix::from((&device, 2, 3,

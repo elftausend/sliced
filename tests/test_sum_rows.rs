@@ -2,7 +2,7 @@
 fn test_sum_rows() {
     use sliced::{BinaryOpsMayGrad, Buffer, SumRowsMayGrad, CPU};
 
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
     let rhs = Buffer::from((&device, [1, 4, 2, 3]));
 
     #[rustfmt::skip]

@@ -5,7 +5,7 @@ fn test_gemm_cpu() {
     use custos::{Buffer, CPU};
     use sliced::GemmMayGrad;
 
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
 
     let m = 4;
     let k = 2;
@@ -48,7 +48,7 @@ fn test_gemm_cl() -> custos::Result<()> {
     use custos::{Buffer, OpenCL};
     use sliced::GemmMayGrad;
 
-    let device = OpenCL::<custos::Base>::new(0).unwrap();
+    let device = OpenCL::<custos::Autograd<custos::Base>>::new(0).unwrap();
 
     let m = 4;
     let k = 2;

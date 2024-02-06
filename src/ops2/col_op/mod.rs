@@ -18,7 +18,6 @@ use core::ops::{Div, Sub};
 use custos::{Buffer, Device, Shape};
 
 pub trait ColOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
-    #[track_caller]
     fn col_op<F>(
         &self,
         cols: usize,
@@ -30,7 +29,7 @@ pub trait ColOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
         F: Fn(T, T) -> T + Copy;
 
     #[inline]
-    #[track_caller]
+
     fn sub_cols(
         &self,
         cols: usize,
@@ -44,7 +43,7 @@ pub trait ColOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     }
 
     #[inline]
-    #[track_caller]
+
     fn div_cols(
         &self,
         cols: usize,
@@ -61,7 +60,6 @@ pub trait ColOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
 pub trait ColOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>:
     ColOp<T, LS, RS, D>
 {
-    #[track_caller]
     fn col_op_may_grad<F, G>(
         &self,
         cols: usize,

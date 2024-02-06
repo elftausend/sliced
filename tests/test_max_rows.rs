@@ -3,7 +3,7 @@
 fn test_max_rows_cpu() {
     use sliced::{BinaryOpsMayGrad, Buffer, MaxRowsMayGrad, CPU};
 
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
     let rhs = Buffer::from((&device, [2, 3, 4, 1]));
 
     #[rustfmt::skip]

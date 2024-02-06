@@ -13,7 +13,6 @@ pub use opencl::*;
 
 use custos::{Buffer, Device, Shape};
 pub trait Mean<T, S: Shape>: Device {
-    #[track_caller]
     fn mean(&self, x: &Buffer<T, Self, S>) -> T;
 }
 
@@ -25,7 +24,7 @@ pub trait MeanRows<T, IS: Shape = (), OS: Shape = ()>: Device {
     #[cfg_attr(not(feature = "cpu"), doc = "```ignore")]
     /// use sliced::{CPU, MeanRows, Buffer};
     ///
-    /// let device = CPU::<custos::Base>::new();
+    /// let device = CPU::<custos::Autograd<custos::Base>>::new();
     ///
     /// let to_mean_rows = Buffer::from((&device, [
     ///     2, 1, 3,
@@ -37,7 +36,7 @@ pub trait MeanRows<T, IS: Shape = (), OS: Shape = ()>: Device {
     /// assert_eq!(&*mean_rows, [2, 2, 2]);
     ///
     /// ```
-    #[track_caller]
+
     fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }
 
@@ -49,7 +48,7 @@ pub trait MeanCols<T, IS: Shape = (), OS: Shape = ()>: Device {
     #[cfg_attr(not(feature = "cpu"), doc = "```ignore")]
     /// use sliced::{Buffer, CPU, MeanCols};
     ///
-    /// let device = CPU::<custos::Base>::new();
+    /// let device = CPU::<custos::Autograd<custos::Base>>::new();
     ///
     /// let to_mean_cols = Buffer::from((&device, [
     ///     1, 4, 1, 2,
@@ -60,6 +59,6 @@ pub trait MeanCols<T, IS: Shape = (), OS: Shape = ()>: Device {
     /// let mean_cols: Buffer<_>  = device.mean_cols(4, &to_mean_cols);
     /// assert_eq!(&*mean_cols, [2, 2, 3])
     /// ```
-    #[track_caller]
+
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS>;
 }

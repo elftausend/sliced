@@ -48,7 +48,7 @@ where
 // 80MB, 110 MB
 // dur: 434 ms
 fn main() {
-    // let device = custos::OpenCL::<custos::Base>::new(0).unwrap();
+    // let device = custos::OpenCL::<custos::Autograd<custos::Base>>::new(0).unwrap();
     // let device = custos::Stack;
     let device = CPU::<Autograd<Cached<Base>>>::new();
     //device.tape_mut().disable();

@@ -3,7 +3,7 @@
 fn test_sum_cols_cpu() {
     use sliced::{BinaryOpsMayGrad, Buffer, SumColsMayGrad, CPU};
 
-    let device = CPU::<custos::Base>::new();
+    let device = CPU::<custos::Autograd<custos::Base>>::new();
     let rhs = Buffer::from((&device, [1, 4, 2]));
 
     #[rustfmt::skip]

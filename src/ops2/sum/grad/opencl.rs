@@ -97,7 +97,7 @@ where
         out_grad: &custos::Buffer<T, Self, OS>,
     ) {
         use custos::{Base, Buffer, WriteBuf, CPU};
-        let cpu = custos::CPU::<custos::Base>::new();
+        let cpu = custos::CPU::<custos::Autograd<custos::Base>>::new();
 
         #[rustfmt::skip]
         custos::cl_cpu_exec_unified_mut!(
@@ -127,7 +127,7 @@ mod tests {
             4, 8, 1
         ];
 
-        let device = OpenCL::<custos::Base>::new(0)?;
+        let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
         let mut x_grad = device.buffer::<_, (), _>(12);
         let out_grad = device.buffer([2, 3, 4, -1]);
@@ -157,7 +157,7 @@ mod tests {
             4, 8, 1
         ];
 
-        let device = OpenCL::<custos::Base>::new(0)?;
+        let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
         let mut x_grad = device.buffer::<_, (), _>(12);
         let out_grad = device.buffer([2, 4, -1]);
@@ -185,7 +185,7 @@ mod tests {
             4, 8, 1
         ];
 
-        let device = OpenCL::<custos::Base>::new(0)?;
+        let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
         let mut x_grad = device.buffer::<_, (), _>(12);
 
@@ -207,7 +207,7 @@ mod tests {
 
     #[test]
     fn test_cl_sum_rows_modulo_vs_for() -> custos::Result<()> {
-        let device = OpenCL::<custos::Base>::new(0)?;
+        let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
         let mut x_grad = device.buffer::<_, (), _>(4000 * 1000);
 
@@ -227,7 +227,7 @@ mod tests {
 
     #[test]
     fn test_cl_sum_rows_for_large() -> custos::Result<()> {
-        let device = OpenCL::<custos::Base>::new(0)?;
+        let device = OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
 
         let mut x_grad = device.buffer::<_, (), _>(4000 * 1000);
 

@@ -1,6 +1,5 @@
 use custos::{
-    prelude::Float, Alloc, Autograd, Base, Buffer, Device, IsShapeIndep, MayTapeActions,
-    OnNewBuffer, TapeActions,
+    prelude::Float, Alloc, Autograd, Base, Buffer, Cursor, Device, IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions
 };
 
 use sliced::{GemmMayGrad, Matrix, Mean, RandOp, RowOpMayGrad};
@@ -118,20 +117,20 @@ fn main() {
 
     use custos::CPU;
 
-    let device = CPU::<Autograd<Base>>::new();
-    let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
-    let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
-    let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);
+    let dev = CPU::<Autograd<Base>>::new();
+    let mut lin1 = Linear::<f32, _, 1, 64>::new(&dev);
+    let mut lin2 = Linear::<f32, _, 64, 64>::new(&dev);
+    let mut lin3 = Linear::<f32, _, 64, 1>::new(&dev);
 
-    let (x, y) = create_sine(&device, 0, 1000);
+    let (x, y) = create_sine(&dev, 0, 1000);
     let sgd = SGD { lr: 0.0001 };
 
     let start = Instant::now();
 
-    for _ in 0..1000 {
+    for _ in dev.range(0..1000) {
         #[cfg(feature = "autograd")]
         unsafe {
-            device.gradients_mut().unwrap().zero_grad();
+            dev.gradients_mut().unwrap().zero_grad();
         };
         // custos::TapeReturn::tape_mut(&device).grads.zero_grad();
         // sgd.zero_grad(lin1.params());
@@ -143,7 +142,7 @@ fn main() {
         let out = lin3.forward(&out);
 
         let loss = (&out - &y).squared();
-        let loss_val = device.mean(&loss);
+        let loss_val = dev.mean(&loss);
         println!("loss: {loss_val}");
 
         #[cfg(feature = "autograd")]

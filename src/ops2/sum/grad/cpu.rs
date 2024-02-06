@@ -32,7 +32,7 @@ where
         &self,
         cols: usize,
         x_grad: &mut Buffer<T, Self, IS>,
-        out_grad: &Buffer<T, Self, IS>,
+        out_grad: &Buffer<T, Self, OS>,
     ) {
         slice_sum_cols_grad(cols, x_grad, out_grad);
     }
