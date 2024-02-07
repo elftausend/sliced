@@ -1,5 +1,6 @@
 use custos::{
-    prelude::Float, Alloc, Autograd, Base, Buffer, Cursor, Device, IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions
+    prelude::Float, Alloc, Autograd, Base, Buffer, Cursor, Device, IsShapeIndep, MayTapeActions,
+    OnNewBuffer, TapeActions, ZeroGrad,
 };
 
 use sliced::{GemmMayGrad, Matrix, Mean, RandOp, RowOpMayGrad};
@@ -16,14 +17,14 @@ impl<'a, T: Float, D: Device + OnNewBuffer<T, D>, const I: usize, const O: usize
     where
         D: RandOp<T> + Alloc<T>,
     {
-        let mut weights = Matrix::new(device, I, O);
+        let mut weights = Matrix::new(device, I, O).require_grad();
         // device.rand(&mut weights, T::from_f64(-0.1), T::from);
         device.rand(&mut weights, -T::one() / T::two(), T::one() / T::two());
         //let mut weights = Matrix::from((device, I, O, vec![T::one(); I*O]));
 
         Linear {
             weights,
-            bias: Matrix::new(device, 1, O),
+            bias: Matrix::new(device, 1, O).require_grad(),
         }
     }
 
@@ -91,7 +92,7 @@ use std::ops::{Deref, DerefMut};
 impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: MayTapeActions + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
+        D: MayTapeActions + WriteBuf<T> + Alloc<T> + ZeroGrad<T> + ClearBuf<T> + 'static,
     {
         for param in params {
             param.param.grad_mut().clear();
@@ -100,7 +101,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
 
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: WriteBuf<T> + Alloc<T> + MayTapeActions + 'static,
+        D: WriteBuf<T> + Alloc<T> + MayTapeActions + ZeroGrad<T> + 'static,
         D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
@@ -123,6 +124,7 @@ fn main() {
     let mut lin3 = Linear::<f32, _, 64, 1>::new(&dev);
 
     let (x, y) = create_sine(&dev, 0, 1000);
+
     let sgd = SGD { lr: 0.0001 };
 
     let start = Instant::now();
@@ -141,7 +143,7 @@ fn main() {
         let out = lin2.forward(&out).relu();
         let out = lin3.forward(&out);
 
-        let loss = (&out - &y).squared();
+        let loss = (&out - &y).pow(2.);
         let loss_val = dev.mean(&loss);
         println!("loss: {loss_val}");
 

@@ -4,7 +4,8 @@ use std::{
 };
 
 use custos::{
-    Alloc, Autograd, Base, Cached, Combiner, Device, Dim1, Resolve, Retriever, Shape, WithShape,
+    Alloc, Autograd, Base, Cached, Combiner, Cursor, Device, Dim1, Resolve, Retriever, Shape,
+    WithShape,
 };
 use sliced::{slice_binary_ew, BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU};
 
@@ -14,7 +15,7 @@ pub fn op<'b, T, D, S>(
     op: impl Fn(T, T) -> T,
 ) -> Buffer<'b, T, D, S>
 where
-    D: Alloc<T> + Retriever<T>,
+    D: Alloc<T> + Retriever<T, S>,
     D::Base<T, S>: Deref<Target = [T]> + DerefMut,
     S: Shape,
     T: Copy,
@@ -49,11 +50,12 @@ where
 // dur: 434 ms
 fn main() {
     // let device = custos::OpenCL::<custos::Autograd<custos::Base>>::new(0).unwrap();
-    // let device = custos::Stack;
-    let device = CPU::<Autograd<Cached<Base>>>::new();
+    // let device = custos::Stack::<Base>::new();
+    let device = CPU::<Autograd<Base>>::new();
+    // let device = CPU::<Cached<Base>>::new();
     //device.tape_mut().disable();
 
-    const SIZE: usize = 2; // 123412
+    const SIZE: usize = 123412; // 123412
 
     // if with fails with CPU -> backwards operation may use () shape, Box<dyn Any> does not like this
     let mut x = Buffer::with(&device, [1.3f32; SIZE]);
@@ -61,14 +63,14 @@ fn main() {
 
     let start = std::time::Instant::now();
 
-    const TIMES: usize = 1;
+    const TIMES: usize = 100;
 
     let mut already = false;
 
     /*let x_slice = &*x;
     let b_slice = &*b;*/
     for _ in 0..TIMES {
-        for epoch in 0..100 {
+        for epoch in device.range(0..100) {
             //let mut out = device.retrieve::<_, Dim1<SIZE>>(SIZE, (&x, &b));
             /*for idx in 0..SIZE {
                 let x = x_slice[idx];

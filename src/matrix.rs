@@ -9,7 +9,7 @@ use std::{fmt::Display, ops::Mul};
 use custos::{
     prelude::{Float, Number, Numeric, Two},
     AddGradFn, Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep,
-    MayTapeActions, OnNewBuffer, Shape, UnaryElementWiseMayGrad, UnaryGrad, CPU,
+    MayTapeActions, OnNewBuffer, Shape, UnaryElementWiseMayGrad, UnaryGrad, ZeroGrad, CPU,
 };
 
 use crate::{
@@ -34,6 +34,19 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             data: Buffer::new(device, rows * cols),
             rows,
             cols,
+        }
+    }
+
+    #[inline]
+    pub fn require_grad(self) -> Matrix<'a, T, D, S>
+    where
+        D: OnNewBuffer<T, D, S>,
+    {
+        let data = self.data.require_grad();
+        Matrix {
+            data,
+            rows: self.rows,
+            cols: self.cols,
         }
     }
 
@@ -148,6 +161,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + MayTapeActions
             + UnaryGrad<T, S>
             + Alloc<T>
+            + ZeroGrad<T>
             + AddGradFn
             + 'static,
     {
@@ -184,6 +198,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + MayTapeActions
             + UnaryGrad<T, S>
             + Alloc<T>
+            + ZeroGrad<T>
             + AddGradFn
             + 'static,
     {
@@ -211,6 +226,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + MayTapeActions
             + UnaryGrad<T, S>
             + Alloc<T>
+            + ZeroGrad<T>
             + AddGradFn
             + 'static,
     {
@@ -250,6 +266,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + ApplyFunction<T, S>
             + UnaryGrad<T, S>
             + Alloc<T>
+            + ZeroGrad<T>
             + MayTapeActions
             + AddGradFn
             + 'static,
@@ -313,6 +330,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + ApplyFunction<T, S>
             + UnaryGrad<T, S>
             + Alloc<T>
+            + ZeroGrad<T>
             + MayTapeActions
             + AddGradFn
             + SumColsMayGrad<T, S, OS>

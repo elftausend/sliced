@@ -2,10 +2,19 @@ use custos::{Alloc, Buffer, Device, OnNewBuffer, Shape};
 
 use crate::Matrix;
 
+
+impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
+    #[inline]
+    pub fn from_data(data: Buffer<'a, T, D, S>, rows: usize, cols: usize) -> Self {
+        assert_eq!(data.len(), rows * cols, "Size of matrix != buffer size");
+        Matrix { data, rows, cols }
+    }
+}
+
 impl<'a, T, D: Device, S: Shape> From<(Buffer<'a, T, D, S>, usize, usize)> for Matrix<'a, T, D, S> {
     #[inline]
     fn from((data, rows, cols): (Buffer<'a, T, D, S>, usize, usize)) -> Self {
-        Matrix { data, rows, cols }
+        Matrix::from_data(data, rows, cols)
     }
 }
 
@@ -15,7 +24,7 @@ impl<'a, T: Copy, D: Alloc<T> + OnNewBuffer<T, D, ()>, const N: usize>
     #[inline]
     fn from((device, rows, cols, slice): (&'a D, usize, usize, [T; N])) -> Self {
         let data = Buffer::from((device, slice));
-        Matrix { data, rows, cols }
+        Matrix::from_data(data, rows, cols)
     }
 }
 
@@ -25,7 +34,7 @@ impl<'a, T: Copy, D: Alloc<T> + OnNewBuffer<T, D, ()>, const N: usize>
     #[inline]
     fn from((device, rows, cols, slice): (&'a D, usize, usize, &[T; N])) -> Self {
         let data = Buffer::from((device, slice));
-        Matrix { data, rows, cols }
+        Matrix::from_data(data, rows, cols)
     }
 }
 
@@ -54,6 +63,6 @@ impl<'a, T: Copy, D: Alloc<T> + OnNewBuffer<T, D, ()>> From<(&'a D, usize, usize
 {
     fn from((device, rows, cols, data): (&'a D, usize, usize, Vec<T>)) -> Self {
         let data = Buffer::from((device, data));
-        Matrix { data, rows, cols }
+        Matrix::from_data(data, rows, cols)
     }
 }

@@ -7,7 +7,7 @@ use custos::{
     number::Numeric,
     prelude::{Float, One, Two},
     AddGradFn, AddOperation, Alloc, ApplyFunction, AsNoId, Buffer, Combiner, Device, Eval, HasId,
-    MayTapeActions, MayToCLSource, Shape, UnaryGrad, WriteBuf,
+    MayTapeActions, MayToCLSource, Shape, UnaryGrad, WriteBuf, ZeroGrad,
 };
 
 use crate::{
@@ -29,6 +29,7 @@ where
             + UnaryGrad<T, S, Self>
             + MayTapeActions
             + Alloc<T>
+            + ZeroGrad<T>
             + AddGradFn
             + 'static,
     {
@@ -56,6 +57,7 @@ where
         + UnaryGrad<T, S, Self>
         + MayTapeActions
         + Alloc<T>
+        + ZeroGrad<T>
         + AddGradFn
         + 'static,
 {
@@ -96,6 +98,7 @@ where
         + BinaryElementWiseGrad<T, S, D>
         + MayTapeActions
         + Alloc<T>
+        + ZeroGrad<T>
         + AddGradFn
         + 'static,
     T: Mul<Output = T>
@@ -196,6 +199,7 @@ where
         + TranposeGrad<T, IS, OS>
         + MayTapeActions
         + Alloc<T>
+        + ZeroGrad<T>
         + WriteBuf<T>
         + AddGradFn
         + 'static,
@@ -239,6 +243,7 @@ where
         + GemmGrad<T, LS, RS, OS>
         + MayTapeActions
         + Alloc<T>
+        + ZeroGrad<T>
         + AddGradFn
         + 'static,
 {
@@ -307,7 +312,13 @@ where
     T: 'static + Add<Output = T>,
     LS: Shape,
     RS: Shape,
-    D: RowOp<T, LS, RS> + RowOpGrad<T, LS, RS> + MayTapeActions + Alloc<T> + AddGradFn + 'static,
+    D: RowOp<T, LS, RS>
+        + RowOpGrad<T, LS, RS>
+        + MayTapeActions
+        + Alloc<T>
+        + AddGradFn
+        + 'static
+        + ZeroGrad<T>,
 {
     fn add_row(
         &self,
@@ -554,6 +565,7 @@ where
         + SumCols<T, IS, OS>
         + SumColsGrad<T, IS, OS>
         + Alloc<T>
+        + ZeroGrad<T>
         + AddOperation
         + 'static,
 {
@@ -628,6 +640,7 @@ where
         + MeanRows<T, IS, OS>
         + MeanRowsGrad<T, IS, OS>
         + Alloc<T>
+        + ZeroGrad<T>
         + AddGradFn
         + 'static,
 {
@@ -658,6 +671,7 @@ where
         + Diagflat<T, IS, OS>
         + DiagflatGrad<T, IS, OS>
         + Alloc<T>
+        + ZeroGrad<T>
         + MayTapeActions
         + 'static,
 {
@@ -698,7 +712,13 @@ impl<T, S, D> SoftmaxMayGrad<T, S> for D
 where
     T: Copy + 'static,
     S: Shape,
-    D: Softmax<T, S> + SoftmaxGrad<T, S> + AddGradFn + Alloc<T> + MayTapeActions + 'static,
+    D: Softmax<T, S>
+        + SoftmaxGrad<T, S>
+        + AddGradFn
+        + Alloc<T>
+        + MayTapeActions
+        + 'static
+        + ZeroGrad<T>,
 {
     fn softmax(
         &self,

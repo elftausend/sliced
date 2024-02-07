@@ -1,7 +1,8 @@
 use std::time::Instant;
 
 use custos::{
-    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cursor, Device, IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions, CPU
+    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cursor, Device, HasId,
+    IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions, ZeroGrad, CPU,
 };
 
 use graplot::Plot;
@@ -22,14 +23,15 @@ impl<'a, T: Float, D: Device + OnNewBuffer<T, D>, const I: usize, const O: usize
     where
         D: RandOp<T> + Alloc<T>,
     {
-        let mut weights = Matrix::new(device, I, O);
-        // device.rand(&mut weights, T::from_f64(-0.1), T::from);
-        device.rand(&mut weights, -T::one() / T::two(), T::one() / T::two());
+        // let mut weights = Matrix::new(device, I, O).require_grad();
+        // device.rand(&mut weights, T::from_f64(-0.1), T::from_f64(0.1));
+        let mut weights = Matrix::from((device, I, O, vec![T::from_f64(0.01)])).require_grad();
+        // device.rand(&mut weights, -T::one() / T::two(), T::one() / T::two());
         //let mut weights = Matrix::from((device, I, O, vec![T::one(); I*O]));
 
         Linear {
             weights,
-            bias: Matrix::new(device, 1, O),
+            bias: Matrix::new(device, 1, O).require_grad(),
         }
     }
 
@@ -97,7 +99,7 @@ use std::ops::{Deref, DerefMut};
 impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: MayTapeActions + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
+        D: MayTapeActions + ZeroGrad<T> + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
     {
         for param in params {
             param.param.grad_mut().clear();
@@ -106,7 +108,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
 
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: WriteBuf<T> + Alloc<T> + MayTapeActions + 'static,
+        D: WriteBuf<T> + ZeroGrad<T> + Alloc<T> + MayTapeActions + 'static,
         D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
@@ -147,6 +149,7 @@ pub fn cce_grad<'a, T: Float, D: Device + Clip<T, ()> + AddOperation + BinaryEle
 }
 
 fn mnist() {
+    use custos::HasId;
     let device = CPU::<Autograd<Base>>::new();
 
     let mut lin1 = Linear::<f32, _, { 28 * 28 }, 128>::new(&device);
@@ -165,14 +168,23 @@ fn mnist() {
         x[i] /= 255.;
     }
 
-    let y = Matrix::from((&device, loaded_data.sample_count, 28 * 28, loaded_data.y));
+    let y = Matrix::from((&device, loaded_data.sample_count, 1, loaded_data.y));
     let y = device.onehot(&y);
+    let y = Matrix::from((y, loaded_data.sample_count, 10));
+
+    assert!(!y.as_buf().requires_grad());
 
     let start = Instant::now();
 
-    let sgd = SGD { lr: 0.0001 };
-    for epoch in device.range(0..50) {
+    let sgd = SGD { lr: 0.16 };
+    for epoch in device.range(0..80) {
+        #[cfg(feature = "autograd")]
+        unsafe {
+            device.gradients_mut().unwrap().zero_grad();
+        };
+
         let out = lin1.forward(&x).relu();
+
         let out = lin2.forward(&out).relu();
         let out = lin3.forward(&out).softmax();
 
@@ -195,6 +207,7 @@ fn mnist() {
         //     preds.grad_mut().write_buf(&out);
         //     Ok(())
         // }).unwrap();
+        // out.backward();
         out.backward_with(&grad);
 
         sgd.step(lin1.params());

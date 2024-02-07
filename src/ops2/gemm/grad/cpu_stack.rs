@@ -2,7 +2,7 @@ use std::ops::{Deref, DerefMut};
 
 #[cfg(feature = "stack")]
 use custos::Stack;
-use custos::{impl_stack, Buffer, Device, GenericBlas, OnDropBuffer, Shape, CPU};
+use custos::{impl_stack, Buffer, Device, GenericBlas, HasId, OnDropBuffer, Shape, CPU};
 
 use super::GemmGrad;
 
@@ -32,7 +32,11 @@ where
         rhs_grad: &mut Buffer<T, D, RS>,
         out_grad: &Buffer<T, D, OS>,
     ) {
-        T::gemmT(m, k, n, out_grad, rhs, lhs_grad);
-        T::Tgemm(k, n, m, lhs, out_grad, rhs_grad);
+        if lhs.requires_grad() {
+            T::gemmT(m, k, n, out_grad, rhs, lhs_grad);
+        }
+        if rhs.requires_grad() {
+            T::Tgemm(k, n, m, lhs, out_grad, rhs_grad);
+        }
     }
 }
