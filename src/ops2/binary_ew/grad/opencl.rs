@@ -1,23 +1,21 @@
 use custos::{
-    opencl::{CLDevice, CLPtr},
-    prelude::enqueue_kernel,
-    Buffer, CDatatype, Eval, MayToCLSource, OnDropBuffer, OpenCL, Resolve, ToMarker,
+    opencl::{CLDevice, CLPtr}, prelude::enqueue_kernel, Buffer, CDatatype, Eval, MayToCLSource, OnDropBuffer, OpenCL, Resolve, Shape, ToMarker
 };
 
 use super::BinaryElementWiseGrad;
 
-impl<T, Mods: OnDropBuffer> BinaryElementWiseGrad<T> for OpenCL<Mods>
+impl<T, Mods: OnDropBuffer, S: Shape> BinaryElementWiseGrad<T, S> for OpenCL<Mods>
 where
     T: CDatatype + Default,
 {
     #[inline]
     fn binary_ew_grad<LO, RO>(
         &self,
-        lhs: &Buffer<T, Self>,
-        rhs: &Buffer<T, Self>,
-        lhs_grad: &mut Buffer<T, Self>,
-        rhs_grad: &mut Buffer<T, Self>,
-        out: &Buffer<T, Self>,
+        lhs: &Buffer<T, Self, S>,
+        rhs: &Buffer<T, Self, S>,
+        lhs_grad: &mut Buffer<T, Self, S>,
+        rhs_grad: &mut Buffer<T, Self, S>,
+        out: &Buffer<T, Self, S>,
         lhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> LO,
         rhs_grad_fn: impl Fn(Resolve<T>, Resolve<T>) -> RO,
     ) where

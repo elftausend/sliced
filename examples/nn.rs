@@ -1,8 +1,7 @@
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use custos::{
-    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cursor, Device, HasId,
-    IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions, ZeroGrad, CPU,
+    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cursor, Device, HasId, IsShapeIndep, MayTapeActions, OnNewBuffer, OpenCL, TapeActions, ZeroGrad, CPU
 };
 
 use graplot::Plot;
@@ -23,9 +22,9 @@ impl<'a, T: Float, D: Device + OnNewBuffer<T, D>, const I: usize, const O: usize
     where
         D: RandOp<T> + Alloc<T>,
     {
-        // let mut weights = Matrix::new(device, I, O).require_grad();
-        // device.rand(&mut weights, T::from_f64(-0.1), T::from_f64(0.1));
-        let mut weights = Matrix::from((device, I, O, vec![T::from_f64(0.01)])).require_grad();
+        let mut weights = Matrix::new(device, I, O).require_grad();
+        device.rand(&mut weights, T::from_f64(-0.1), T::from_f64(0.1));
+        // let mut weights = Matrix::from((device, I, O, vec![T::from_f64(0.01); I * O])).require_grad();
         // device.rand(&mut weights, -T::one() / T::two(), T::one() / T::two());
         //let mut weights = Matrix::from((device, I, O, vec![T::one(); I*O]));
 
@@ -151,6 +150,7 @@ pub fn cce_grad<'a, T: Float, D: Device + Clip<T, ()> + AddOperation + BinaryEle
 fn mnist() {
     use custos::HasId;
     let device = CPU::<Autograd<Base>>::new();
+    // let device = OpenCL::<Autograd<Base>>::new(0).unwrap();
 
     let mut lin1 = Linear::<f32, _, { 28 * 28 }, 128>::new(&device);
     let mut lin2 = Linear::<f32, _, 128, 10>::new(&device);
@@ -168,7 +168,7 @@ fn mnist() {
         x[i] /= 255.;
     }
 
-    let y = Matrix::from((&device, loaded_data.sample_count, 1, loaded_data.y));
+    let y = Matrix::from((&device, loaded_data.sample_count, 1, loaded_data.y.clone()));
     let y = device.onehot(&y);
     let y = Matrix::from((y, loaded_data.sample_count, 10));
 
@@ -176,8 +176,8 @@ fn mnist() {
 
     let start = Instant::now();
 
-    let sgd = SGD { lr: 0.16 };
-    for epoch in device.range(0..80) {
+    let sgd = SGD { lr: 0.1 };
+    for epoch in device.range(0..80000) {
         #[cfg(feature = "autograd")]
         unsafe {
             device.gradients_mut().unwrap().zero_grad();
@@ -187,6 +187,24 @@ fn mnist() {
 
         let out = lin2.forward(&out).relu();
         let out = lin3.forward(&out).softmax();
+
+        let mut correct_count = 0;
+        let out_slice = out.as_slice(); 
+        for row in 0..out.rows() {
+            let correct_idx = loaded_data.y[row].round() as usize;
+            let mut max = out_slice[row * out.cols()];
+            let mut max_idx = 0;
+            for col in 1..out.cols() {
+                if out_slice[row * out.cols() + col] > max {
+                    max = out_slice[row * out.cols() + col];
+                    max_idx = col
+                }
+            }
+            if correct_idx == max_idx {
+                correct_count += 1;
+            }
+        }
+        let acc = correct_count as f32 / loaded_data.sample_count as f32;
 
         let loss = cce(&out, &y, out.cols());
         let grad = cce_grad(&out, &y, out.rows());
@@ -200,7 +218,7 @@ fn mnist() {
         // let loss = (&out - &y).pow(2.);
 
         let avg_loss = device.mean(&loss);
-        println!("epoch: {epoch}, loss: {avg_loss}");
+        println!("epoch: {epoch}, loss: {avg_loss}, acc: {acc}");
 
         // device.add_op((out.as_buf(), &y), |(preds, targets)| {
         //     let out = cce_grad(preds, targets);
@@ -213,6 +231,10 @@ fn mnist() {
         sgd.step(lin1.params());
         sgd.step(lin2.params());
         sgd.step(lin3.params());
+
+        if start.elapsed() >= Duration::from_secs_f64(31.834260042) {
+            break;
+        }
     }
     println!("elapsed: {:?}", start.elapsed());
 }
