@@ -163,21 +163,21 @@ fn mnist() {
         return;
     };
 
-    let mut x = Matrix::from((&device, loaded_data.sample_count, 28 * 28, loaded_data.x));
+    let mut x = Matrix::from((&device, loaded_data.sample_count, 28 * 28, loaded_data.x)).no_grad();
     for i in 0..x.len() {
         x[i] /= 255.;
     }
 
     let y = Matrix::from((&device, loaded_data.sample_count, 1, loaded_data.y.clone()));
     let y = device.onehot(&y);
-    let y = Matrix::from((y, loaded_data.sample_count, 10));
+    let y = Matrix::from((y, loaded_data.sample_count, 10)).no_grad();
 
     assert!(!y.as_buf().requires_grad());
 
     let start = Instant::now();
 
     let sgd = SGD { lr: 0.1 };
-    for epoch in device.range(0..80000) {
+    for epoch in device.range(0..50) {
         #[cfg(feature = "autograd")]
         unsafe {
             device.gradients_mut().unwrap().zero_grad();

@@ -50,6 +50,19 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         }
     }
 
+    #[inline]
+    pub fn no_grad(self) -> Matrix<'a, T, D, S>
+    where
+        D: OnNewBuffer<T, D, S>,
+    {
+        let data = self.data.no_grad();
+        Matrix {
+            data,
+            rows: self.rows,
+            cols: self.cols,
+        }
+    }
+
     /// Returns the rows of `Matrix`.
     #[inline]
     pub fn rows(&self) -> usize {
