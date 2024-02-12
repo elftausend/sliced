@@ -1,8 +1,8 @@
 use std::ops::Deref;
 
 use custos::{
-    impl_stack, Buffer, Device, Eval, MayToCLSource, Resolve, Retrieve, Retriever, Shape, ToVal,
-    CPU,
+    impl_stack, AddOperation, AsNoId, Buffer, Device, Eval, MayToCLSource, Resolve, Retrieve,
+    Retriever, Shape, ToVal, CPU,
 };
 
 use super::BinaryElementWise;
@@ -11,25 +11,29 @@ use super::BinaryElementWise;
 use custos::Stack;
 
 #[impl_stack]
-impl<T, S, D, Mods: Retrieve<Self, T, S>> BinaryElementWise<T, S, D> for CPU<Mods>
+impl<T, S, D, Mods> BinaryElementWise<T, S, D> for CPU<Mods>
 where
-    T: Copy + Default,
+    T: Copy + Default + 'static,
     S: Shape,
-    D: Device,
+    D: Device + AddOperation + 'static,
     D::Base<T, S>: Deref<Target = [T]>,
+    Mods: Retrieve<Self, T, S> + AddOperation + 'static,
 {
     #[inline]
     fn binary_ew<O>(
         &self,
         lhs: &Buffer<T, D, S>,
         rhs: &Buffer<T, D, S>,
-        f: impl Fn(Resolve<T>, Resolve<T>) -> O,
+        f: impl Fn(Resolve<T>, Resolve<T>) -> O + Copy + 'static,
     ) -> Buffer<T, Self, S>
     where
         O: Eval<T> + MayToCLSource,
     {
         let mut out = self.retrieve(lhs.len(), (lhs, rhs));
-        slice_binary_ew(lhs, rhs, &mut out, f);
+        self.add_op((lhs, rhs, &mut out, f.no_id()), |(lhs, rhs, out, f)| {
+            slice_binary_ew(lhs, rhs, out, **f);
+            Ok(())
+        });
         out
     }
 }

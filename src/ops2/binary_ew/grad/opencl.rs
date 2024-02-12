@@ -1,5 +1,7 @@
 use custos::{
-    opencl::{CLDevice, CLPtr}, prelude::enqueue_kernel, Buffer, CDatatype, Eval, MayToCLSource, OnDropBuffer, OpenCL, Resolve, Shape, ToMarker
+    opencl::{CLDevice, CLPtr},
+    prelude::enqueue_kernel,
+    Buffer, CDatatype, Eval, MayToCLSource, OnDropBuffer, OpenCL, Resolve, Shape, ToMarker,
 };
 
 use super::BinaryElementWiseGrad;

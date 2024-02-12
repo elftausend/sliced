@@ -2,7 +2,6 @@ use custos::{Alloc, Buffer, Device, OnNewBuffer, Shape};
 
 use crate::Matrix;
 
-
 impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn from_data(data: Buffer<'a, T, D, S>, rows: usize, cols: usize) -> Self {

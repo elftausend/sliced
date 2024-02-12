@@ -1,7 +1,8 @@
 use std::time::{Duration, Instant};
 
 use custos::{
-    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cursor, Device, HasId, IsShapeIndep, MayTapeActions, OnNewBuffer, OpenCL, TapeActions, ZeroGrad, CPU
+    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cursor, Device, HasId,
+    IsShapeIndep, MayTapeActions, OnNewBuffer, OpenCL, TapeActions, ZeroGrad, CPU,
 };
 
 use graplot::Plot;
@@ -189,7 +190,7 @@ fn mnist() {
         let out = lin3.forward(&out).softmax();
 
         let mut correct_count = 0;
-        let out_slice = out.as_slice(); 
+        let out_slice = out.as_slice();
         for row in 0..out.rows() {
             let correct_idx = loaded_data.y[row].round() as usize;
             let mut max = out_slice[row * out.cols()];
