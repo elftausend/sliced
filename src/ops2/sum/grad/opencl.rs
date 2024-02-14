@@ -85,7 +85,7 @@ pub fn cl_sum_rows_grad_modulo<T: CDatatype>(
 
 impl<T, IS, OS, Mods: OnDropBuffer + 'static> SumRowsGrad<T, IS, OS> for OpenCL<Mods>
 where
-    T: Default + Copy + AddAssign,
+    T: Default + Copy + AddAssign + 'static,
     IS: Shape,
     OS: Shape,
 {
@@ -97,7 +97,7 @@ where
         out_grad: &custos::Buffer<T, Self, OS>,
     ) {
         use custos::{Base, Buffer, WriteBuf, CPU};
-        let cpu = custos::CPU::<custos::Autograd<custos::Base>>::new();
+        // let cpu = custos::CPU::<custos::Autograd<custos::Base>>::new();
 
         #[rustfmt::skip]
         custos::cl_cpu_exec_unified_mut!(

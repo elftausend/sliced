@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use custos::{prelude::Number, Buffer, Device, OnDropBuffer, Retrieve, Retriever, Shape, CPU};
+use custos::{prelude::Number, AddOperation, AsNoId, Buffer, Device, OnDropBuffer, Retrieve, Retriever, Shape, CPU};
 
 use crate::{Max, MaxCols, MaxRows};
 
@@ -50,16 +50,21 @@ pub fn max_rows<T: Number>(cols: usize, x: &[T], out: &mut [T]) {
     }
 }
 
-impl<T, D, Mods: Retrieve<Self, T>> MaxCols<T, (), (), D> for CPU<Mods>
+impl<T, D, Mods> MaxCols<T, (), (), D> for CPU<Mods>
 where
     T: Number,
-    D: Device,
+    D: Device + 'static,
     D::Base<T, ()>: Deref<Target = [T]>,
+    Mods: Retrieve<Self, T> + AddOperation + 'static,
 {
     #[inline]
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D>) -> Buffer<T, Self> {
         let mut out = self.retrieve(rows, x);
-        max_cols(cols, x, &mut out);
+
+        self.add_op((cols.no_id(), x, &mut out), |(cols, x, out)| {
+            max_cols(**cols, x, out);
+            Ok(())
+        }).unwrap();
         out
     }
 }

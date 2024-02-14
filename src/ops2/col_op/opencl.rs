@@ -12,7 +12,7 @@ impl<T: Copy + Default + 'static> ColOp<T> for OpenCL {
         f: F,
     ) -> Buffer<T, Self>
     where
-        F: Fn(T, T) -> T + Copy,
+        F: Fn(T, T) -> T + Copy + 'static,
     {
         cpu_exec_binary_may_unified(self, lhs, rhs, |cpu, lhs, rhs| {
             cpu.col_op(cols, lhs, rhs, f)

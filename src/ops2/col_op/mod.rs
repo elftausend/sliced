@@ -26,7 +26,7 @@ pub trait ColOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
         f: F,
     ) -> Buffer<T, Self, LS>
     where
-        F: Fn(T, T) -> T + Copy;
+        F: Fn(T, T) -> T + Copy + 'static;
 
     #[inline]
 

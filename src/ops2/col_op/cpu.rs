@@ -1,15 +1,16 @@
 use std::ops::Deref;
 
-use custos::{Buffer, Device, Retrieve, Retriever, CPU};
+use custos::{AddOperation, AsNoId, Buffer, Device, Retrieve, Retriever, CPU};
 
 use super::ColOp;
 
 // TODO: shape?
-impl<T, D, Mods: Retrieve<Self, T>> ColOp<T, (), (), D> for CPU<Mods>
+impl<T, D, Mods> ColOp<T, (), (), D> for CPU<Mods>
 where
-    T: Copy,
-    D: Device,
+    T: Copy + 'static,
+    D: Device + 'static,
     D::Base<T, ()>: Deref<Target = [T]>,
+    Mods: Retrieve<Self, T> + AddOperation + 'static,
 {
     #[inline]
     fn col_op<F>(
@@ -20,10 +21,17 @@ where
         f: F,
     ) -> Buffer<T, Self>
     where
-        F: Fn(T, T) -> T,
+        F: Fn(T, T) -> T + Copy + 'static,
     {
         let mut out = self.retrieve(lhs.len(), (lhs, rhs));
-        slice_col_op(cols, lhs, rhs, &mut out, f);
+
+        self.add_op(
+            (cols.no_id(), lhs, rhs, &mut out, f.no_id()),
+            |(cols, lhs, rhs, out, f)| {
+                slice_col_op(**cols, lhs, rhs, out, **f);
+                Ok(())
+            },
+        );
         out
     }
 }
