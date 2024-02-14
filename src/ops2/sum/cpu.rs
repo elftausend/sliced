@@ -20,18 +20,23 @@ where
     }
 }
 
-impl<T, IS, OS, D, Mods: Retrieve<Self, T, OS>> SumRows<T, IS, OS, D> for CPU<Mods>
+impl<T, IS, OS, D, Mods> SumRows<T, IS, OS, D> for CPU<Mods>
 where
-    T: Copy + Sum + AddAssign,
+    T: Copy + Sum + AddAssign + 'static,
     IS: Shape,
     OS: Shape,
-    D: Device,
+    D: Device + 'static,
     D::Base<T, IS>: Deref<Target = [T]>,
+    Mods: Retrieve<Self, T, OS> + AddOperation + 'static,
 {
     #[inline]
     fn sum_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(cols, x);
-        slice_sum_rows2(cols, x, &mut out);
+        self.add_op((cols.no_id(), x, &mut out), |(cols, x, out)| {
+            slice_sum_rows2(**cols, x, out);
+            Ok(())
+        })
+        .unwrap();
         out
     }
 }

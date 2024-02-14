@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use custos::{impl_stack, AddOperation, Buffer, Device, Retrieve, Retriever, Shape, CPU};
+use custos::{impl_stack, AddOperation, AsNoId, Buffer, Device, Retrieve, Retriever, Shape, CPU};
 
 use crate::{
     assign_or_set::{AssignOrSet, Set},
@@ -31,16 +31,23 @@ use custos::Stack;
 #[impl_stack]
 impl<T, IS, OS, D, Mods> Transpose<T, IS, OS, D> for CPU<Mods>
 where
-    T: Copy + Default,
+    T: Copy + Default + 'static,
     IS: Shape,
     OS: Shape,
-    D: Device,
+    D: Device + 'static,
     D::Base<T, IS>: Deref<Target = [T]>,
-    Mods: Retrieve<Self, T, OS> + AddOperation,
+    Mods: Retrieve<Self, T, OS> + AddOperation + 'static,
 {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(x.len(), x);
-        slice_transpose::<_, Set>(rows, cols, x, &mut out);
+        self.add_op(
+            (rows.no_id(), cols.no_id(), x, &mut out),
+            |(rows, cols, x, out)| {
+                slice_transpose::<_, Set>(**rows, **cols, x, out);
+                Ok(())
+            },
+        )
+        .unwrap();
         out
     }
 }
