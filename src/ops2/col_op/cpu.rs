@@ -31,7 +31,8 @@ where
                 slice_col_op(**cols, lhs, rhs, out, **f);
                 Ok(())
             },
-        );
+        )
+        .unwrap();
         out
     }
 }

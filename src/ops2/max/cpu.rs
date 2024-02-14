@@ -1,6 +1,9 @@
 use std::ops::Deref;
 
-use custos::{prelude::Number, AddOperation, AsNoId, Buffer, Device, OnDropBuffer, Retrieve, Retriever, Shape, CPU};
+use custos::{
+    prelude::Number, AddOperation, AsNoId, Buffer, Device, OnDropBuffer, Retrieve, Retriever,
+    Shape, CPU,
+};
 
 use crate::{Max, MaxCols, MaxRows};
 
@@ -64,7 +67,8 @@ where
         self.add_op((cols.no_id(), x, &mut out), |(cols, x, out)| {
             max_cols(**cols, x, out);
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
         out
     }
 }

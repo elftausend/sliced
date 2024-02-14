@@ -3,7 +3,7 @@ use std::{
     ops::{AddAssign, Deref},
 };
 
-use custos::{Buffer, Device, OnDropBuffer, Retrieve, Retriever, Shape, CPU};
+use custos::{AddOperation, AsNoId, Buffer, Device, OnDropBuffer, Retrieve, Retriever, Shape, CPU};
 
 use crate::{SumCols, SumRows};
 
@@ -36,19 +36,24 @@ where
     }
 }
 
-impl<T, IS, OS, D, Mods: Retrieve<Self, T, OS>> SumCols<T, IS, OS, D> for CPU<Mods>
+impl<T, IS, OS, D, Mods> SumCols<T, IS, OS, D> for CPU<Mods>
 where
-    T: Copy + Sum,
+    T: Copy + Sum + 'static,
     IS: Shape,
     OS: Shape,
-    D: Device,
+    D: Device + 'static,
     D::Base<T, IS>: Deref<Target = [T]>,
+    Mods: Retrieve<Self, T, OS> + AddOperation + 'static,
 {
     #[inline]
     fn sum_cols(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let rows = x.len() / cols;
         let mut out = self.retrieve(rows, x);
-        slice_sum_cols(cols, x, &mut out);
+        self.add_op((cols.no_id(), x, &mut out), |(cols, x, out)| {
+            slice_sum_cols(**cols, x, out);
+            Ok(())
+        })
+        .unwrap();
         out
     }
 }
