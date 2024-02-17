@@ -1,6 +1,6 @@
 use custos::{
-    prelude::Float, Alloc, Autograd, Base, Buffer, Cursor, Device, IsShapeIndep, MayTapeActions,
-    OnNewBuffer, TapeActions, ZeroGrad,
+    prelude::Float, AddOperation, Alloc, AsNoId, Autograd, Base, Buffer, Cached, Cursor, Device,
+    ExecNow, IsShapeIndep, Lazy, MayTapeActions, OnNewBuffer, Run, TapeActions, ZeroGrad,
 };
 
 use sliced::{GemmMayGrad, Matrix, Mean, RandOp, RowOpMayGrad};
@@ -64,7 +64,7 @@ pub fn create_sine<'a, D: Alloc<f32> + IsShapeIndep + OnNewBuffer<f32, D>>(
     let x = Matrix::from((device, max - min, 1, x));
     let y = Matrix::from((device, max - min, 1, y));
 
-    (x, y)
+    (x.no_grad(), y.no_grad())
 }
 
 pub struct Param<'a, 'b, T, D: Device> {
@@ -86,7 +86,10 @@ use custos::prelude::{ClearBuf, One, WriteBuf};
 
 #[cfg(feature = "autograd")]
 use core::ops::{Mul, SubAssign};
-use std::ops::{Deref, DerefMut};
+use std::{
+    ops::{Deref, DerefMut},
+    rc::Rc,
+};
 
 #[cfg(feature = "autograd")]
 impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
@@ -113,12 +116,12 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     }
 }
 
-fn main() {
+fn sine_net() {
     use std::time::Instant;
 
     use custos::CPU;
 
-    let dev = CPU::<Autograd<Base>>::new();
+    let dev = CPU::<Autograd<Cached<Base>>>::new();
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&dev);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&dev);
     let mut lin3 = Linear::<f32, _, 64, 1>::new(&dev);
@@ -129,11 +132,12 @@ fn main() {
 
     let start = Instant::now();
 
-    for _ in dev.range(0..1000) {
+    for _ in dev.range(0..10000) {
         #[cfg(feature = "autograd")]
         unsafe {
             dev.gradients_mut().unwrap().zero_grad();
         };
+
         // custos::TapeReturn::tape_mut(&device).grads.zero_grad();
         // sgd.zero_grad(lin1.params());
         // sgd.zero_grad(lin2.params());
@@ -145,7 +149,7 @@ fn main() {
 
         let loss = (&out - &y).pow(2.);
         let loss_val = dev.mean(&loss);
-        println!("loss: {loss_val}");
+        // println!("loss: {loss_val}");
 
         #[cfg(feature = "autograd")]
         {
@@ -169,4 +173,124 @@ fn main() {
     let mut plot = graplot::Plot::new((x.read(), y.read()));
     plot.add((x.read(), out.read(), "-r"));
     plot.show()
+}
+
+fn sine_net_lazy2() {
+    use std::time::Instant;
+
+    use custos::CPU;
+
+    let dev = Rc::new(CPU::<Autograd<Lazy<Base>>>::new());
+    let mut lin1 = Linear::<f32, _, 1, 64>::new(&*dev);
+    let mut lin2 = Linear::<f32, _, 64, 64>::new(&*dev);
+    let mut lin3 = Linear::<f32, _, 64, 1>::new(&*dev);
+
+    let (x, y) = create_sine(&*dev, 0, 1000);
+    let sgd = SGD { lr: 0.0001 };
+
+    let start = Instant::now();
+
+    dev.clone()
+        .add_op(dev.clone().no_id(), |dev| {
+            #[cfg(feature = "autograd")]
+            unsafe {
+                dev.gradients_mut().unwrap().zero_grad();
+            };
+            Ok(())
+        })
+        .unwrap();
+
+    let out = lin1.forward(&x).relu();
+    let out = lin2.forward(&out).relu();
+    let out = lin3.forward(&out);
+
+    let loss = (&out - &y).pow(2.);
+
+    for _ in 0..10000 {
+        unsafe { dev.run().unwrap() };
+        let loss_val = dev.mean(loss.replace());
+        // println!("loss: {loss_val}");
+
+        #[cfg(feature = "autograd")]
+        {
+            loss.replace().backward();
+
+            sgd.step(lin1.params());
+            sgd.step(lin2.params());
+            sgd.step(lin3.params());
+        }
+    }
+    println!("elapsed: {:?}", start.elapsed());
+
+    let out = lin1.forward(&x).relu();
+    let out = lin2.forward(&out).relu();
+    let out = lin3.forward(&out);
+    unsafe { dev.exec_now(&dev, ..).unwrap() };
+
+    let mut plot = graplot::Plot::new((x.read(), y.read()));
+    plot.add((x.read(), out.replace().read(), "-r"));
+    plot.show()
+}
+
+fn sine_net_lazy() {
+    use std::time::Instant;
+
+    use custos::CPU;
+
+    let dev = Rc::new(CPU::<Autograd<Lazy<Base>>>::new());
+    let mut lin1 = Linear::<f32, _, 1, 64>::new(&*dev);
+    let mut lin2 = Linear::<f32, _, 64, 64>::new(&*dev);
+    let mut lin3 = Linear::<f32, _, 64, 1>::new(&*dev);
+
+    let (x, y) = create_sine(&*dev, 0, 1000);
+
+    let sgd = SGD { lr: 0.0001 };
+
+    let start = Instant::now();
+
+    for _ in dev.range(0..1000) {
+        dev.clone()
+            .add_op(dev.clone().no_id(), |dev| {
+                #[cfg(feature = "autograd")]
+                unsafe {
+                    dev.gradients_mut().unwrap().zero_grad();
+                };
+                Ok(())
+            })
+            .unwrap();
+
+        let out = lin1.forward(&x).relu();
+        let out = lin2.forward(&out).relu();
+        let out = lin3.forward(&out);
+
+        let loss = (&out - &y).pow(2.);
+        unsafe { dev.exec_now(&dev, ..).unwrap() };
+        let loss_val = dev.mean(loss.replace());
+        println!("loss: {loss_val}");
+
+        #[cfg(feature = "autograd")]
+        {
+            loss.replace().backward();
+
+            sgd.step(lin1.params());
+            sgd.step(lin2.params());
+            sgd.step(lin3.params());
+        }
+    }
+
+    println!("elapsed: {:?}", start.elapsed());
+
+    let out = lin1.forward(&x).relu();
+    let out = lin2.forward(&out).relu();
+    let out = lin3.forward(&out);
+    unsafe { dev.exec_now(&dev, ..).unwrap() };
+
+    let mut plot = graplot::Plot::new((x.read(), y.read()));
+    plot.add((x.read(), out.replace().read(), "-r"));
+    plot.show()
+}
+
+fn main() {
+    sine_net_lazy2();
+    sine_net();
 }

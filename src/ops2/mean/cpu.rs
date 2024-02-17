@@ -1,4 +1,4 @@
-use custos::{prelude::Number, Buffer, Device, OnDropBuffer, Retrieve, Retriever, Shape, CPU};
+use custos::{prelude::Number, Buffer, OnDropBuffer, Retrieve, Retriever, Shape, CPU};
 
 use crate::{slice_sum_rows2, Mean, MeanCols, MeanRows};
 

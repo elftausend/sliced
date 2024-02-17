@@ -1,14 +1,15 @@
 use std::ops::{Add, AddAssign, Deref, DerefMut};
 
-use custos::{Alloc, Buffer, Device, Retrieve, Retriever, Shape, CPU};
+use custos::{AddOperation, Alloc, AsNoId, Buffer, Device, Retrieve, Retriever, Shape, CPU};
 
 use crate::RowOp;
 
-impl<T, LS, RS, Mods: Retrieve<Self, T, LS>> RowOp<T, LS, RS> for CPU<Mods>
+impl<T, LS, RS, Mods> RowOp<T, LS, RS> for CPU<Mods>
 where
-    T: Add<Output = T> + Copy + AddAssign,
+    T: Add<Output = T> + Copy + AddAssign + 'static,
     LS: Shape,
     RS: Shape,
+    Mods: Retrieve<Self, T, LS> + AddOperation + 'static,
 {
     #[inline]
     fn add_row_mut(
@@ -18,7 +19,14 @@ where
         lhs: &mut Buffer<T, Self, LS>,
         rhs: &Buffer<T, Self, RS>,
     ) {
-        slice_row_op_lhs(rows, cols, lhs, rhs, |c, a| *c += a)
+        self.add_op(
+            (rows.no_id(), cols.no_id(), lhs, rhs),
+            |(rows, cols, lhs, rhs)| {
+                slice_row_op_lhs(**rows, **cols, lhs, rhs, |c, a| *c += a);
+                Ok(())
+            },
+        )
+        .unwrap();
     }
 
     #[inline]
