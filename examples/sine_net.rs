@@ -1,6 +1,6 @@
 use custos::{
     prelude::Float, AddOperation, Alloc, AsNoId, Autograd, Base, Buffer, Cached, Cursor, Device,
-    ExecNow, IsShapeIndep, Lazy, MayTapeActions, OnNewBuffer, Run, TapeActions, ZeroGrad,
+    ExecNow, HasId, IsShapeIndep, Lazy, MayTapeActions, OnNewBuffer, Run, TapeActions, ZeroGrad,
 };
 
 use sliced::{GemmMayGrad, Matrix, Mean, RandOp, RowOpMayGrad};
@@ -92,7 +92,7 @@ use std::{
 };
 
 #[cfg(feature = "autograd")]
-impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
+impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static + std::fmt::Debug> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
         D: MayTapeActions + WriteBuf<T> + Alloc<T> + ZeroGrad<T> + ClearBuf<T> + 'static,
@@ -132,7 +132,7 @@ fn sine_net() {
 
     let start = Instant::now();
 
-    for _ in dev.range(0..10000) {
+    for _ in dev.range(0..1000) {
         #[cfg(feature = "autograd")]
         unsafe {
             dev.gradients_mut().unwrap().zero_grad();
@@ -206,10 +206,10 @@ fn sine_net_lazy2() {
 
     let loss = (&out - &y).pow(2.);
 
-    for _ in 0..10000 {
+    for _ in 0..1000 {
         unsafe { dev.run().unwrap() };
         let loss_val = dev.mean(loss.replace());
-        // println!("loss: {loss_val}");
+        println!("loss: {loss_val}");
 
         #[cfg(feature = "autograd")]
         {
@@ -225,7 +225,7 @@ fn sine_net_lazy2() {
     let out = lin1.forward(&x).relu();
     let out = lin2.forward(&out).relu();
     let out = lin3.forward(&out);
-    unsafe { dev.exec_now(&dev, ..).unwrap() };
+    dev.exec_now(&dev, ..).unwrap();
 
     let mut plot = graplot::Plot::new((x.read(), y.read()));
     plot.add((x.read(), out.replace().read(), "-r"));
@@ -264,13 +264,17 @@ fn sine_net_lazy() {
         let out = lin3.forward(&out);
 
         let loss = (&out - &y).pow(2.);
-        unsafe { dev.exec_now(&dev, ..).unwrap() };
+        dev.exec_now(&dev, ..).unwrap();
         let loss_val = dev.mean(loss.replace());
         println!("loss: {loss_val}");
 
         #[cfg(feature = "autograd")]
         {
-            loss.replace().backward();
+            // could also just deactivate lazy and activate it after the backward call
+            // if the lazy mode is activated, grad functions aren't cleared (ops are called once normally)
+            // this results in a build up of grad functions in this case
+            dev.eagerly(|| loss.replace().backward());
+            // loss.replace().backward();
 
             sgd.step(lin1.params());
             sgd.step(lin2.params());
@@ -283,7 +287,7 @@ fn sine_net_lazy() {
     let out = lin1.forward(&x).relu();
     let out = lin2.forward(&out).relu();
     let out = lin3.forward(&out);
-    unsafe { dev.exec_now(&dev, ..).unwrap() };
+    dev.exec_now(&dev, ..).unwrap();
 
     let mut plot = graplot::Plot::new((x.read(), y.read()));
     plot.add((x.read(), out.replace().read(), "-r"));
@@ -291,6 +295,6 @@ fn sine_net_lazy() {
 }
 
 fn main() {
-    sine_net_lazy2();
+    sine_net_lazy();
     sine_net();
 }
