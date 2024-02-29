@@ -102,7 +102,7 @@ where
         #[rustfmt::skip]
         custos::cl_cpu_exec_unified_mut!(
             self,
-            out_grad
+            out_grad;
             WRITE_TO<x_grad, x_grad_cpu>
             self.cpu.sum_rows_grad(cols, &mut x_grad_cpu, &out_grad)
         );

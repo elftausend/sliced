@@ -27,7 +27,7 @@ where
         #[rustfmt::skip]
         custos::cl_cpu_exec_unified_mut!(
             self,
-            lhs, rhs, out_grad
+            lhs, rhs, out_grad;
             WRITE_TO<
                 lhs_grad, lhs_grad_cpu,
                 rhs_grad, rhs_grad_cpu
@@ -52,7 +52,7 @@ where
         #[rustfmt::skip]
         custos::cl_cpu_exec_unified_mut!(
             self,
-            out_grad
+            out_grad;
             WRITE_TO<
                 lhs_grad, lhs_grad_cpu,
                 rhs_grad, rhs_grad_cpu
