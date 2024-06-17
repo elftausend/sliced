@@ -49,10 +49,11 @@ where
 // 80MB, 110 MB
 // dur: 434 ms
 fn main() {
-    let device = custos::OpenCL::<custos::Autograd<custos::Base>>::new(0).unwrap();
+    // let device = custos::OpenCL::<Autograd<Base>>::new(0).unwrap();
     // let device = custos::Stack::<Base>::new();
-    // let device = CPU::<Autograd<Base>>::new();
+    let device = CPU::<Autograd<Cached<Base>>>::new();
     // let device = CPU::<Cached<Base>>::new();
+    // let device = CPU::<Base>::new();
     //device.tape_mut().disable();
 
     const SIZE: usize = 123412; // 123412
@@ -69,72 +70,70 @@ fn main() {
 
     /*let x_slice = &*x;
     let b_slice = &*b;*/
-    for _ in 0..TIMES {
-        for epoch in device.range(0..100) {
-            //let mut out = device.retrieve::<_, Dim1<SIZE>>(SIZE, (&x, &b));
-            /*for idx in 0..SIZE {
-                let x = x_slice[idx];
-                let b = b_slice[idx];
+    for epoch in device.range(0..100 * TIMES) {
+        //let mut out = device.retrieve::<_, Dim1<SIZE>>(SIZE, (&x, &b));
+        /*for idx in 0..SIZE {
+            let x = x_slice[idx];
+            let b = b_slice[idx];
 
-                let squared = x * x;
-                let mul = squared * x;
-                let add = b + x;
-                let mul_b = add * b;
-                out[idx] = mul + mul_b;
-            }*/
+            let squared = x * x;
+            let mul = squared * x;
+            let add = b + x;
+            let mul_b = add * b;
+            out[idx] = mul + mul_b;
+        }*/
 
-            let squared = device.square(&x);
-            let add = device.add(&b, &x);
-            let mul_b = device.mul(&add, &b);
-            let mul = device.mul(&squared, &x);
-            let out = device.add(&mul, &mul_b);
-            assert_eq!(out.read()[0], 9.336999);
+        let squared = device.square(&x);
+        let add = device.add(&b, &x);
+        let mul_b = device.mul(&add, &b);
+        let mul = device.mul(&squared, &x);
+        let out = device.add(&mul, &mul_b);
+        assert_eq!(out.read()[0], 9.336999);
 
-            out.backward();
+        // out.backward();
 
-            // let squared = device.mul(&x, &x);
-            // let mut squared: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(x.len(), (&x, &x));
-            // slice_binary_ew2(&x, &x, &mut squared, |x, _| x.mul(x));
+        // let squared = device.mul(&x, &x);
+        // let mut squared: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(x.len(), (&x, &x));
+        // slice_binary_ew2(&x, &x, &mut squared, |x, _| x.mul(x));
 
-            // let mut add: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(b.len(), (&b, &x));
-            // slice_binary_ew2(&b, &x, &mut add, |b, x| b.add(x));
+        // let mut add: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(b.len(), (&b, &x));
+        // slice_binary_ew2(&b, &x, &mut add, |b, x| b.add(x));
 
-            // let mut mul_b: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(add.len(), (&add, &b));
-            // slice_binary_ew2(&add, &b, &mut mul_b, |add, b| add.mul(b));
+        // let mut mul_b: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(add.len(), (&add, &b));
+        // slice_binary_ew2(&add, &b, &mut mul_b, |add, b| add.mul(b));
 
-            // let mut mul: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(squared.len(), (&squared, &x));
-            // slice_binary_ew2(&squared, &x, &mut mul, |squared, x| squared.mul(x));
+        // let mut mul: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(squared.len(), (&squared, &x));
+        // slice_binary_ew2(&squared, &x, &mut mul, |squared, x| squared.mul(x));
 
-            // let mut out: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(mul.len(), (&mul, &mul_b));
-            // slice_binary_ew2(&mul, &mul_b, &mut out, |mul, mul_b| mul.add(mul_b));
+        // let mut out: Buffer<'_, f32, _, Dim1<SIZE>> = device.retrieve(mul.len(), (&mul, &mul_b));
+        // slice_binary_ew2(&mul, &mul_b, &mut out, |mul, mul_b| mul.add(mul_b));
 
-            if !already {
-                // println!("cache traces: {:?}", &device.graph().cache_traces());
-                // println!("nodes before: {:?}", &device.cache().nodes);
-                // device.optimize().unwrap();
-                already = true;
-                // println!();
-                // println!("nodes after: {:?}", &device.cache().nodes);
-            }
-            // println!("{traces:?}");
-            //let out = op(&x, &b, |x, b| x * x * x * (x + b) * b);
-
-            //assert_eq!(&*out, [(1.3 * 1.3 * 1.3) * (1.3 + 2.1) * 2.1; 123412]);
-            //println!("count: {}", get_count());
-
-            //let _sum = out.iter().sum::<f32>();
-            //println!("i: {i}, sum: {sum:?}");
-
-            // out.backward();
-
-            // x.grad_mut().clear();
-            // b.grad_mut().clear();
-
-            //sliced::ew_assign_scalar(&mut x_grad, &0.1, |x, r| *x *= r);
-            //sliced::ew_assign_binary(&mut x, &x_grad, |x, y| *x -= y);
+        if !already {
+            // println!("cache traces: {:?}", &device.graph().cache_traces());
+            // println!("nodes before: {:?}", &device.cache().nodes);
+            // device.optimize().unwrap();
+            already = true;
+            // println!();
+            // println!("nodes after: {:?}", &device.cache().nodes);
         }
-        // println!("next")
+        // println!("{traces:?}");
+        //let out = op(&x, &b, |x, b| x * x * x * (x + b) * b);
+
+        //assert_eq!(&*out, [(1.3 * 1.3 * 1.3) * (1.3 + 2.1) * 2.1; 123412]);
+        //println!("count: {}", get_count());
+
+        //let _sum = out.iter().sum::<f32>();
+        //println!("i: {i}, sum: {sum:?}");
+
+        // out.backward();
+
+        // x.grad_mut().clear();
+        // b.grad_mut().clear();
+
+        //sliced::ew_assign_scalar(&mut x_grad, &0.1, |x, r| *x *= r);
+        //sliced::ew_assign_binary(&mut x, &x_grad, |x, y| *x -= y);
     }
+    // println!("next")
 
     println!(
         "elapsed (custos/sliced): {:?}",

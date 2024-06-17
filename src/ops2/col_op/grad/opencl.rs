@@ -1,8 +1,11 @@
-use custos::prelude::CLBuffer;
+use custos::{
+    opencl::{CLDevice, KernelLaunch},
+    prelude::CLBuffer,
+};
 use custos::{CDatatype, MayToCLSource, OpenCL, Resolve, ToMarker};
 
 pub fn cl_col_op_grad_lhs<T: CDatatype + Default, LhsGrad>(
-    device: &OpenCL,
+    device: &CLDevice,
     cols: usize,
     lhs: &CLBuffer<T>,
     rhs: &CLBuffer<T>,
@@ -32,7 +35,7 @@ pub fn cl_col_op_grad_lhs<T: CDatatype + Default, LhsGrad>(
 }
 
 pub fn cl_col_op_grad_rhs<T: CDatatype + Default, LhsGrad>(
-    device: &OpenCL,
+    device: &CLDevice,
     cols: usize,
     lhs: &CLBuffer<T>,
     rhs: &CLBuffer<T>,
@@ -88,9 +91,9 @@ mod tests {
         let lhs = device.buffer(&lhs);
         let mut lhs_grad = device.buffer::<_, (), _>(lhs.len());
 
-        let rhs = device.buffer([-3., 2.]);
+        let rhs = device.buffer([-3f32, 2.]);
 
-        let out_grad = device.buffer([1.4, 2.5, 3.3, 4., 5., 6.]);
+        let out_grad = device.buffer([1.4f32, 2.5, 3.3, 4., 5., 6.]);
 
         cl_col_op_grad_lhs(
             &device,

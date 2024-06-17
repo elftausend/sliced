@@ -52,7 +52,7 @@ use custos::nnapi::{nnapi_sys::OperationCode, Operand};
     ANEURALNETWORKS_DIV,
     ANEURALNETWORKS_SUB
 )]
-pub trait BinaryElementWise<T, S: Shape = (), D: Device = Self>: Device {
+pub trait BinaryElementWise<T: Copy + 'static, S: Shape = (), D: Device = Self>: Device {
     fn binary_ew<O>(
         &self,
         lhs: &Buffer<T, D, S>,

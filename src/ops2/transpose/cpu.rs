@@ -39,7 +39,7 @@ where
     Mods: Retrieve<Self, T, OS> + AddOperation + 'static,
 {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve(x.len(), x);
+        let mut out = self.retrieve(x.len(), x).unwrap();
         self.add_op(
             (rows.no_id(), cols.no_id(), x, &mut out),
             |(rows, cols, x, out)| {

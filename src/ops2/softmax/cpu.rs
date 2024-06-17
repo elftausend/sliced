@@ -1,10 +1,10 @@
-use custos::{prelude::Float, AddOperation, Buffer, Retrieve, CPU};
+use custos::{prelude::Float, AddOperation, Buffer, Retrieve, SetOpHint, CPU};
 
 use crate::{ColOp, Exp, MaxCols, Softmax, SumCols};
 
 impl<T, Mods> Softmax<T> for CPU<Mods>
 where
-    Mods: Retrieve<Self, T, ()> + AddOperation + 'static,
+    Mods: Retrieve<Self, T, ()> + AddOperation + SetOpHint<T> + 'static,
     T: Float + PartialOrd,
 {
     #[inline]

@@ -1,6 +1,7 @@
 use std::ops::AddAssign;
 
 use custos::{
+    opencl::{CLDevice, KernelLaunch},
     prelude::{Buffer, CLBuffer},
     CDatatype, OpenCL,
 };
@@ -43,7 +44,7 @@ where
 
 // TODO
 pub fn cl_max_rows_grad<T: CDatatype>(
-    device: &OpenCL,
+    device: &CLDevice,
     cols: usize,
     out: &CLBuffer<T>,
     x: &CLBuffer<T>,
@@ -74,7 +75,7 @@ pub fn cl_max_rows_grad<T: CDatatype>(
 }
 
 pub fn cl_max_cols_grad<T: CDatatype>(
-    device: &OpenCL,
+    device: &CLDevice,
     cols: usize,
     out: &CLBuffer<T>,
     x: &CLBuffer<T>,
@@ -125,7 +126,7 @@ mod tests {
         let out = device.max_rows(4, &x);
 
         let out_grad = device.buffer(&[2, 3, 4, 1]);
-        cl_max_rows_grad(&device, 4, &out, &x.clone(), &mut x_grad, &out_grad)?;
+        cl_max_rows_grad(&device, 4, &out, &x.clone(), &mut x_grad, &out_grad.base())?;
 
         #[rustfmt::skip]
         let expected = vec![
@@ -153,7 +154,7 @@ mod tests {
         let out = device.max_cols(3, 4, &x);
 
         let out_grad = device.buffer(&[1, 2, 3]);
-        cl_max_cols_grad(&device, 4, &out, &x.clone(), &mut x_grad, &out_grad)?;
+        cl_max_cols_grad(&device, 4, &out, &x.clone(), &mut x_grad, &out_grad.base())?;
 
         #[rustfmt::skip]
         let expected = vec![

@@ -29,11 +29,11 @@ where
     where
         O: Eval<T> + MayToCLSource,
     {
-        let mut out = self.retrieve(lhs.len(), (lhs, rhs));
+        let mut out = self.retrieve(lhs.len(), (lhs, rhs)).unwrap();
         self.add_op((lhs, rhs, &mut out, f.no_id()), |(lhs, rhs, out, f)| {
             slice_binary_ew(lhs, rhs, out, **f);
             Ok(())
-        });
+        }).unwrap();
         out
     }
 }

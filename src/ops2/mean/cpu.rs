@@ -14,7 +14,7 @@ impl<T: Number, IS: Shape, OS: Shape, Mods: Retrieve<Self, T, OS>> MeanRows<T, I
 {
     #[inline]
     fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve(cols, x);
+        let mut out = self.retrieve(cols, x).unwrap();
         mean_rows(cols, x, &mut out);
         out
     }
@@ -25,7 +25,7 @@ impl<T: Number, IS: Shape, OS: Shape, Mods: Retrieve<Self, T, OS>> MeanCols<T, I
 {
     #[inline]
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve(x.len() / cols, x);
+        let mut out = self.retrieve(x.len() / cols, x).unwrap();
         mean_cols(cols, x, &mut out);
         out
     }

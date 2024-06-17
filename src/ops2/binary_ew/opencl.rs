@@ -9,7 +9,7 @@ use super::BinaryElementWise;
 
 impl<T, S: Shape, Mods: Retrieve<Self, T, S>> BinaryElementWise<T, S> for OpenCL<Mods>
 where
-    T: CDatatype + Default,
+    T: Copy + CDatatype + Default,
 {
     #[inline]
     fn binary_ew<O>(
@@ -21,7 +21,7 @@ where
     where
         O: Eval<T> + MayToCLSource,
     {
-        let mut out = self.retrieve(lhs.len(), (lhs, rhs));
+        let mut out = self.retrieve(lhs.len(), (lhs, rhs)).unwrap();
         cl_binary_ew(self, lhs, rhs, &mut out, f).unwrap();
         out
     }
@@ -69,7 +69,7 @@ mod tests {
 
         let mut out = Buffer::<_, _>::new(&device, 5);
 
-        cl_binary_ew(&device, &lhs, &rhs, &mut out, |a, b| a.add(b))?;
+        cl_binary_ew(&device, &lhs.base(), &rhs.base(), &mut out, |a, b| a.add(b))?;
 
         assert_eq!(out.read(), vec![0, 7, 12, 3, 4]);
 
@@ -80,9 +80,9 @@ mod tests {
     fn test_cpu_exec_macro() -> custos::Result<()> {
         use crate::{custos::Base, BinaryElementWise, Buffer, CPU};
 
-        let device = crate::OpenCL::<custos::Autograd<custos::Base>>::new(0)?;
+        let device = crate::OpenCL::<custos::Cached<custos::Base>>::new(0)?;
 
-        let cpu = CPU::<custos::Autograd<custos::Base>>::new();
+        let cpu = CPU::<custos::Cached<custos::Base>>::new();
 
         let lhs = Buffer::from((&device, [1, 2, 3]));
         let rhs = Buffer::from((&device, [1, 2, 3]));

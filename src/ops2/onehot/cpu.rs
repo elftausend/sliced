@@ -7,7 +7,9 @@ impl<T: PartialOrd + Number, Mods: Retrieve<Self, T>> Onehot<T> for CPU<Mods> {
     fn onehot(&self, classes: &Buffer<T, Self>) -> Buffer<T, Self> {
         let highest_class = max(classes).unwrap().as_usize() + 1;
 
-        let mut out = self.retrieve(classes.len() * highest_class, classes);
+        let mut out = self
+            .retrieve(classes.len() * highest_class, classes)
+            .unwrap();
         slice_onehot(highest_class, classes, &mut out);
 
         out

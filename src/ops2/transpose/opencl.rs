@@ -10,7 +10,7 @@ use crate::{
 
 impl<T: CDatatype> Transpose<T> for OpenCL {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, OpenCL>) -> Buffer<T, OpenCL> {
-        let mut out = self.retrieve(x.len(), x);
+        let mut out = self.retrieve(x.len(), x).unwrap();
         cl_transpose::<T, Set>(self, x, &mut out, rows, cols).unwrap();
         out
     }

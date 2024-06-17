@@ -20,7 +20,7 @@ impl<T: CDatatype> Gemm<T> for OpenCL {
         lhs: &Buffer<T, Self>,
         rhs: &Buffer<T, Self>,
     ) -> Buffer<T, Self> {
-        let mut out = self.retrieve(m * n, (lhs, rhs));
+        let mut out = self.retrieve(m * n, (lhs, rhs)).unwrap();
         cl_gemm::<T, Set>(self, m, k, n, lhs, rhs, &mut out).unwrap();
         out
     }

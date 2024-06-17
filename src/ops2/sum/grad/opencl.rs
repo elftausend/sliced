@@ -1,12 +1,16 @@
 use std::ops::AddAssign;
 
-use custos::{prelude::CLBuffer, CDatatype, OnDropBuffer, OpenCL, Shape};
+use custos::{
+    opencl::{CLDevice, KernelLaunch},
+    prelude::CLBuffer,
+    CDatatype, OnDropBuffer, OpenCL, Shape,
+};
 
 use crate::SumRowsGrad;
 
 // measured performance
 pub fn cl_sum_rows_grad<T: CDatatype>(
-    device: &OpenCL,
+    device: &CLDevice,
     cols: usize,
     x_grad: &mut CLBuffer<T>,
     out_grad: &CLBuffer<T>,
@@ -33,7 +37,7 @@ pub fn cl_sum_rows_grad<T: CDatatype>(
 }
 
 pub fn cl_sum_cols_grad<T: CDatatype>(
-    device: &OpenCL,
+    device: &CLDevice,
     cols: usize,
     x_grad: &mut CLBuffer<T>,
     out_grad: &CLBuffer<T>,
@@ -60,7 +64,7 @@ pub fn cl_sum_cols_grad<T: CDatatype>(
 }
 
 pub fn cl_sum_rows_grad_modulo<T: CDatatype>(
-    device: &OpenCL,
+    device: &CLDevice,
     cols: usize,
     x_grad: &mut CLBuffer<T>,
     out_grad: &CLBuffer<T>,

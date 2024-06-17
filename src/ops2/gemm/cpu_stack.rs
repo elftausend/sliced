@@ -32,7 +32,7 @@ where
         lhs: &Buffer<T, D, LS>,
         rhs: &Buffer<T, D, RS>,
     ) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve(m * n, (lhs, rhs));
+        let mut out = self.retrieve(m * n, (lhs, rhs)).unwrap();
         self.add_op(
             (m.no_id(), k.no_id(), n.no_id(), lhs, rhs, &mut out),
             |(m, k, n, lhs, rhs, out)| {

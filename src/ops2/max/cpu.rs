@@ -35,7 +35,7 @@ where
 {
     #[inline]
     fn max_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
-        let mut out = self.retrieve(cols, x);
+        let mut out = self.retrieve(cols, x).unwrap();
 
         // If all values in a column are negative, the corresponding maximum would be 0.
         out.copy_from_slice(&x[..cols]);
@@ -62,7 +62,7 @@ where
 {
     #[inline]
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D>) -> Buffer<T, Self> {
-        let mut out = self.retrieve(rows, x);
+        let mut out = self.retrieve(rows, x).unwrap();
 
         self.add_op((cols.no_id(), x, &mut out), |(cols, x, out)| {
             max_cols(**cols, x, out);

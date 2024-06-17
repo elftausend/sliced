@@ -7,7 +7,7 @@ use custos::{
     number::Numeric,
     prelude::{Float, One, Two},
     AddGradFn, AddOperation, Alloc, ApplyFunction, AsNoId, Buffer, Combiner, Device, Eval, HasId,
-    MayTapeActions, MayToCLSource, Shape, UnaryGrad, WriteBuf, ZeroGrad,
+    MayTapeActions, MayToCLSource, SetOpHint, Shape, TwoWay, UnaryGrad, WriteBuf, ZeroGrad,
 };
 
 use crate::{
@@ -51,7 +51,7 @@ pub trait PowMayGrad<T, S: Shape = (), D: Device = Self>: Device {
 
 impl<T, S, D> PowMayGrad<T, S, D> for D
 where
-    T: Display + Eval<T> + Mul<Output = T> + Float + 'static,
+    T: TwoWay<T> + Display + Eval<T> + Mul<Output = T> + Float + 'static,
     S: Shape + 'static,
     D: ApplyFunction<T, S, Self>
         + UnaryGrad<T, S, Self>
@@ -416,7 +416,7 @@ where
 {
 }
 
-pub trait Clip<T: Float, S: Shape>: ApplyFunction<T, S> {
+pub trait Clip<T: TwoWay<T> + Float, S: Shape>: ApplyFunction<T, S> {
     #[inline]
 
     fn clip(&self, x: &Buffer<T, Self, S>, min: T, max: T) -> Buffer<T, Self, S> {
@@ -427,14 +427,13 @@ pub trait Clip<T: Float, S: Shape>: ApplyFunction<T, S> {
 impl<T, S, D> Clip<T, S> for D
 where
     D: ApplyFunction<T, S>,
-    T: Float,
+    T: TwoWay<T> + Float,
     S: Shape,
 {
 }
 
 pub trait Exp<T: Float, S: Shape>: ApplyFunction<T, S> {
     #[inline]
-
     fn exp(&self, x: &Buffer<T, Self, S>) -> Buffer<T, Self, S> {
         self.apply_fn(x, |x| x.exp())
     }

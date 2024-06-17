@@ -1,7 +1,11 @@
-use custos::{prelude::CLBuffer, CDatatype, OpenCL};
+use custos::{
+    opencl::{CLDevice, KernelLaunch},
+    prelude::CLBuffer,
+    CDatatype,
+};
 
 pub fn cl_onehot<T: CDatatype>(
-    device: &OpenCL,
+    device: &CLDevice,
     x: &CLBuffer<T>,
     out: &mut CLBuffer<T>,
     highest_class: usize,

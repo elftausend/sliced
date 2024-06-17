@@ -23,7 +23,7 @@ where
     where
         F: Fn(T, T) -> T + Copy + 'static,
     {
-        let mut out = self.retrieve(lhs.len(), (lhs, rhs));
+        let mut out = self.retrieve(lhs.len(), (lhs, rhs)).unwrap();
 
         self.add_op(
             (cols.no_id(), lhs, rhs, &mut out, f.no_id()),

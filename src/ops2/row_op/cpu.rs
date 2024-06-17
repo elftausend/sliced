@@ -59,7 +59,7 @@ where
 {
     debug_assert_eq!(rhs.len(), cols);
 
-    let mut out = device.retrieve(lhs.len(), (lhs, rhs));
+    let mut out = device.retrieve(lhs.len(), (lhs, rhs)).unwrap();
     slice_row_op_mut(cols, lhs, rhs, &mut out, f);
     out
 }

@@ -9,7 +9,7 @@ use std::{fmt::Display, ops::Mul};
 use custos::{
     prelude::{Float, Number, Numeric, Two},
     AddGradFn, Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep,
-    MayTapeActions, OnNewBuffer, Shape, UnaryElementWiseMayGrad, UnaryGrad, ZeroGrad, CPU,
+    MayTapeActions, OnNewBuffer, Shape, TwoWay, UnaryElementWiseMayGrad, UnaryGrad, ZeroGrad, CPU,
 };
 
 use crate::{
@@ -168,7 +168,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
 
     pub fn relu(&self) -> Matrix<'a, T, D, S>
     where
-        T: Number + 'static,
+        T: TwoWay<T> + Number + 'static,
         D: UnaryElementWiseMayGrad<T, D, S>
             + ApplyFunction<T, S>
             + MayTapeActions
@@ -233,7 +233,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
 
     pub fn sigmoid(&self) -> Matrix<'a, T, D, S>
     where
-        T: Float + 'static,
+        T: TwoWay<T> + Float + 'static,
         D: UnaryElementWiseMayGrad<T, D, S>
             + ApplyFunction<T, S>
             + MayTapeActions
