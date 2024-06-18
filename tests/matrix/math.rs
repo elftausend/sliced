@@ -19,6 +19,6 @@ fn test_ops() {
         5., 6.]
     ));
 
-    let out: Matrix = lhs.gemm(&rhs);
+    let out: Matrix<_, _> = lhs.gemm(&rhs);
     println!("out: {:?}", out.read());
 }

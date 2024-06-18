@@ -6,7 +6,7 @@ fn test_tanh_cpu() {
 
     let device = CPU::<Autograd<custos::Base>>::new();
 
-    let buf = Matrix::from((&device, 1, 5, [-1f32, -3., 2., 5., -1.3, 0.]));
+    let buf = Matrix::from((&device, 1, 6, [-1f32, -3., 2., 5., -1.3, 0.]));
     let out = buf.tanh();
 
     roughly_equals(

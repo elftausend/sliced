@@ -12,7 +12,7 @@ fn test_sum_rows() {
         5,4,1,1,
     ]));
 
-    let x: Buffer<_> = device.sum_rows(4, &to_sum_rows);
+    let x: Buffer<_, _> = device.sum_rows(4, &to_sum_rows);
     let _out = device.mul(&x, &rhs);
 
     #[cfg(feature = "autograd")]

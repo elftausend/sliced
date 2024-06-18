@@ -1,7 +1,7 @@
 use custos::{
     opencl::{enqueue_kernel, CLDevice},
     prelude::CLBuffer,
-    Buffer, CDatatype, Device, Error, OpenCL, Retriever,
+    Buffer, CDatatype, Device, Error, OpenCL, Retrieve, Retriever,
 };
 
 use std::fmt::Write;
@@ -10,7 +10,7 @@ use crate::assign_or_set::{AssignOrSet, Set};
 
 use super::Gemm;
 
-impl<T: CDatatype> Gemm<T> for OpenCL {
+impl<Mods: Retrieve<Self, T>, T: CDatatype> Gemm<T> for OpenCL<Mods> {
     #[inline]
     fn gemm(
         &self,

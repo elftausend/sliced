@@ -1,8 +1,7 @@
 use std::time::{Duration, Instant};
 
 use custos::{
-    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cursor, Device, HasId,
-    IsShapeIndep, MayTapeActions, OnNewBuffer, OpenCL, TapeActions, ZeroGrad, CPU,
+    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cached, Cursor, Device, HasId, IsShapeIndep, MayTapeActions, MayToWgslSource, OnNewBuffer, OpenCL, TapeActions, ZeroGrad, CPU
 };
 
 use graplot::Plot;
@@ -122,15 +121,15 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
 
 use custos::Combiner;
 
-pub fn cce<
-    'a,
-    T: Float,
-    D: Device + Clip<T, ()> + AddOperation + BinaryElementWise<T> + SumCols<T>,
->(
+pub fn cce<'a, T, D>(
     preds: &Buffer<'a, T, D>,
     targets: &Buffer<T, D>,
     cols: usize,
-) -> Buffer<'a, T, D> {
+) -> Buffer<'a, T, D>
+where
+    T: Float + MayToWgslSource,
+    D: Device + Clip<T, ()> + AddOperation + BinaryElementWise<T> + SumCols<T>,
+{
     let device = preds.device();
     let preds = device.clip(preds, T::as_generic(1E-7), T::as_generic(1. - 1E-7));
     let preds = device.mul(&preds, &targets);
@@ -138,11 +137,15 @@ pub fn cce<
     device.apply_fn(&preds, |v| v.ln().neg())
 }
 
-pub fn cce_grad<'a, T: Float, D: Device + Clip<T, ()> + AddOperation + BinaryElementWise<T>>(
+pub fn cce_grad<'a, T, D>(
     preds: &Buffer<'a, T, D>,
     targets: &Buffer<T, D>,
     rows: usize,
-) -> Buffer<'a, T, D> {
+) -> Buffer<'a, T, D>
+where
+    T: Float + custos::ToWgslSource,
+    D: Device + Clip<T, ()> + AddOperation + BinaryElementWise<T>,
+{
     let device = preds.device();
     let grad = device.div(targets, preds);
     device.apply_fn(&grad, move |v| v.neg().div(T::from_usize(rows)))
@@ -150,8 +153,8 @@ pub fn cce_grad<'a, T: Float, D: Device + Clip<T, ()> + AddOperation + BinaryEle
 
 fn mnist() {
     use custos::HasId;
-    let device = CPU::<Autograd<Base>>::new();
-    // let device = OpenCL::<Autograd<Base>>::new(0).unwrap();
+    let device = CPU::<Autograd<Cached<Base>>>::new();
+    // let device = OpenCL::<Cached<Autograd<Base>>>::new(0).unwrap();
 
     let mut lin1 = Linear::<f32, _, { 28 * 28 }, 128>::new(&device);
     let mut lin2 = Linear::<f32, _, 128, 10>::new(&device);

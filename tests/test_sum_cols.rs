@@ -13,7 +13,7 @@ fn test_sum_cols_cpu() {
         5,4,1,1,
     ]));
 
-    let x: Buffer<_> = device.sum_cols(4, &to_sum_cols);
+    let x: Buffer<_, _> = device.sum_cols(4, &to_sum_cols);
     let _out = device.mul(&x, &rhs);
 
     #[cfg(feature = "autograd")]

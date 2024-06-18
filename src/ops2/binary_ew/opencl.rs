@@ -90,7 +90,7 @@ mod tests {
         // cpu.add(&lhs,  &rhs);
 
         let a = custos::cpu_exec!(
-            device, cpu, lhs, rhs; cpu.add(&lhs, &rhs)
+            &device, &cpu, lhs, rhs; cpu.add(&lhs, &rhs)
         );
         //let a = Buffer::from((&device, a));
 
@@ -100,7 +100,7 @@ mod tests {
         use custos::UnifiedMemChain;
 
         let a = custos::cl_cpu_exec_unified!(
-            device, lhs, rhs; device.cpu.add(&lhs, &rhs)
+            &device, &device.cpu, lhs, rhs; device.cpu.add(&lhs, &rhs)
         )?;
 
         // assert_eq!(a.device().type_id(), device.type_id());

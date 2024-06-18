@@ -2,14 +2,15 @@ use std::ops::{Add, AddAssign};
 
 use custos::{
     exec_on_cpu::cpu_exec_binary_may_unified, prelude::cpu_exec_binary_may_unified_mut, Buffer,
-    OpenCL,
+    OnDropBuffer, OpenCL, Retrieve, UnifiedMemChain,
 };
 
 use crate::RowOp;
 
-impl<T> RowOp<T> for OpenCL
+impl<Mods, T> RowOp<T> for OpenCL<Mods>
 where
     T: Copy + Default + Add<Output = T> + AddAssign + 'static,
+    Mods: Retrieve<Self, T> + UnifiedMemChain<Self> + 'static,
 {
     #[inline]
     fn row_op<F: Fn(&mut T, T, T) + Copy>(

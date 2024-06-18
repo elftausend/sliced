@@ -460,12 +460,22 @@ where
     T: 'static,
     IS: Shape,
     OS: Shape,
-    D: MaxCols<T, IS, OS> + MayTapeActions + Alloc<T> + MaxColsGrad<T>,
+    D: ZeroGrad<T>
+        + MaxCols<T, IS, OS>
+        + MayTapeActions
+        + Alloc<T>
+        + MaxColsGrad<T, IS, OS>
+        + AddGradFn
+        + 'static,
 {
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
-        let out = self.max_cols(rows, cols, x);
+        let mut out = self.max_cols(rows, cols, x);
 
-        unimplemented!();
+        self.add_grad_fn((x, &mut out, cols.no_id()), |(x, out, cols)| {
+            x.device()
+                .max_cols_grad(**cols, out, x, x.grad_mut(), out.grad());
+            Ok(())
+        });
 
         // #[cfg(feature = "autograd")]
         // {
@@ -494,12 +504,22 @@ where
     T: 'static,
     IS: Shape,
     OS: Shape,
-    D: MaxRows<T, IS, OS> + MayTapeActions + Alloc<T> + MaxRowsGrad<T>,
+    D: MaxRows<T, IS, OS>
+        + MayTapeActions
+        + Alloc<T>
+        + MaxRowsGrad<T, IS, OS>
+        + AddGradFn
+        + ZeroGrad<T>
+        + 'static,
 {
     fn max_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
-        let out = self.max_rows(cols, x);
+        let mut out = self.max_rows(cols, x);
 
-        unimplemented!();
+        self.add_grad_fn((x, &mut out, cols.no_id()), |(x, out, cols)| {
+            x.device()
+                .max_rows_grad(**cols, out, x, x.grad_mut(), out.grad());
+            Ok(())
+        });
         // #[cfg(feature = "autograd")]
         // {
         //     let ids = (x.id(), out.id());
@@ -566,16 +586,16 @@ where
         + Alloc<T>
         + ZeroGrad<T>
         + AddOperation
+        + AddGradFn
         + 'static,
 {
     fn sum_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.sum_cols(cols, x);
 
-        self.add_op((x, &out, cols.no_id()), |(x, out, cols)| {
+        self.add_grad_fn((x, &out, cols.no_id()), |(x, out, cols)| {
             x.device().sum_cols_grad(**cols, x.grad_mut(), out.grad());
             Ok(())
-        })
-        .unwrap();
+        });
 
         // unimplemented!();
         // #[cfg(feature = "autograd")]
@@ -604,12 +624,21 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeActions + MeanCols<T, IS, OS> + MeanColsGrad<T> + Alloc<T>,
+    D: ZeroGrad<T>
+        + MayTapeActions
+        + MeanCols<T, IS, OS>
+        + MeanColsGrad<T, IS, OS>
+        + Alloc<T>
+        + AddGradFn
+        + 'static,
 {
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.mean_cols(cols, x);
 
-        unimplemented!();
+        self.add_grad_fn((x, &out, cols.no_id()), |(x, out, cols)| {
+            x.device().mean_cols_grad(**cols, x.grad_mut(), out.grad());
+            Ok(())
+        });
         // #[cfg(feature = "autograd")]
         // {
         //     let ids = (x.id(), out.id());

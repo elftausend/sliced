@@ -20,7 +20,7 @@ where
     S: Shape,
     T: Copy,
 {
-    let mut out = lhs.device().retrieve(lhs.len(), (lhs, rhs));
+    let mut out = lhs.device().retrieve(lhs.len(), (lhs, rhs)).unwrap();
 
     for ((lhs, rhs), out) in lhs.iter().zip(&*rhs).zip(&mut out) {
         *out = op(*lhs, *rhs)

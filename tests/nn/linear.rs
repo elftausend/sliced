@@ -1,5 +1,6 @@
 use custos::{
     prelude::Float, Alloc, Buffer, Device, IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions,
+    ZeroGrad,
 };
 
 use sliced::{GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
@@ -90,7 +91,7 @@ use std::ops::{Deref, DerefMut};
 impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: MayTapeActions + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
+        D: ZeroGrad<T> + MayTapeActions + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
     {
         for param in params {
             param.param.grad_mut().clear();
@@ -99,7 +100,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
 
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: WriteBuf<T> + Alloc<T> + MayTapeActions + 'static,
+        D: ZeroGrad<T> + WriteBuf<T> + Alloc<T> + MayTapeActions + 'static,
         D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
@@ -139,7 +140,7 @@ fn test_nn() {
 
     use custos::CPU;
 
-    let device = CPU::<custos::Autograd<custos::Base>>::new();
+    let device = CPU::<custos::Autograd<custos::Cached<custos::Base>>>::new();
     let mut lin1 = Linear::<f32, _, 1, 64>::new(&device);
     let mut lin2 = Linear::<f32, _, 64, 64>::new(&device);
     let mut lin3 = Linear::<f32, _, 64, 1>::new(&device);

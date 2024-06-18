@@ -33,7 +33,8 @@ where
         self.add_op((lhs, rhs, &mut out, f.no_id()), |(lhs, rhs, out, f)| {
             slice_binary_ew(lhs, rhs, out, **f);
             Ok(())
-        }).unwrap();
+        })
+        .unwrap();
         out
     }
 }

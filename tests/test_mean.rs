@@ -15,7 +15,7 @@ fn test_mean_rows_cpu() {
         -2., 1., 4.,
     ]));
 
-    let mean_rows: Buffer = device.mean_rows(3, &to_mean_rows);
+    let mean_rows: Buffer<_, _> = device.mean_rows(3, &to_mean_rows);
 
     let _out = device.sub(&lhs, &mean_rows);
 

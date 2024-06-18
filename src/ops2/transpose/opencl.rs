@@ -1,6 +1,6 @@
 use custos::{
     opencl::{CLDevice, CLPtr},
-    Buffer, CDatatype, OpenCL, Retriever,
+    Buffer, CDatatype, OpenCL, Retrieve, Retriever,
 };
 
 use crate::{
@@ -8,8 +8,8 @@ use crate::{
     Transpose,
 };
 
-impl<T: CDatatype> Transpose<T> for OpenCL {
-    fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, OpenCL>) -> Buffer<T, OpenCL> {
+impl<Mods: Retrieve<Self, T>, T: CDatatype> Transpose<T> for OpenCL<Mods> {
+    fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, Self>) -> Buffer<T, Self> {
         let mut out = self.retrieve(x.len(), x).unwrap();
         cl_transpose::<T, Set>(self, x, &mut out, rows, cols).unwrap();
         out
