@@ -11,13 +11,13 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-use custos::{Buffer, Device, Shape};
-pub trait Mean<T, S: Shape>: Device {
+use custos::{Buffer, Device, Shape, Unit};
+pub trait Mean<T: Unit, S: Shape>: Device {
     fn mean(&self, x: &Buffer<T, Self, S>) -> T;
 }
 
 /// Calculates the mean of every column (while interacting with the rows).
-pub trait MeanRows<T, IS: Shape = (), OS: Shape = ()>: Device {
+pub trait MeanRows<T: Unit, IS: Shape = (), OS: Shape = ()>: Device {
     /// Calculates the mean of every column (while interacting with the rows).
     /// # Example
     #[cfg_attr(feature = "cpu", doc = "```")]
@@ -41,7 +41,7 @@ pub trait MeanRows<T, IS: Shape = (), OS: Shape = ()>: Device {
 }
 
 /// Calculates the mean of every row (while interacting with the columns).
-pub trait MeanCols<T, IS: Shape = (), OS: Shape = ()>: Device {
+pub trait MeanCols<T: Unit, IS: Shape = (), OS: Shape = ()>: Device {
     /// Calculates the mean of every row (while interacting with the columns).
     /// # Example
     #[cfg_attr(feature = "cpu", doc = "```")]

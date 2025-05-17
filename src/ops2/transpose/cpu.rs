@@ -41,9 +41,9 @@ where
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(x.len(), x).unwrap();
         self.add_op(
-            (rows.no_id(), cols.no_id(), x, &mut out),
-            |(rows, cols, x, out)| {
-                slice_transpose::<_, Set>(**rows, **cols, x, out);
+            (x, &mut out),
+            move |(x, out)| {
+                slice_transpose::<_, Set>(rows, cols, x, out);
                 Ok(())
             },
         )

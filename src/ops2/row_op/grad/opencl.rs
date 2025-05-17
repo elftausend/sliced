@@ -1,6 +1,6 @@
 use std::ops::{AddAssign, Mul};
 
-use crate::{slice_add_row_op_grad, RowOpGrad};
+use crate::{slice_add_row_op_grad, slice_sum_rows, RowOpGrad};
 use custos::{
     opencl::CLBuffer,
     prelude::{cpu_exec_binary_may_unified_mut, One},
@@ -70,8 +70,8 @@ where
         rhs_grad: &mut Buffer<T, Self>,
         out_grad: &Buffer<T, Self>,
     ) {
-        cpu_exec_binary_may_unified_mut(self, rhs_grad, out_grad, |cpu, rhs_grad, out_grad| {
-            cpu.add_row_mut_grad(rows, cols, rhs_grad, out_grad)
+        cpu_exec_binary_may_unified_mut(self, rhs_grad, out_grad, |rhs_grad, out_grad| {
+            slice_sum_rows(rows, cols, out_grad, rhs_grad)
         })
         .unwrap();
     }

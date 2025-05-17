@@ -3,12 +3,12 @@ use std::ops::AddAssign;
 use custos::{
     opencl::{CLDevice, KernelLaunch},
     prelude::{Buffer, CLBuffer},
-    CDatatype, OnDropBuffer, OpenCL,
+    CDatatype, WrappedData, OpenCL,
 };
 
 use crate::{MaxColsGrad, MaxRowsGrad};
 
-impl<Mods: OnDropBuffer, T> MaxRowsGrad<T> for OpenCL<Mods>
+impl<Mods: WrappedData, T> MaxRowsGrad<T> for OpenCL<Mods>
 where
     T: PartialEq + Copy + AddAssign + CDatatype,
 {
@@ -25,7 +25,7 @@ where
     }
 }
 
-impl<Mods: OnDropBuffer, T> MaxColsGrad<T> for OpenCL<Mods>
+impl<Mods: WrappedData, T> MaxColsGrad<T> for OpenCL<Mods>
 where
     T: PartialEq + Copy + AddAssign + CDatatype,
 {

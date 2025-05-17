@@ -1,12 +1,12 @@
 use custos::{
     opencl::{CLDevice, CLPtr},
     prelude::enqueue_kernel,
-    Buffer, CDatatype, Eval, MayToCLSource, OnDropBuffer, OpenCL, Resolve, Shape, ToMarker,
+    Buffer, CDatatype, Eval, MayToCLSource, WrappedData, OpenCL, Resolve, Shape, ToMarker,
 };
 
 use super::BinaryElementWiseGrad;
 
-impl<T, Mods: OnDropBuffer, S: Shape> BinaryElementWiseGrad<T, S> for OpenCL<Mods>
+impl<T, Mods: WrappedData, S: Shape> BinaryElementWiseGrad<T, S> for OpenCL<Mods>
 where
     T: CDatatype + Default,
 {

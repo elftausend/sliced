@@ -1,7 +1,8 @@
 use std::time::{Duration, Instant};
 
 use custos::{
-    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cached, Cursor, Device, HasId, IsShapeIndep, MayTapeActions, MayToWgslSource, OnNewBuffer, OpenCL, TapeActions, ZeroGrad, CPU
+    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cached, Cursor, Device, HasId,
+    IsShapeIndep, MayGradActions, OnNewBuffer, OpenCL, TapeActions, ZeroGrad, CPU,
 };
 
 use graplot::Plot;
@@ -98,7 +99,7 @@ use std::ops::{Deref, DerefMut};
 impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: MayTapeActions + ZeroGrad<T> + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
+        D: MayGradActions + ZeroGrad<T> + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
     {
         for param in params {
             param.param.grad_mut().clear();
@@ -107,7 +108,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
 
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: WriteBuf<T> + ZeroGrad<T> + Alloc<T> + MayTapeActions + 'static,
+        D: WriteBuf<T> + ZeroGrad<T> + Alloc<T> + MayGradActions + 'static,
         D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
@@ -154,7 +155,7 @@ where
 fn mnist() {
     use custos::HasId;
     let device = CPU::<Autograd<Cached<Base>>>::new();
-    // let device = OpenCL::<Cached<Autograd<Base>>>::new(0).unwrap();
+    // let device = OpenCL::<Autograd<Base>>::new(0).unwrap();
 
     let mut lin1 = Linear::<f32, _, { 28 * 28 }, 128>::new(&device);
     let mut lin2 = Linear::<f32, _, 128, 10>::new(&device);
@@ -181,7 +182,7 @@ fn mnist() {
     let start = Instant::now();
 
     let sgd = SGD { lr: 0.1 };
-    for epoch in device.range(0..50) {
+    for epoch in device.range(0..500) {
         #[cfg(feature = "autograd")]
         unsafe {
             device.gradients_mut().unwrap().zero_grad();

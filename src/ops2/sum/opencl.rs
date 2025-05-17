@@ -2,14 +2,14 @@ use std::{iter::Sum, ops::AddAssign};
 
 use custos::{
     exec_on_cpu::cpu_exec_reduce_may_unified, prelude::cpu_exec_unary_may_unified, Buffer,
-    CDatatype, OpenCL,
+    CDatatype, OpenCL, Unit,
 };
 
 use crate::{SumCols, SumRows};
 
 impl<T> crate::Sum<T> for OpenCL
 where
-    T: Default + Copy + Sum,
+    T: Unit + Default + Copy + Sum,
 {
     #[inline]
     fn sum(&self, x: &Buffer<T, Self>) -> T {
@@ -19,7 +19,7 @@ where
 
 impl<T> SumRows<T> for OpenCL
 where
-    T: Default + Copy + Sum + AddAssign + 'static,
+    T: Unit + Default + Copy + Sum + AddAssign + 'static,
 {
     #[inline]
     fn sum_rows(&self, cols: usize, x: &Buffer<T, Self>) -> Buffer<T, Self> {
@@ -29,7 +29,7 @@ where
 
 impl<T> SumCols<T> for OpenCL
 where
-    T: Default + Copy + Sum + 'static,
+    T: Unit + Default + Copy + Sum + 'static,
 {
     #[inline]
     fn sum_cols(&self, cols: usize, x: &Buffer<T, Self>) -> Buffer<T, Self> {

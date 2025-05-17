@@ -11,16 +11,16 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-use custos::{Buffer, Device, Shape};
+use custos::{Buffer, Device, Shape, Unit};
 
-pub trait Max<T, S: Shape = (), D: Device = Self>: Device {
+pub trait Max<T: Unit, S: Shape = (), D: Device = Self>: Device {
     fn max(&self, x: &Buffer<T, D, S>) -> T;
 }
 
-pub trait MaxRows<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
+pub trait MaxRows<T: Unit, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
     fn max_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
 }
 
-pub trait MaxCols<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
+pub trait MaxCols<T: Unit, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
 }

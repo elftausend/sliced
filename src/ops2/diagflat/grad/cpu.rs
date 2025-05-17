@@ -1,9 +1,9 @@
 use crate::DiagflatGrad;
-use custos::{Buffer, Shape, CPU};
+use custos::{Buffer, Shape, Unit, CPU};
 use std::ops::AddAssign;
 
 // TODO stack impl
-impl<T: Copy + AddAssign, IS: Shape, OS: Shape> DiagflatGrad<T, IS, OS> for CPU {
+impl<T: Unit + Copy + AddAssign, IS: Shape, OS: Shape> DiagflatGrad<T, IS, OS> for CPU {
     #[inline]
     fn diagflat_grad(&self, x_grad: &mut Buffer<T, Self, IS>, out_grad: &Buffer<T, Self, OS>) {
         diagflat_grad(x_grad, out_grad);

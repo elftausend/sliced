@@ -1,9 +1,9 @@
 use std::ops::AddAssign;
 
 use crate::{diagflat, diagflat_grad, Diagflat, DiagflatGrad};
-use custos::{Buffer, Device, Dim1, Dim2, Retriever, Stack};
+use custos::{Buffer, Device, Dim1, Dim2, Retriever, Stack, Unit};
 
-impl<T: Copy + Default, const N: usize> Diagflat<T, Dim1<N>, Dim2<N, N>> for Stack {
+impl<T: Unit + Copy + Default, const N: usize> Diagflat<T, Dim1<N>, Dim2<N, N>> for Stack {
     fn diagflat(&self, x: &Buffer<T, Self, Dim1<N>>) -> Buffer<T, Self, Dim2<N, N>> {
         let mut out = self.retrieve(x.len() * x.len(), x).unwrap();
         diagflat(x, &mut out);
@@ -11,7 +11,7 @@ impl<T: Copy + Default, const N: usize> Diagflat<T, Dim1<N>, Dim2<N, N>> for Sta
     }
 }
 
-impl<T: Copy + Default, const N: usize> Diagflat<T, Dim2<N, 1>, Dim2<N, N>> for Stack {
+impl<T: Unit + Copy + Default, const N: usize> Diagflat<T, Dim2<N, 1>, Dim2<N, N>> for Stack {
     fn diagflat(&self, x: &Buffer<T, Self, Dim2<N, 1>>) -> Buffer<T, Self, Dim2<N, N>> {
         let mut out = self.retrieve(x.len() * x.len(), x).unwrap();
         diagflat(x, &mut out);
@@ -19,7 +19,7 @@ impl<T: Copy + Default, const N: usize> Diagflat<T, Dim2<N, 1>, Dim2<N, N>> for 
     }
 }
 
-impl<T: AddAssign + Copy, const N: usize> DiagflatGrad<T, Dim1<N>, Dim2<N, N>> for Stack {
+impl<T: Unit + AddAssign + Copy, const N: usize> DiagflatGrad<T, Dim1<N>, Dim2<N, N>> for Stack {
     #[inline]
     fn diagflat_grad(
         &self,
@@ -30,7 +30,7 @@ impl<T: AddAssign + Copy, const N: usize> DiagflatGrad<T, Dim1<N>, Dim2<N, N>> f
     }
 }
 
-impl<T: AddAssign + Copy, const N: usize> DiagflatGrad<T, Dim2<N, 1>, Dim2<N, N>> for Stack {
+impl<T: Unit + AddAssign + Copy, const N: usize> DiagflatGrad<T, Dim2<N, 1>, Dim2<N, N>> for Stack {
     #[inline]
     fn diagflat_grad(
         &self,

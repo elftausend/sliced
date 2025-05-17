@@ -1,6 +1,6 @@
 use std::ops::{Add, AddAssign, Deref, DerefMut};
 
-use custos::{AddOperation, Alloc, AsNoId, Buffer, Device, Retrieve, Retriever, Shape, CPU};
+use custos::{AddOperation, Alloc, AsNoId, Buffer, Device, Retrieve, Retriever, Shape, Unit, CPU};
 
 use crate::RowOp;
 
@@ -20,9 +20,9 @@ where
         rhs: &Buffer<T, Self, RS>,
     ) {
         self.add_op(
-            (rows.no_id(), cols.no_id(), lhs, rhs),
-            |(rows, cols, lhs, rhs)| {
-                slice_row_op_lhs(**rows, **cols, lhs, rhs, |c, a| *c += a);
+            (lhs, rhs),
+            move |(lhs, rhs)| {
+                slice_row_op_lhs(rows, cols, lhs, rhs, |c, a| *c += a);
                 Ok(())
             },
         )
@@ -49,12 +49,12 @@ pub fn row_op<'a, T, F, D, Host, LS: Shape, RS: Shape>(
     f: F,
 ) -> Buffer<'a, T, Host, LS>
 where
-    T: Copy,
+    T: Unit + Copy,
     F: Fn(&mut T, T, T),
     D: Device,
     D::Base<T, LS>: Deref<Target = [T]>,
     D::Base<T, RS>: Deref<Target = [T]>,
-    Host: Alloc<T> + Retriever<T, LS>,
+    Host: Alloc<T> + Retriever<'a, T, LS>,
     Host::Base<T, LS>: Deref<Target = [T]> + DerefMut,
 {
     debug_assert_eq!(rhs.len(), cols);

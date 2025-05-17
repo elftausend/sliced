@@ -1,5 +1,5 @@
 mod grad;
-use custos::{impl_nnapi_op, Buffer, Device, Shape};
+use custos::{impl_nnapi_op, Buffer, Device, Shape, Unit};
 pub use grad::*;
 
 #[cfg(any(feature = "cpu", feature = "stack"))]
@@ -18,7 +18,7 @@ pub use opencl::*;
 use custos::nnapi::nnapi_sys::OperationCode;
 
 #[impl_nnapi_op(ANEURALNETWORKS_BATCH_MATMUL)]
-pub trait Gemm<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
+pub trait Gemm<T: Unit, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
     Device
 {
     fn gemm(

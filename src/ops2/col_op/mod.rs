@@ -15,9 +15,9 @@ pub use opencl::*;
 
 use core::ops::{Div, Sub};
 
-use custos::{Buffer, Device, Shape};
+use custos::{Buffer, Device, Shape, Unit};
 
-pub trait ColOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+pub trait ColOp<T: Unit, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     fn col_op<F>(
         &self,
         cols: usize,
@@ -57,7 +57,7 @@ pub trait ColOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     }
 }
 
-pub trait ColOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>:
+pub trait ColOpMayGrad<T: Unit, LS: Shape = (), RS: Shape = (), D: Device = Self>:
     ColOp<T, LS, RS, D>
 {
     fn col_op_may_grad<F, G>(

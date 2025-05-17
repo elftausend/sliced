@@ -1,6 +1,6 @@
 use custos::{
     prelude::Float, AddOperation, Alloc, AsNoId, Autograd, Base, Buffer, Cached, Cursor, Device,
-    ExecNow, HasId, IsShapeIndep, Lazy, MayTapeActions, OnNewBuffer, Run, TapeActions, ZeroGrad,
+    ExecNow, HasId, IsShapeIndep, Lazy, MayGradActions, OnNewBuffer, Run, TapeActions, ZeroGrad,
 };
 
 use sliced::{GemmMayGrad, Matrix, Mean, RandOp, RowOpMayGrad};
@@ -95,7 +95,7 @@ use std::{
 impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static + std::fmt::Debug> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: MayTapeActions + WriteBuf<T> + Alloc<T> + ZeroGrad<T> + ClearBuf<T> + 'static,
+        D: MayGradActions + WriteBuf<T> + Alloc<T> + ZeroGrad<T> + ClearBuf<T> + 'static,
     {
         for param in params {
             param.param.grad_mut().clear();
@@ -104,7 +104,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static + std::fmt::Debug> SG
 
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: WriteBuf<T> + Alloc<T> + MayTapeActions + ZeroGrad<T> + 'static,
+        D: WriteBuf<T> + Alloc<T> + MayGradActions + ZeroGrad<T> + 'static,
         D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {

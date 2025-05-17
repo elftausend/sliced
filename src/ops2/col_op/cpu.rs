@@ -26,9 +26,9 @@ where
         let mut out = self.retrieve(lhs.len(), (lhs, rhs)).unwrap();
 
         self.add_op(
-            (cols.no_id(), lhs, rhs, &mut out, f.no_id()),
-            |(cols, lhs, rhs, out, f)| {
-                slice_col_op(**cols, lhs, rhs, out, **f);
+            (lhs, rhs, &mut out),
+            move |(lhs, rhs, out)| {
+                slice_col_op(cols, lhs, rhs, out, f);
                 Ok(())
             },
         )

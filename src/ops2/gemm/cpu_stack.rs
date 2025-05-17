@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use custos::{
-    impl_stack, AddOperation, AsNoId, Buffer, Device, GenericBlas, OnDropBuffer, Retrieve,
+    impl_stack, AddOperation, AsNoId, Buffer, Device, GenericBlas, WrappedData, Retrieve,
     Retriever, Shape, CPU,
 };
 
@@ -34,9 +34,9 @@ where
     ) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(m * n, (lhs, rhs)).unwrap();
         self.add_op(
-            (m.no_id(), k.no_id(), n.no_id(), lhs, rhs, &mut out),
-            |(m, k, n, lhs, rhs, out)| {
-                T::gemm(**m, **n, **k, lhs, rhs, out);
+            (lhs, rhs, &mut out),
+            move |(lhs, rhs, out)| {
+                T::gemm(m, n, k, lhs, rhs, out);
                 Ok(())
             },
         )

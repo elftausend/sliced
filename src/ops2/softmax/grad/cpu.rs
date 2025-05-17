@@ -2,10 +2,10 @@ use std::{fmt::Display, ops::Deref};
 
 use crate::{BinaryElementWise, Diagflat, Gemm, SoftmaxGrad, Transpose};
 use custos::{
-    prelude::Number, Base, Buffer, Device, GenericBlas, OnDropBuffer, Retrieve, Shape, CPU,
+    prelude::Number, Base, Buffer, Device, GenericBlas, WrappedData, Retrieve, Shape, CPU,
 };
 
-impl<T, S, Mods: OnDropBuffer + Retrieve<Self, T, ()>> SoftmaxGrad<T, S> for CPU<Mods>
+impl<T, S, Mods: WrappedData + Retrieve<Self, T, ()>> SoftmaxGrad<T, S> for CPU<Mods>
 where
     T: GenericBlas + Number,
     S: Shape,

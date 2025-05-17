@@ -8,9 +8,9 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-use custos::{Buffer, Device, Shape};
+use custos::{Buffer, Device, Shape, Unit};
 
-pub trait TranposeGrad<T, IS = (), OS = (), D = Self>: Device
+pub trait TranposeGrad<T: Unit, IS = (), OS = (), D = Self>: Device
 where
     IS: Shape,
     OS: Shape,

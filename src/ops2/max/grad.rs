@@ -8,9 +8,9 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-use custos::{Buffer, Device, Shape};
+use custos::{Buffer, Device, Shape, Unit};
 
-pub trait MaxRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+pub trait MaxRowsGrad<T: Unit, IS: Shape = (), OS: Shape = ()>: Device {
     fn max_rows_grad(
         &self,
         cols: usize,
@@ -21,7 +21,7 @@ pub trait MaxRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
     );
 }
 
-pub trait MaxColsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+pub trait MaxColsGrad<T: Unit, IS: Shape = (), OS: Shape = ()>: Device {
     fn max_cols_grad(
         &self,
         cols: usize,

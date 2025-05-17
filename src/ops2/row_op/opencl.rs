@@ -2,10 +2,12 @@ use std::ops::{Add, AddAssign};
 
 use custos::{
     exec_on_cpu::cpu_exec_binary_may_unified, prelude::cpu_exec_binary_may_unified_mut, Buffer,
-    OnDropBuffer, OpenCL, Retrieve, UnifiedMemChain,
+    WrappedData, OpenCL, Retrieve, UnifiedMemChain,
 };
 
 use crate::RowOp;
+
+use super::slice_row_op_lhs;
 
 impl<Mods, T> RowOp<T> for OpenCL<Mods>
 where
@@ -34,8 +36,8 @@ where
         lhs: &mut Buffer<T, Self>,
         rhs: &Buffer<T, Self>,
     ) {
-        cpu_exec_binary_may_unified_mut(self, lhs, rhs, |cpu, lhs, rhs| {
-            cpu.add_row_mut(rows, cols, lhs, rhs)
+        cpu_exec_binary_may_unified_mut(self, lhs, rhs, |lhs, rhs| {
+            slice_row_op_lhs(rows, cols, lhs, rhs, |c, a| *c += a);
         })
         .unwrap()
     }

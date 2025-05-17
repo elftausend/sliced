@@ -1,5 +1,5 @@
 use custos::{
-    prelude::Float, Alloc, Buffer, Device, IsShapeIndep, MayTapeActions, OnNewBuffer, TapeActions,
+    prelude::Float, Alloc, Buffer, Device, IsShapeIndep, MayGradActions, OnNewBuffer, TapeActions,
     ZeroGrad,
 };
 
@@ -91,7 +91,7 @@ use std::ops::{Deref, DerefMut};
 impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
     pub fn zero_grad<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: ZeroGrad<T> + MayTapeActions + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
+        D: ZeroGrad<T> + MayGradActions + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
     {
         for param in params {
             param.param.grad_mut().clear();
@@ -100,7 +100,7 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
 
     pub fn step<D>(&self, params: Vec<Param<T, D>>)
     where
-        D: ZeroGrad<T> + WriteBuf<T> + Alloc<T> + MayTapeActions + 'static,
+        D: ZeroGrad<T> + WriteBuf<T> + Alloc<T> + MayGradActions + 'static,
         D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {

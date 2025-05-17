@@ -1,8 +1,8 @@
 use crate::Diagflat;
-use custos::{Buffer, Device, Retriever, Shape, CPU};
+use custos::{Buffer, Device, Retriever, Shape, Unit, CPU};
 
 // TODO stack impl
-impl<T: Copy, IS: Shape, OS: Shape> Diagflat<T, IS, OS> for CPU {
+impl<T: Unit + Copy, IS: Shape, OS: Shape> Diagflat<T, IS, OS> for CPU {
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(x.len() * x.len(), x).unwrap();
         diagflat(x, &mut out);

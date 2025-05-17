@@ -1,7 +1,7 @@
 use custos::{
     opencl::{CLDevice, CLPtr},
     prelude::enqueue_kernel,
-    Buffer, CDatatype, Device, Eval, MayToCLSource, OnDropBuffer, OpenCL, Resolve, Retrieve,
+    Buffer, CDatatype, Device, Eval, MayToCLSource, WrappedData, OpenCL, Resolve, Retrieve,
     Retriever, Shape, ToMarker, UnifiedMemChain,
 };
 

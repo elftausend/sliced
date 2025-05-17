@@ -3,7 +3,7 @@ use std::{
     ops::{Div, Sub},
 };
 
-use custos::{Buffer, Combiner, Device, Eval, MayDim2, Resolve, Shape};
+use custos::{Buffer, Combiner, Device, Eval, MayDim2, Resolve, Shape, Unit};
 
 mod cpu;
 
@@ -21,7 +21,7 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-pub trait BinaryEWMayGrad<T, S: Shape = (), D: Device = Self>: Device {
+pub trait BinaryEWMayGrad<T: Unit, S: Shape = (), D: Device = Self>: Device {
     fn binary_ew_w_grad<FO, LO, RO>(
         &self,
         lhs: &Buffer<T, D, S>,
@@ -36,7 +36,7 @@ pub trait BinaryEWMayGrad<T, S: Shape = (), D: Device = Self>: Device {
         RO: Eval<T> + ToString;
 }
 
-pub trait RandOp<T, S: Shape = (), D: Device = Self>: Device {
+pub trait RandOp<T: Unit, S: Shape = (), D: Device = Self>: Device {
     fn rand(&self, x: &mut Buffer<T, D, S>, lo: T, hi: T);
 }
 

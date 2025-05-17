@@ -4,10 +4,7 @@ use std::{
 };
 
 use custos::{
-    number::Numeric,
-    prelude::{Float, One, Two},
-    AddGradFn, AddOperation, Alloc, ApplyFunction, AsNoId, Buffer, Combiner, Device, Eval, HasId,
-    MayTapeActions, MayToCLSource, SetOpHint, Shape, TwoWay, UnaryGrad, WriteBuf, ZeroGrad,
+    number::Numeric, prelude::{Float, One, Two}, AddGradFn, AddOperation, Alloc, ApplyFunction, AsNoId, Buffer, Combiner, Device, Eval, HasId, MayGradActions, MayToCLSource, SetOpHint, Shape, TwoWay, UnaryGrad, Unit, WriteBuf, ZeroGrad
 };
 
 use crate::{
@@ -27,7 +24,7 @@ where
         T: MayToCLSource + Eval<T> + Mul<Output = T> + Copy + Two,
         Self: ApplyFunction<T, S, Self>
             + UnaryGrad<T, S, Self>
-            + MayTapeActions
+            + MayGradActions
             + Alloc<T>
             + ZeroGrad<T>
             + AddGradFn
@@ -35,9 +32,9 @@ where
     {
         let out = self.apply_fn(x, |x| x.mul(x));
 
-        self.add_grad_fn((x, &out), |(x, out)| {
+        self.add_grad_fn((x, &out), |(x, out)| unsafe {
             x.device()
-                .add_unary_grad(x, x.grad_mut(), out.grad(), |x| x.mul(T::two()));
+                .add_unary_grad(x, x.grad_mut_unbound(), out.grad(), |x| x.mul(T::two()));
             Ok(())
         });
 
@@ -45,7 +42,7 @@ where
     }
 }
 
-pub trait PowMayGrad<T, S: Shape = (), D: Device = Self>: Device {
+pub trait PowMayGrad<T: Unit, S: Shape = (), D: Device = Self>: Device {
     fn pow(&self, x: &Buffer<T, D, S>, rhs: T) -> Buffer<T, D, S>;
 }
 
@@ -55,7 +52,7 @@ where
     S: Shape + 'static,
     D: ApplyFunction<T, S, Self>
         + UnaryGrad<T, S, Self>
-        + MayTapeActions
+        + MayGradActions
         + Alloc<T>
         + ZeroGrad<T>
         + AddGradFn
@@ -64,10 +61,9 @@ where
     fn pow(&self, x: &Buffer<T, D, S>, rhs: T) -> Buffer<T, D, S> {
         let out = self.apply_fn(x, move |x| x.pow(rhs));
 
-        self.add_grad_fn((x, rhs.no_id(), &out), |(x, rhs, out)| {
-            let rhs = **rhs;
+        self.add_grad_fn((x, &out), move |(x, out)| unsafe {
             x.device()
-                .add_unary_grad(x, x.grad_mut(), out.grad(), move |x| {
+                .add_unary_grad(x, x.grad_mut_unbound(), out.grad(), move |x| {
                     x.pow(rhs - T::one()).mul(rhs)
                 });
             Ok(())
@@ -79,7 +75,7 @@ where
 
 impl<T: 'static, S: Shape, D: Device> SquareMayGrad<T, S> for D {}
 
-pub trait BinaryOpsMayGrad<T, S: Shape = (), D: Device = Self>: Device {
+pub trait BinaryOpsMayGrad<T: Unit, S: Shape = (), D: Device = Self>: Device {
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>;
 
     fn add2(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S>
@@ -96,7 +92,7 @@ where
     S: Shape + 'static,
     D: BinaryElementWise<T, S, D>
         + BinaryElementWiseGrad<T, S, D>
-        + MayTapeActions
+        + MayGradActions
         + Alloc<T>
         + ZeroGrad<T>
         + AddGradFn
@@ -115,12 +111,12 @@ where
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.add(lhs, rhs);
 
-        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| {
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| unsafe {
             lhs.device().binary_ew_grad(
                 lhs,
                 rhs,
-                lhs.grad_mut(),
-                rhs.grad_mut(),
+                lhs.grad_mut_unbound(),
+                rhs.grad_mut_unbound(),
                 out.grad(),
                 |_, _| T::one(),
                 |_, _| T::one(),
@@ -134,12 +130,12 @@ where
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.sub(lhs, rhs);
 
-        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| {
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| unsafe {
             lhs.device().binary_ew_grad(
                 lhs,
                 rhs,
-                lhs.grad_mut(),
-                rhs.grad_mut(),
+                lhs.grad_mut_unbound(),
+                rhs.grad_mut_unbound(),
                 out.grad(),
                 |_, _| T::one(),
                 |_, _| -T::one(),
@@ -153,12 +149,12 @@ where
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.mul(lhs, rhs);
 
-        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| {
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| unsafe {
             lhs.device().binary_ew_grad(
                 lhs,
                 rhs,
-                lhs.grad_mut(),
-                rhs.grad_mut(),
+                lhs.grad_mut_unbound(),
+                rhs.grad_mut_unbound(),
                 out.grad(),
                 |_, rhs| rhs,
                 |lhs, _| lhs,
@@ -176,9 +172,9 @@ where
     {
         let out = self.binary_ew(lhs, rhs, |a, b| a.add(b));
 
-        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| {
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| unsafe {
             lhs.device()
-                .add_ew_grad(lhs.grad_mut(), rhs.grad_mut(), out.grad());
+                .add_ew_grad(lhs.grad_mut_unbound(), rhs.grad_mut_unbound(), out.grad());
             Ok(())
         });
 
@@ -186,7 +182,7 @@ where
     }
 }
 
-pub trait TransposeMayGrad<T, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
+pub trait TransposeMayGrad<T: Unit, IS: Shape = (), OS: Shape = (), D: Device = Self>: Device {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, D, OS>;
 }
 
@@ -197,7 +193,7 @@ where
     OS: Shape,
     D: Transpose<T, IS, OS>
         + TranposeGrad<T, IS, OS>
-        + MayTapeActions
+        + MayGradActions
         + Alloc<T>
         + ZeroGrad<T>
         + WriteBuf<T>
@@ -208,10 +204,10 @@ where
         let out = self.transpose(rows, cols, x);
 
         self.add_grad_fn(
-            (rows.no_id(), cols.no_id(), x, &out),
-            |(rows, cols, x, out)| {
+            (x, &out),
+            move |(x, out)| unsafe {
                 x.device()
-                    .transpose_grad(**cols, **rows, x.grad_mut(), out.grad());
+                    .transpose_grad(cols, rows, x.grad_mut_unbound(), out.grad());
                 Ok(())
             },
         );
@@ -220,7 +216,7 @@ where
     }
 }
 
-pub trait GemmMayGrad<T, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
+pub trait GemmMayGrad<T: Unit, LS: Shape = (), RS: Shape = (), OS: Shape = (), D: Device = Self>:
     Device
 {
     fn gemm(
@@ -241,7 +237,7 @@ where
     OS: Shape,
     D: Gemm<T, LS, RS, OS>
         + GemmGrad<T, LS, RS, OS>
-        + MayTapeActions
+        + MayGradActions
         + Alloc<T>
         + ZeroGrad<T>
         + AddGradFn
@@ -258,12 +254,12 @@ where
         let out = self.gemm(m, k, n, lhs, rhs);
 
         self.add_grad_fn(
-            (m.no_id(), k.no_id(), n.no_id(), lhs, rhs, &out),
-            |(m, k, n, lhs, rhs, out)| {
+            (lhs, rhs, &out),
+            move |(lhs, rhs, out)| {
                 lhs.device().gemm_grad(
-                    **m,
-                    **k,
-                    **n,
+                    m,
+                    k,
+                    n,
                     lhs,
                     rhs,
                     lhs.grad_mut(),
@@ -289,7 +285,7 @@ where
     }
 }
 
-pub trait RowOpMayGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+pub trait RowOpMayGrad<T: Unit, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     fn add_row(
         &self,
         rows: usize,
@@ -314,7 +310,7 @@ where
     RS: Shape,
     D: RowOp<T, LS, RS>
         + RowOpGrad<T, LS, RS>
-        + MayTapeActions
+        + MayGradActions
         + Alloc<T>
         + AddGradFn
         + 'static
@@ -387,7 +383,7 @@ where
 
 pub trait ExpMayGrad<T, S>
 where
-    Self: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeActions + Alloc<T>,
+    Self: ApplyFunction<T, S> + UnaryGrad<T> + MayGradActions + Alloc<T>,
     T: Float + 'static,
     S: Shape,
 {
@@ -412,7 +408,7 @@ impl<T, S, D> ExpMayGrad<T, S> for D
 where
     T: Float + 'static,
     S: Shape,
-    D: ApplyFunction<T, S> + UnaryGrad<T> + MayTapeActions + Alloc<T>,
+    D: ApplyFunction<T, S> + UnaryGrad<T> + MayGradActions + Alloc<T>,
 {
 }
 
@@ -447,7 +443,7 @@ where
 {
 }
 
-pub trait MaxColsMayGrad<T, IS, OS>: Device
+pub trait MaxColsMayGrad<T: Unit, IS, OS>: Device
 where
     IS: Shape,
     OS: Shape,
@@ -462,7 +458,7 @@ where
     OS: Shape,
     D: ZeroGrad<T>
         + MaxCols<T, IS, OS>
-        + MayTapeActions
+        + MayGradActions
         + Alloc<T>
         + MaxColsGrad<T, IS, OS>
         + AddGradFn
@@ -491,7 +487,7 @@ where
     }
 }
 
-pub trait MaxRowsMayGrad<T, IS, OS>: Device
+pub trait MaxRowsMayGrad<T: Unit, IS, OS>: Device
 where
     IS: Shape,
     OS: Shape,
@@ -505,7 +501,7 @@ where
     IS: Shape,
     OS: Shape,
     D: MaxRows<T, IS, OS>
-        + MayTapeActions
+        + MayGradActions
         + Alloc<T>
         + MaxRowsGrad<T, IS, OS>
         + AddGradFn
@@ -548,7 +544,7 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeActions + SumRows<T, IS, OS> + SumRowsGrad<T> + Alloc<T>,
+    D: MayGradActions + SumRows<T, IS, OS> + SumRowsGrad<T> + Alloc<T>,
 {
     fn sum_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.sum_rows(cols, x);
@@ -567,7 +563,7 @@ where
     }
 }
 
-pub trait SumColsMayGrad<T, IS, OS>: Device
+pub trait SumColsMayGrad<T: Unit, IS, OS>: Device
 where
     IS: Shape,
     OS: Shape,
@@ -580,7 +576,7 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeActions
+    D: MayGradActions
         + SumCols<T, IS, OS>
         + SumColsGrad<T, IS, OS>
         + Alloc<T>
@@ -611,7 +607,7 @@ where
     }
 }
 
-pub trait MeanColsMayGrad<T, IS, OS>: Device
+pub trait MeanColsMayGrad<T: Unit, IS, OS>: Device
 where
     IS: Shape,
     OS: Shape,
@@ -625,7 +621,7 @@ where
     IS: Shape,
     OS: Shape,
     D: ZeroGrad<T>
-        + MayTapeActions
+        + MayGradActions
         + MeanCols<T, IS, OS>
         + MeanColsGrad<T, IS, OS>
         + Alloc<T>
@@ -651,7 +647,7 @@ where
     }
 }
 
-pub trait MeanRowsMayGrad<T, IS, OS>: Device
+pub trait MeanRowsMayGrad<T: Unit, IS, OS>: Device
 where
     IS: Shape,
     OS: Shape,
@@ -664,7 +660,7 @@ where
     T: Copy + 'static,
     IS: Shape,
     OS: Shape,
-    D: MayTapeActions
+    D: MayGradActions
         + MeanRows<T, IS, OS>
         + MeanRowsGrad<T, IS, OS>
         + Alloc<T>
@@ -684,7 +680,7 @@ where
     }
 }
 
-pub trait DiagflatMayGrad<T, IS, OS>: Device
+pub trait DiagflatMayGrad<T: Unit, IS, OS>: Device
 where
     IS: Shape,
     OS: Shape,
@@ -700,7 +696,7 @@ where
         + DiagflatGrad<T, IS, OS>
         + Alloc<T>
         + ZeroGrad<T>
-        + MayTapeActions
+        + MayGradActions
         + 'static,
 {
     #[inline]
@@ -724,7 +720,7 @@ where
     }
 }
 
-pub trait SoftmaxMayGrad<T, S>: Device
+pub trait SoftmaxMayGrad<T: Unit, S>: Device
 where
     S: Shape,
 {
@@ -744,7 +740,7 @@ where
         + SoftmaxGrad<T, S>
         + AddGradFn
         + Alloc<T>
-        + MayTapeActions
+        + MayGradActions
         + 'static
         + ZeroGrad<T>,
 {

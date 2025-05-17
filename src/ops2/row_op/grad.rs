@@ -5,11 +5,11 @@ pub use cpu::*;
 
 #[cfg(feature = "opencl")]
 mod opencl;
-use custos::{Buffer, Device, Shape};
+use custos::{Buffer, Device, Shape, Unit};
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-pub trait RowOpGrad<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+pub trait RowOpGrad<T: Unit, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     fn row_op_grad(
         &self,
         cols: usize,

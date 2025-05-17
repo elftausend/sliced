@@ -1,5 +1,5 @@
 mod grad;
-use custos::{Buffer, Device, MayDim2, Shape};
+use custos::{Buffer, Device, MayDim2, Shape, Unit};
 pub use grad::*;
 
 #[cfg(feature = "cpu")]
@@ -14,14 +14,14 @@ pub use opencl::*;
 
 use crate::assign_or_set::{AssignOrSet, Set};
 
-pub trait Transpose<T, IS: Shape = (), OS: Shape = (), D: Device = Self, AOS: AssignOrSet<T> = Set>:
+pub trait Transpose<T: Unit, IS: Shape = (), OS: Shape = (), D: Device = Self, AOS: AssignOrSet<T> = Set>:
     Device
 {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS>;
 }
 
 pub trait Transpose2<
-    T,
+    T: Unit,
     const ROWS: usize = 0,
     const COLS: usize = 0,
     IS: MayDim2<ROWS, COLS> = (),

@@ -1,7 +1,7 @@
 mod grad;
 use std::ops::Add;
 
-use custos::{Buffer, Device, Shape};
+use custos::{Buffer, Device, Shape, Unit};
 pub use grad::*;
 
 #[cfg(feature = "cpu")]
@@ -14,7 +14,7 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-pub trait RowOp<T, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
+pub trait RowOp<T: Unit, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     fn row_op<F: Fn(&mut T, T, T) + Copy>(
         &self,
         cols: usize,

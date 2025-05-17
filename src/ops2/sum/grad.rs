@@ -5,11 +5,11 @@ pub use cpu::*;
 
 #[cfg(feature = "opencl")]
 mod opencl;
-use custos::{Buffer, Device, Shape};
+use custos::{Buffer, Device, Shape, Unit};
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-pub trait SumRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+pub trait SumRowsGrad<T: Unit, IS: Shape = (), OS: Shape = ()>: Device {
     fn sum_rows_grad(
         &self,
         cols: usize,
@@ -18,7 +18,7 @@ pub trait SumRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
     );
 }
 
-pub trait SumColsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+pub trait SumColsGrad<T: Unit, IS: Shape = (), OS: Shape = ()>: Device {
     fn sum_cols_grad(
         &self,
         cols: usize,

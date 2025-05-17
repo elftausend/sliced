@@ -8,8 +8,8 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-use custos::{Buffer, Device, Shape};
-pub trait MeanRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+use custos::{Buffer, Device, Shape, Unit};
+pub trait MeanRowsGrad<T: Unit, IS: Shape = (), OS: Shape = ()>: Device {
     fn mean_rows_grad(
         &self,
         cols: usize,
@@ -18,7 +18,7 @@ pub trait MeanRowsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
     );
 }
 
-pub trait MeanColsGrad<T, IS: Shape = (), OS: Shape = ()>: Device {
+pub trait MeanColsGrad<T: Unit, IS: Shape = (), OS: Shape = ()>: Device {
     fn mean_cols_grad(
         &self,
         cols: usize,

@@ -11,10 +11,10 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
-use custos::{Buffer, Device, Shape};
+use custos::{Buffer, Device, Shape, Unit};
 
 /// Provides the onehot encoding operation.
-pub trait Onehot<T, IS: Shape = (), OS: Shape = ()>: Device {
+pub trait Onehot<T: Unit, IS: Shape = (), OS: Shape = ()>: Device {
     /// Onehot encodes a `Buffer` of classes.
     ///
     /// # Example

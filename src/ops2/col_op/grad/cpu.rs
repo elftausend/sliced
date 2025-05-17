@@ -1,10 +1,10 @@
 use std::ops::{AddAssign, Deref, DerefMut, Mul};
 
-use custos::{Buffer, Device, Eval, Resolve, Shape, ToVal, CPU};
+use custos::{Buffer, Device, Eval, Resolve, Shape, ToVal, Unit, CPU};
 
 use crate::ColOpGrad;
 
-impl<T, LS, RS, D> ColOpGrad<T, LS, RS, D> for CPU
+impl<T: Unit, LS, RS, D> ColOpGrad<T, LS, RS, D> for CPU
 where
     T: Copy + AddAssign + Mul<Output = T>,
     LS: Shape,

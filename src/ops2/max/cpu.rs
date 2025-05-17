@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use custos::{
-    prelude::Number, AddOperation, AsNoId, Buffer, Device, OnDropBuffer, Retrieve, Retriever,
+    prelude::Number, AddOperation, AsNoId, Buffer, Device, WrappedData, Retrieve, Retriever,
     Shape, CPU,
 };
 
@@ -12,7 +12,7 @@ pub fn max<T: Number>(x: &[T]) -> Option<T> {
     x.iter().copied().reduce(T::max)
 }
 
-impl<T, D, S, Mods: OnDropBuffer> Max<T, S, D> for CPU<Mods>
+impl<T, D, S, Mods: WrappedData> Max<T, S, D> for CPU<Mods>
 where
     T: Number,
     D: Device,
@@ -64,8 +64,8 @@ where
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D>) -> Buffer<T, Self> {
         let mut out = self.retrieve(rows, x).unwrap();
 
-        self.add_op((cols.no_id(), x, &mut out), |(cols, x, out)| {
-            max_cols(**cols, x, out);
+        self.add_op((x, &mut out), move |(x, out)| {
+            max_cols(cols, x, out);
             Ok(())
         })
         .unwrap();

@@ -1,5 +1,5 @@
 mod grad;
-use custos::{Buffer, Device, Shape};
+use custos::{Buffer, Device, Shape, Unit};
 pub use grad::*;
 
 #[cfg(feature = "cpu")]
@@ -18,7 +18,7 @@ mod opencl;
 pub use opencl::*;
 
 /// Calculates the diagflat of an 1D [`Buffer`] without gradients.
-pub trait Diagflat<T, IS: Shape = (), OS: Shape = ()>: Device {
+pub trait Diagflat<T: Unit, IS: Shape = (), OS: Shape = ()>: Device {
     /// Takes the values of [`Buffer`] `x` and puts them diagonally on the `Buffer` `out`.
     /// # Example
     #[cfg_attr(feature = "cpu", doc = "```")]

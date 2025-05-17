@@ -1,10 +1,10 @@
 use std::ops::AddAssign;
 
-use custos::{prelude::One, Buffer, OnDropBuffer, CPU};
+use custos::{prelude::One, Buffer, Unit, WrappedData, CPU};
 
 use crate::{MaxColsGrad, MaxRowsGrad};
 
-impl<Mods: OnDropBuffer, T: PartialEq + Copy + AddAssign> MaxRowsGrad<T> for CPU<Mods> {
+impl<Mods: WrappedData, T: Unit + PartialEq + Copy + AddAssign> MaxRowsGrad<T> for CPU<Mods> {
     #[inline]
     fn max_rows_grad(
         &self,
@@ -18,7 +18,7 @@ impl<Mods: OnDropBuffer, T: PartialEq + Copy + AddAssign> MaxRowsGrad<T> for CPU
     }
 }
 
-impl<Mods: OnDropBuffer, T: PartialEq + Copy + AddAssign> MaxColsGrad<T> for CPU<Mods> {
+impl<Mods: WrappedData, T: Unit + PartialEq + Copy + AddAssign> MaxColsGrad<T> for CPU<Mods> {
     #[inline]
     fn max_cols_grad(
         &self,

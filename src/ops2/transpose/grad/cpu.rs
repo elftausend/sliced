@@ -1,12 +1,12 @@
 use std::ops::{AddAssign, Deref, DerefMut};
 
-use custos::{Buffer, Device, OnDropBuffer, Shape, CPU};
+use custos::{Buffer, Device, Shape, Unit, WrappedData, CPU};
 
 use crate::{assign_or_set::Assign, slice_transpose, TranposeGrad};
 
-impl<T, IS, OS, D, Mods: OnDropBuffer> TranposeGrad<T, IS, OS, D> for CPU<Mods>
+impl<T, IS, OS, D, Mods: WrappedData> TranposeGrad<T, IS, OS, D> for CPU<Mods>
 where
-    T: Default + Copy + AddAssign,
+    T: Unit + Default + Copy + AddAssign,
     IS: Shape,
     OS: Shape,
     D: Device,

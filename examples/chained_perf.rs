@@ -1,11 +1,12 @@
 use std::{
     hint::black_box,
     ops::{Add, Deref, DerefMut, Mul},
+    vec,
 };
 
 use custos::{
-    Alloc, Autograd, Base, Cached, Combiner, Cursor, Device, Dim1, Resolve, Retriever, Shape,
-    WithShape,
+    Alloc, Autograd, Base, Cached, Combiner, Cursor, Device, Dim1, Lazy, Resolve, Retriever, Run,
+    Shape, WithShape,
 };
 use sliced::{slice_binary_ew, BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU};
 
@@ -41,6 +42,62 @@ where
     }*/
 }
 
+const SIZE: usize = 1234125;
+const TIMES: usize = 10;
+
+fn perf_lazy() {
+    // let device = custos::OpenCL::<Lazy<Base>>::new(0).unwrap();
+    let device = CPU::<Lazy<Base>>::new();
+
+    let x: Buffer<_, _> = device.buffer(vec![1.3f32; SIZE]);
+    let b: Buffer<_, _> = device.buffer(vec![2.1f32; SIZE]);
+
+    let squared = device.square(&x);
+    let add = device.add(&b, &x);
+    let mul_b = device.mul(&add, &b);
+    let mul = device.mul(&squared, &x);
+    let out = device.add(&mul, &mul_b);
+
+    let start = std::time::Instant::now();
+    for _ in 0..TIMES {
+        unsafe { device.run().unwrap() };
+        assert_eq!(out.replace().read()[0], 9.336999);
+    }
+
+    println!(
+        "elapsed lazy (custos/sliced): {:?}",
+        start.elapsed() / TIMES as u32
+    );
+}
+
+fn perf() {
+    // let device = custos::OpenCL::<Cached<Base>>::new(0).unwrap();
+    let device = CPU::<Base>::new();
+
+    let x: Buffer<_, _> = device.buffer(vec![1.3f32; SIZE]);
+    let b: Buffer<_, _> = device.buffer(vec![2.1f32; SIZE]);
+
+    let start = std::time::Instant::now();
+
+    for _ in device.range(0..TIMES) {
+        let squared = device.square(&x);
+        // assert!((squared.read()[0] - 1.69) < 0.001);
+        let add = device.add(&b, &x);
+        // assert!((add.read()[0] - 3.4) < 0.001);
+        let mul_b = device.mul(&add, &b);
+        // assert!((mul_b.read()[0] - 7.14) < 0.001);
+        let mul = device.mul(&squared, &x);
+        let out = device.add(&mul, &mul_b);
+        assert_eq!(out.read()[0], 9.336999);
+        // out.backward();
+    }
+
+    println!(
+        "elapsed (custos/sliced): {:?}",
+        start.elapsed() / TIMES as u32
+    );
+}
+
 // 123412
 // 12.8 MB 13.1MB
 // dur: 23.82ms
@@ -49,18 +106,22 @@ where
 // 80MB, 110 MB
 // dur: 434 ms
 fn main() {
-    // let device = custos::OpenCL::<Autograd<Base>>::new(0).unwrap();
+    perf();
+    perf_lazy();
+    return;
+    let device = custos::OpenCL::<Cached<Base>>::new(0).unwrap();
     // let device = custos::Stack::<Base>::new();
     let device = CPU::<Autograd<Cached<Base>>>::new();
     // let device = CPU::<Cached<Base>>::new();
     // let device = CPU::<Base>::new();
     //device.tape_mut().disable();
 
-    const SIZE: usize = 123412; // 123412
-
     // if with fails with CPU -> backwards operation may use () shape, Box<dyn Any> does not like this
-    let mut x = Buffer::with(&device, [1.3f32; SIZE]);
-    let mut b = Buffer::with(&device, [2.1f32; SIZE]);
+    // let mut x = Buffer::with(&device, [1.3f32; SIZE]);
+    // let mut b = Buffer::with(&device, [2.1f32; SIZE]);
+
+    let mut x = device.buffer::<_, (), _>(vec![1.3f32; SIZE]);
+    let mut b = device.buffer::<_, (), _>(vec![2.1f32; SIZE]);
 
     let start = std::time::Instant::now();
 
@@ -70,7 +131,7 @@ fn main() {
 
     /*let x_slice = &*x;
     let b_slice = &*b;*/
-    for epoch in device.range(0..100 * TIMES) {
+    for epoch in device.range(0..TIMES) {
         //let mut out = device.retrieve::<_, Dim1<SIZE>>(SIZE, (&x, &b));
         /*for idx in 0..SIZE {
             let x = x_slice[idx];
@@ -84,12 +145,14 @@ fn main() {
         }*/
 
         let squared = device.square(&x);
+        // assert!((squared.read()[0] - 1.69) < 0.001);
         let add = device.add(&b, &x);
+        // assert!((add.read()[0] - 3.4) < 0.001);
         let mul_b = device.mul(&add, &b);
+        // assert!((mul_b.read()[0] - 7.14) < 0.001);
         let mul = device.mul(&squared, &x);
         let out = device.add(&mul, &mul_b);
         assert_eq!(out.read()[0], 9.336999);
-
         // out.backward();
 
         // let squared = device.mul(&x, &x);

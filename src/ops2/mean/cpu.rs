@@ -1,8 +1,8 @@
-use custos::{prelude::Number, Buffer, OnDropBuffer, Retrieve, Retriever, Shape, CPU};
+use custos::{prelude::Number, Buffer, WrappedData, Retrieve, Retriever, Shape, CPU};
 
 use crate::{slice_sum_rows2, Mean, MeanCols, MeanRows};
 
-impl<T: Number, IS: Shape, Mods: OnDropBuffer> Mean<T, IS> for CPU<Mods> {
+impl<T: Number, IS: Shape, Mods: WrappedData> Mean<T, IS> for CPU<Mods> {
     #[inline]
     fn mean(&self, x: &Buffer<T, Self, IS>) -> T {
         mean(x)

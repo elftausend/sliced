@@ -7,9 +7,7 @@ mod to_static_device;
 use std::{fmt::Display, ops::Mul};
 
 use custos::{
-    prelude::{Float, Number, Numeric, Two},
-    AddGradFn, Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep,
-    MayTapeActions, OnNewBuffer, Shape, TwoWay, UnaryElementWiseMayGrad, UnaryGrad, ZeroGrad, CPU,
+    prelude::{Float, Number, Numeric, Two}, AddGradFn, Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep, MayGradActions, OnNewBuffer, Shape, TwoWay, UnaryElementWiseMayGrad, UnaryGrad, Unit, ZeroGrad, CPU
 };
 
 use crate::{
@@ -18,17 +16,17 @@ use crate::{
     SquareMayGrad, SumColsMayGrad, TransposeMayGrad,
 };
 
-pub struct Matrix<'a, T = f32, D: Device = CPU, S: Shape = ()> {
+pub struct Matrix<'a, T: Unit = f32, D: Device = CPU, S: Shape = ()> {
     data: Buffer<'a, T, D, S>,
     rows: usize,
     cols: usize,
 }
 
-impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
+impl<'a, T: Unit, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn new(device: &'a D, rows: usize, cols: usize) -> Matrix<'a, T, D, S>
     where
-        D: Alloc<T> + OnNewBuffer<T, D, S>,
+        D: Alloc<T> + OnNewBuffer<'a, T, D, S>,
     {
         Matrix {
             data: Buffer::new(device, rows * cols),
@@ -40,7 +38,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn require_grad(self) -> Matrix<'a, T, D, S>
     where
-        D: OnNewBuffer<T, D, S>,
+        D: OnNewBuffer<'a, T, D, S>,
     {
         let data = self.data.require_grad();
         Matrix {
@@ -53,7 +51,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     #[inline]
     pub fn no_grad(self) -> Matrix<'a, T, D, S>
     where
-        D: OnNewBuffer<T, D, S>,
+        D: OnNewBuffer<'a, T, D, S>,
     {
         let data = self.data.no_grad();
         Matrix {
@@ -171,7 +169,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         T: TwoWay<T> + Number + 'static,
         D: UnaryElementWiseMayGrad<T, D, S>
             + ApplyFunction<T, S>
-            + MayTapeActions
+            + MayGradActions
             + UnaryGrad<T, S>
             + Alloc<T>
             + ZeroGrad<T>
@@ -183,7 +181,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         self.device()
             .add_grad_fn((self.as_buf(), &mut out), |(lhs, out)| {
                 lhs.device()
-                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| x.geq(T::zero()));
+                    .add_unary_grad(lhs, unsafe { lhs.grad_mut_unbound() }, out.grad(), |x| x.geq(T::zero()));
                 Ok(())
             });
 
@@ -208,7 +206,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         T: Float + 'static,
         D: UnaryElementWiseMayGrad<T, D, S>
             + ApplyFunction<T, S>
-            + MayTapeActions
+            + MayGradActions
             + UnaryGrad<T, S>
             + Alloc<T>
             + ZeroGrad<T>
@@ -220,7 +218,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         self.device()
             .add_grad_fn((self.as_buf(), &mut out), |(lhs, out)| {
                 lhs.device()
-                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| {
+                    .add_unary_grad(lhs, unsafe { lhs.grad_mut_unbound() }, out.grad(), |x| {
                         T::one().identity().sub(x.tanh().pow(T::two()))
                     });
                 Ok(())
@@ -236,7 +234,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         T: TwoWay<T> + Float + 'static,
         D: UnaryElementWiseMayGrad<T, D, S>
             + ApplyFunction<T, S>
-            + MayTapeActions
+            + MayGradActions
             + UnaryGrad<T, S>
             + Alloc<T>
             + ZeroGrad<T>
@@ -252,7 +250,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
         self.device()
             .add_grad_fn((self.as_buf(), &mut out), |(lhs, out)| {
                 lhs.device()
-                    .add_unary_grad(lhs, lhs.grad_mut(), out.grad(), |x| {
+                    .add_unary_grad(lhs, unsafe { lhs.grad_mut_unbound() }, out.grad(), |x| {
                         (x.neg().exp()).div((T::one().identity().add(x.neg().exp())).pow(T::two()))
                     });
                 Ok(())
@@ -280,7 +278,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + UnaryGrad<T, S>
             + Alloc<T>
             + ZeroGrad<T>
-            + MayTapeActions
+            + MayGradActions
             + AddGradFn
             + 'static,
     {
@@ -344,7 +342,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
             + UnaryGrad<T, S>
             + Alloc<T>
             + ZeroGrad<T>
-            + MayTapeActions
+            + MayGradActions
             + AddGradFn
             + SumColsMayGrad<T, S, OS>
             + PowMayGrad<T, OS>
@@ -378,7 +376,7 @@ impl<'a, T, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 }
 
-impl<T, D: IsShapeIndep, S: Shape> Matrix<'_, T, D, S> {
+impl<T: Unit, D: IsShapeIndep, S: Shape> Matrix<'_, T, D, S> {
     #[inline]
     pub fn as_dims<'b, O: Shape>(&self) -> &Matrix<'b, T, D, O> {
         unsafe { &*(self as *const Self).cast() }
@@ -390,7 +388,7 @@ impl<T, D: IsShapeIndep, S: Shape> Matrix<'_, T, D, S> {
     }
 }
 
-impl<'a, T, D: Device, S: Shape> core::ops::Deref for Matrix<'a, T, D, S> {
+impl<'a, T: Unit, D: Device, S: Shape> core::ops::Deref for Matrix<'a, T, D, S> {
     type Target = Buffer<'a, T, D, S>;
 
     #[inline]
@@ -399,14 +397,14 @@ impl<'a, T, D: Device, S: Shape> core::ops::Deref for Matrix<'a, T, D, S> {
     }
 }
 
-impl<'a, T, D: Device, S: Shape> core::ops::DerefMut for Matrix<'a, T, D, S> {
+impl<'a, T: Unit, D: Device, S: Shape> core::ops::DerefMut for Matrix<'a, T, D, S> {
     #[inline]
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.as_buf_mut()
     }
 }
 
-impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Sub for &Matrix<'a, T, D, S> {
+impl<'a, T: Unit, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Sub for &Matrix<'a, T, D, S> {
     type Output = Matrix<'a, T, D, S>;
 
     #[inline]
@@ -416,7 +414,7 @@ impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Sub for &Matrix<'a, T
     }
 }
 
-impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Add for &Matrix<'a, T, D, S> {
+impl<'a, T: Unit, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Add for &Matrix<'a, T, D, S> {
     type Output = Matrix<'a, T, D, S>;
 
     #[inline]
@@ -426,7 +424,7 @@ impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Add for &Matrix<'a, T
     }
 }
 
-impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Add for Matrix<'a, T, D, S> {
+impl<'a, T: Unit, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Add for Matrix<'a, T, D, S> {
     type Output = Matrix<'a, T, D, S>;
 
     #[inline]
@@ -436,7 +434,7 @@ impl<'a, T, D: BinaryOpsMayGrad<T, S>, S: Shape> std::ops::Add for Matrix<'a, T,
     }
 }
 
-impl<'a, T: Clone, D: CloneBuf<'a, T, S>, S: Shape> Clone for Matrix<'a, T, D, S> {
+impl<'a, T: Unit + Clone, D: CloneBuf<'a, T, S>, S: Shape> Clone for Matrix<'a, T, D, S> {
     fn clone(&self) -> Self {
         Self {
             data: self.data.clone(),
