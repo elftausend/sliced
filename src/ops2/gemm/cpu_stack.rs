@@ -35,7 +35,7 @@ where
         let mut out = self.retrieve(m * n, (lhs, rhs)).unwrap();
         self.add_op(
             (lhs, rhs, &mut out),
-            move |(lhs, rhs, out)| {
+            move |(lhs, rhs, out), _| {
                 T::gemm(m, n, k, lhs, rhs, out);
                 Ok(())
             },

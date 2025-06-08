@@ -32,7 +32,7 @@ where
     #[inline]
     fn sum_rows(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(cols, x).unwrap();
-        self.add_op((x, &mut out), move |(x, out)| {
+        self.add_op((x, &mut out), move |(x, out), _| {
             slice_sum_rows2(cols, x, out);
             Ok(())
         })
@@ -54,7 +54,7 @@ where
     fn sum_cols(&self, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let rows = x.len() / cols;
         let mut out = self.retrieve(rows, x).unwrap();
-        self.add_op((x, &mut out), move |(x, out)| {
+        self.add_op((x, &mut out), move |(x, out), _| {
             slice_sum_cols(cols, x, out);
             Ok(())
         })

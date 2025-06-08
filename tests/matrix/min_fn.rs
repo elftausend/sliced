@@ -15,9 +15,11 @@ fn test_min_fn() {
 
         squared.backward();
 
-        let mut grad = x.grad_mut();
+        let mut grad = unsafe { x.grad_mut_unbound() };
         rawsliced::ew_assign_scalar(&mut grad, &0.1, |x, r| *x *= r);
-        rawsliced::ew_assign_binary(&mut x, &grad, |x, y| *x -= y);
-        grad.clear();
+        // x.grad_mut_self();
+        rawsliced::ew_assign_binary(&mut x, grad, |x, y| *x -= y);
+        // let grad = x.grad_mut();
+        // grad.clear();
     }
 }

@@ -5,8 +5,7 @@ use std::{
 };
 
 use custos::{
-    Alloc, Autograd, Base, Cached, Combiner, Cursor, Device, Dim1, Lazy, Resolve, Retriever, Run,
-    Shape, WithShape,
+    Alloc, Autograd, Base, Cached, Combiner, Cursor, Device, Dim1, Lazy, Resolve, Retriever, Run, Shape, Unit, WithShape
 };
 use sliced::{slice_binary_ew, BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU};
 
@@ -16,10 +15,10 @@ pub fn op<'b, T, D, S>(
     op: impl Fn(T, T) -> T,
 ) -> Buffer<'b, T, D, S>
 where
-    D: Alloc<T> + Retriever<T, S>,
+    D: Alloc<T> + Retriever<'b, T, S>,
     D::Base<T, S>: Deref<Target = [T]> + DerefMut,
     S: Shape,
-    T: Copy,
+    T: Copy + Unit,
 {
     let mut out = lhs.device().retrieve(lhs.len(), (lhs, rhs)).unwrap();
 

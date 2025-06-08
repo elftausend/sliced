@@ -32,9 +32,8 @@ where
     {
         let out = self.apply_fn(x, |x| x.mul(x));
 
-        self.add_grad_fn((x, &out), |(x, out)| unsafe {
-            x.device()
-                .add_unary_grad(x, x.grad_mut_unbound(), out.grad(), |x| x.mul(T::two()));
+        self.add_grad_fn((x, &out), |(x, out), dev| unsafe {
+            dev.add_unary_grad(x, x.grad_mut_unbound(), out.grad(), |x| x.mul(T::two()));
             Ok(())
         });
 
@@ -61,11 +60,10 @@ where
     fn pow(&self, x: &Buffer<T, D, S>, rhs: T) -> Buffer<T, D, S> {
         let out = self.apply_fn(x, move |x| x.pow(rhs));
 
-        self.add_grad_fn((x, &out), move |(x, out)| unsafe {
-            x.device()
-                .add_unary_grad(x, x.grad_mut_unbound(), out.grad(), move |x| {
-                    x.pow(rhs - T::one()).mul(rhs)
-                });
+        self.add_grad_fn((x, &out), move |(x, out), dev| unsafe {
+            dev.add_unary_grad(x, x.grad_mut_unbound(), out.grad(), move |x| {
+                x.pow(rhs - T::one()).mul(rhs)
+            });
             Ok(())
         });
 
@@ -111,8 +109,8 @@ where
     fn add(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.add(lhs, rhs);
 
-        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| unsafe {
-            lhs.device().binary_ew_grad(
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out), dev| unsafe {
+            dev.binary_ew_grad(
                 lhs,
                 rhs,
                 lhs.grad_mut_unbound(),
@@ -130,8 +128,8 @@ where
     fn sub(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.sub(lhs, rhs);
 
-        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| unsafe {
-            lhs.device().binary_ew_grad(
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out), dev| unsafe {
+            dev.binary_ew_grad(
                 lhs,
                 rhs,
                 lhs.grad_mut_unbound(),
@@ -149,8 +147,8 @@ where
     fn mul(&self, lhs: &Buffer<T, D, S>, rhs: &Buffer<T, D, S>) -> Buffer<T, D, S> {
         let out = self.mul(lhs, rhs);
 
-        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| unsafe {
-            lhs.device().binary_ew_grad(
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out), dev| unsafe {
+            dev.binary_ew_grad(
                 lhs,
                 rhs,
                 lhs.grad_mut_unbound(),
@@ -172,9 +170,8 @@ where
     {
         let out = self.binary_ew(lhs, rhs, |a, b| a.add(b));
 
-        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out)| unsafe {
-            lhs.device()
-                .add_ew_grad(lhs.grad_mut_unbound(), rhs.grad_mut_unbound(), out.grad());
+        self.add_grad_fn((lhs, rhs, &out), |(lhs, rhs, out), dev| unsafe {
+            dev.add_ew_grad(lhs.grad_mut_unbound(), rhs.grad_mut_unbound(), out.grad());
             Ok(())
         });
 
@@ -205,9 +202,8 @@ where
 
         self.add_grad_fn(
             (x, &out),
-            move |(x, out)| unsafe {
-                x.device()
-                    .transpose_grad(cols, rows, x.grad_mut_unbound(), out.grad());
+            move |(x, out), dev| unsafe {
+                dev.transpose_grad(cols, rows, x.grad_mut_unbound(), out.grad());
                 Ok(())
             },
         );
@@ -255,15 +251,15 @@ where
 
         self.add_grad_fn(
             (lhs, rhs, &out),
-            move |(lhs, rhs, out)| {
-                lhs.device().gemm_grad(
+            move |(lhs, rhs, out), dev| unsafe {
+                dev.gemm_grad(
                     m,
                     k,
                     n,
                     lhs,
                     rhs,
-                    lhs.grad_mut(),
-                    rhs.grad_mut(),
+                    lhs.grad_mut_unbound(),
+                    rhs.grad_mut_unbound(),
                     out.grad(),
                 );
                 Ok(())
@@ -326,13 +322,13 @@ where
         let out = self.add_row(cols, lhs, rhs);
 
         self.add_grad_fn(
-            (rows.no_id(), cols.no_id(), lhs, rhs, &out),
-            |(rows, cols, lhs, rhs, out)| {
-                lhs.device().add_row_grad(
-                    **rows,
-                    **cols,
-                    lhs.grad_mut(),
-                    rhs.grad_mut(),
+            (lhs, rhs, &out),
+            move |(lhs, rhs, out), dev| unsafe {
+                dev.add_row_grad(
+                    rows,
+                    cols,
+                    lhs.grad_mut_unbound(),
+                    rhs.grad_mut_unbound(),
                     out.grad(),
                 );
                 Ok(())
@@ -361,10 +357,9 @@ where
         self.add_row_mut(rows, cols, lhs, rhs);
 
         self.add_grad_fn(
-            (rows.no_id(), cols.no_id(), lhs, rhs),
-            |(rows, cols, lhs, rhs)| {
-                lhs.device()
-                    .add_row_mut_grad(**rows, **cols, rhs.grad_mut(), lhs.grad());
+            (lhs, rhs),
+            move |(lhs, rhs), dev| unsafe {
+                dev.add_row_mut_grad(rows, cols, rhs.grad_mut_unbound(), lhs.grad());
                 Ok(())
             },
         );
@@ -467,9 +462,8 @@ where
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.max_cols(rows, cols, x);
 
-        self.add_grad_fn((x, &mut out, cols.no_id()), |(x, out, cols)| {
-            x.device()
-                .max_cols_grad(**cols, out, x, x.grad_mut(), out.grad());
+        self.add_grad_fn((x, &mut out), move |(x, out), dev| unsafe {
+            dev.max_cols_grad(cols, out, x, x.grad_mut_unbound(), out.grad());
             Ok(())
         });
 
@@ -511,9 +505,8 @@ where
     fn max_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.max_rows(cols, x);
 
-        self.add_grad_fn((x, &mut out, cols.no_id()), |(x, out, cols)| {
-            x.device()
-                .max_rows_grad(**cols, out, x, x.grad_mut(), out.grad());
+        self.add_grad_fn((x, &mut out), move |(x, out), dev| unsafe {
+            dev.max_rows_grad(cols, out, x, x.grad_mut_unbound(), out.grad());
             Ok(())
         });
         // #[cfg(feature = "autograd")]
@@ -588,8 +581,8 @@ where
     fn sum_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.sum_cols(cols, x);
 
-        self.add_grad_fn((x, &out, cols.no_id()), |(x, out, cols)| {
-            x.device().sum_cols_grad(**cols, x.grad_mut(), out.grad());
+        self.add_grad_fn((x, &out), move |(x, out), dev| unsafe {
+            dev.sum_cols_grad(cols, x.grad_mut_unbound(), out.grad());
             Ok(())
         });
 
@@ -631,8 +624,8 @@ where
     fn mean_cols(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.mean_cols(cols, x);
 
-        self.add_grad_fn((x, &out, cols.no_id()), |(x, out, cols)| {
-            x.device().mean_cols_grad(**cols, x.grad_mut(), out.grad());
+        self.add_grad_fn((x, &out), move |(x, out), dev| unsafe {
+            dev.mean_cols_grad(cols, x.grad_mut_unbound(), out.grad());
             Ok(())
         });
         // #[cfg(feature = "autograd")]
@@ -671,8 +664,8 @@ where
     fn mean_rows(&self, cols: usize, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.mean_rows(cols, x);
 
-        self.add_grad_fn((cols.no_id(), x, &out), |(cols, x, out)| {
-            x.device().mean_rows_grad(**cols, x.grad_mut(), out.grad());
+        self.add_grad_fn((x, &out), move |(x, out), dev| unsafe {
+            dev.mean_rows_grad(cols, x.grad_mut_unbound(), out.grad());
             Ok(())
         });
 
@@ -703,8 +696,8 @@ where
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let out = self.diagflat(x);
 
-        self.add_grad_fn((x, &out), |(x, out)| {
-            x.device().diagflat_grad(x.grad_mut(), out.grad());
+        self.add_grad_fn((x, &out), move |(x, out), dev| unsafe {
+            dev.diagflat_grad(x.grad_mut_unbound(), out.grad());
             Ok(())
         });
 
@@ -753,10 +746,9 @@ where
         let out = self.softmax(samples, features, x);
 
         self.add_grad_fn(
-            (samples.no_id(), features.no_id(), x, &out),
-            |(samples, features, x, out)| {
-                x.device()
-                    .softmax_grad(**samples, **features, x.grad_mut(), out, out.grad());
+            (x, &out),
+            move |(x, out), dev| unsafe {
+                dev.softmax_grad(samples, features, x.grad_mut_unbound(), out, out.grad());
                 Ok(())
             },
         );
@@ -773,7 +765,6 @@ where
         out
     }
 }
-
 macro_rules! _impl_may_autograd_op {
     ($trait_name:ident, $forward_trait:ident, $backward_trait:ident) => {};
 }

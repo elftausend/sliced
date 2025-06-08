@@ -1,16 +1,15 @@
 use custos::{
-    prelude::Float, Alloc, Buffer, Device, IsShapeIndep, MayGradActions, OnNewBuffer, TapeActions,
-    ZeroGrad,
+    prelude::Float, Alloc, Buffer, Device, IsShapeIndep, MayGradActions, OnNewBuffer, TapeActions, Unit, ZeroGrad
 };
 
 use sliced::{GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
 
-pub struct Linear<'a, T, D: Device, const I: usize, const O: usize> {
+pub struct Linear<'a, T: Unit, D: Device, const I: usize, const O: usize> {
     weights: Matrix<'a, T, D>,
     bias: Matrix<'a, T, D>,
 }
 
-impl<'a, T: Float, D: Device + OnNewBuffer<T, D, ()>, const I: usize, const O: usize>
+impl<'a, T: Float, D: Device + OnNewBuffer<'a, T, D, ()>, const I: usize, const O: usize>
     Linear<'a, T, D, I, O>
 {
     pub fn new(device: &'a D) -> Self
@@ -46,7 +45,7 @@ impl<'a, T: Float, D: Device + OnNewBuffer<T, D, ()>, const I: usize, const O: u
     }
 }
 
-pub fn create_sine<'a, D: Alloc<f32> + IsShapeIndep + OnNewBuffer<f32, D>>(
+pub fn create_sine<'a, D: Alloc<f32> + IsShapeIndep + OnNewBuffer<'a, f32, D>>(
     device: &'a D,
     min: usize,
     max: usize,
@@ -66,11 +65,11 @@ pub fn create_sine<'a, D: Alloc<f32> + IsShapeIndep + OnNewBuffer<f32, D>>(
     (x, y)
 }
 
-pub struct Param<'a, 'b, T, D: Device> {
+pub struct Param<'a, 'b, T: Unit, D: Device> {
     param: &'a mut Buffer<'b, T, D>,
 }
 
-impl<'a, 'b, T, D: Device> Param<'a, 'b, T, D> {
+impl<'a, 'b, T: Unit, D: Device> Param<'a, 'b, T, D> {
     pub fn new(param: &'a mut Buffer<'b, T, D>) -> Self {
         Param { param }
     }
@@ -104,8 +103,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
         D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
-            let grad = param.param.grad();
-            for (value, grad) in param.param.iter_mut().zip(grad.iter()) {
+            let (data, grad) = unsafe { param.param.grad_self_mut() };
+            for (value, grad) in data.iter_mut().zip(grad.iter()) {
                 *value -= *grad * self.lr
             }
         }
@@ -153,7 +152,9 @@ fn test_nn() {
     for _ in 0..1000 {
         #[cfg(feature = "autograd")]
         unsafe {
-            device.gradients_mut().unwrap().zero_grad();
+            use custos::GradActions;
+
+            device.gradients_mut().unwrap().zero_grad(&device);
         };
         // custos::TapeReturn::tape_mut(&device).grads.zero_grad();
         // sgd.zero_grad(lin1.params());

@@ -64,7 +64,7 @@ where
     fn max_cols(&self, rows: usize, cols: usize, x: &Buffer<T, D>) -> Buffer<T, Self> {
         let mut out = self.retrieve(rows, x).unwrap();
 
-        self.add_op((x, &mut out), move |(x, out)| {
+        self.add_op((x, &mut out), move |(x, out), _| {
             max_cols(cols, x, out);
             Ok(())
         })

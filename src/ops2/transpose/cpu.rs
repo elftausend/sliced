@@ -42,7 +42,7 @@ where
         let mut out = self.retrieve(x.len(), x).unwrap();
         self.add_op(
             (x, &mut out),
-            move |(x, out)| {
+            move |(x, out), _| {
                 slice_transpose::<_, Set>(rows, cols, x, out);
                 Ok(())
             },

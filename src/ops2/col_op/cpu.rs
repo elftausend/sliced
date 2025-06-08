@@ -27,7 +27,7 @@ where
 
         self.add_op(
             (lhs, rhs, &mut out),
-            move |(lhs, rhs, out)| {
+            move |(lhs, rhs, out), _| {
                 slice_col_op(cols, lhs, rhs, out, f);
                 Ok(())
             },

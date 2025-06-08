@@ -21,7 +21,7 @@ where
     ) {
         self.add_op(
             (lhs, rhs),
-            move |(lhs, rhs)| {
+            move |(lhs, rhs), _| {
                 slice_row_op_lhs(rows, cols, lhs, rhs, |c, a| *c += a);
                 Ok(())
             },

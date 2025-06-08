@@ -15,7 +15,7 @@ fn test_comb() {
 
         squared.backward();
 
-        let mut x_grad = x.grad_mut();
+        let mut x_grad = unsafe { x.grad_mut_unbound() };
         rawsliced::ew_assign_scalar(&mut x_grad, &0.1, |x, r| *x *= r);
         rawsliced::ew_assign_binary(&mut x, &x_grad, |x, y| *x -= y);
         x_grad.clear();

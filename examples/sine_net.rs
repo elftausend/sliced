@@ -1,16 +1,15 @@
 use custos::{
-    prelude::Float, AddOperation, Alloc, AsNoId, Autograd, Base, Buffer, Cached, Cursor, Device,
-    ExecNow, HasId, IsShapeIndep, Lazy, MayGradActions, OnNewBuffer, Run, TapeActions, ZeroGrad,
+    prelude::Float, AddOperation, Alloc, AsNoId, Autograd, Base, Buffer, Cached, Cursor, Device, ExecNow, HasId, IsShapeIndep, Lazy, MayGradActions, OnNewBuffer, Run, TapeActions, Unit, ZeroGrad
 };
 
 use sliced::{GemmMayGrad, Matrix, Mean, RandOp, RowOpMayGrad};
 
-pub struct Linear<'a, T, D: Device, const I: usize, const O: usize> {
+pub struct Linear<'a, T: Unit, D: Device, const I: usize, const O: usize> {
     weights: Matrix<'a, T, D>,
     bias: Matrix<'a, T, D>,
 }
 
-impl<'a, T: Float, D: Device + OnNewBuffer<T, D>, const I: usize, const O: usize>
+impl<'a, T: Float, D: Device + OnNewBuffer<'a, T, D>, const I: usize, const O: usize>
     Linear<'a, T, D, I, O>
 {
     pub fn new(device: &'a D) -> Self
@@ -47,7 +46,7 @@ impl<'a, T: Float, D: Device + OnNewBuffer<T, D>, const I: usize, const O: usize
     }
 }
 
-pub fn create_sine<'a, D: Alloc<f32> + IsShapeIndep + OnNewBuffer<f32, D>>(
+pub fn create_sine<'a, D: Alloc<f32> + IsShapeIndep + OnNewBuffer<'a, f32, D>>(
     device: &'a D,
     min: usize,
     max: usize,
@@ -67,11 +66,11 @@ pub fn create_sine<'a, D: Alloc<f32> + IsShapeIndep + OnNewBuffer<f32, D>>(
     (x.no_grad(), y.no_grad())
 }
 
-pub struct Param<'a, 'b, T, D: Device> {
+pub struct Param<'a, 'b, T: Unit, D: Device> {
     param: &'a mut Buffer<'b, T, D>,
 }
 
-impl<'a, 'b, T, D: Device> Param<'a, 'b, T, D> {
+impl<'a, 'b, T: Unit, D: Device> Param<'a, 'b, T, D> {
     pub fn new(param: &'a mut Buffer<'b, T, D>) -> Self {
         Param { param }
     }
@@ -108,8 +107,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static + std::fmt::Debug> SG
         D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
-            let grad = param.param.grad();
-            for (value, grad) in param.param.iter_mut().zip(grad.iter()) {
+            let (data, grad) = unsafe { param.param.grad_self_mut() };
+            for (value, grad) in data.iter_mut().zip(grad.iter()) {
                 *value -= *grad * self.lr
             }
         }
@@ -135,7 +134,9 @@ fn sine_net() {
     for _ in dev.range(0..1000) {
         #[cfg(feature = "autograd")]
         unsafe {
-            dev.gradients_mut().unwrap().zero_grad();
+            use custos::GradActions;
+
+            dev.gradients_mut().unwrap().zero_grad(&dev);
         };
 
         // custos::TapeReturn::tape_mut(&device).grads.zero_grad();
@@ -191,10 +192,12 @@ fn sine_net_lazy2() {
     let start = Instant::now();
 
     dev.clone()
-        .add_op(dev.clone().no_id(), |dev| {
+        .add_op((), |_, dev| {
             #[cfg(feature = "autograd")]
             unsafe {
-                dev.gradients_mut().unwrap().zero_grad();
+                use custos::GradActions;
+
+                dev.gradients_mut().unwrap().zero_grad(&*dev);
             };
             Ok(())
         })
@@ -225,7 +228,7 @@ fn sine_net_lazy2() {
     let out = lin1.forward(&x).relu();
     let out = lin2.forward(&out).relu();
     let out = lin3.forward(&out);
-    dev.exec_now(&dev, ..).unwrap();
+    dev.exec_now(&*dev, ..).unwrap();
 
     let mut plot = graplot::Plot::new((x.read(), y.read()));
     plot.add((x.read(), out.replace().read(), "-r"));
@@ -250,10 +253,12 @@ fn sine_net_lazy() {
 
     for _ in dev.range(0..1000) {
         dev.clone()
-            .add_op(dev.clone().no_id(), |dev| {
+            .add_op((), |_, dev| {
                 #[cfg(feature = "autograd")]
                 unsafe {
-                    dev.gradients_mut().unwrap().zero_grad();
+                    use custos::GradActions;
+
+                    dev.gradients_mut().unwrap().zero_grad(dev);
                 };
                 Ok(())
             })
@@ -264,7 +269,7 @@ fn sine_net_lazy() {
         let out = lin3.forward(&out);
 
         let loss = (&out - &y).pow(2.);
-        dev.exec_now(&dev, ..).unwrap();
+        dev.exec_now(&*dev, ..).unwrap();
         let loss_val = dev.mean(loss.replace());
         println!("loss: {loss_val}");
 
@@ -273,7 +278,7 @@ fn sine_net_lazy() {
             // could also just deactivate lazy and activate it after the backward call
             // if the lazy mode is activated, grad functions aren't cleared (ops are called once normally)
             // this results in a build up of grad functions in this case
-            dev.eagerly(|| loss.replace().backward());
+            dev.eagerly(|| loss.replace().backward().unwrap());
             // loss.replace().backward();
 
             sgd.step(lin1.params());
@@ -287,7 +292,7 @@ fn sine_net_lazy() {
     let out = lin1.forward(&x).relu();
     let out = lin2.forward(&out).relu();
     let out = lin3.forward(&out);
-    dev.exec_now(&dev, ..).unwrap();
+    dev.exec_now(&*dev, ..).unwrap();
 
     let mut plot = graplot::Plot::new((x.read(), y.read()));
     plot.add((x.read(), out.replace().read(), "-r"));
@@ -296,5 +301,6 @@ fn sine_net_lazy() {
 
 fn main() {
     sine_net_lazy();
+    println!("HI");
     sine_net();
 }

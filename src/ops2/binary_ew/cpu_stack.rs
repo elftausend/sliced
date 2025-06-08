@@ -30,7 +30,7 @@ where
         O: Eval<T> + MayToCLSource,
     {
         let mut out = self.retrieve(lhs.len(), (lhs, rhs)).unwrap();
-        self.add_op((lhs, rhs, &mut out), move |(lhs, rhs, out)| {
+        self.add_op((lhs, rhs, &mut out), move |(lhs, rhs, out), _dev| {
             slice_binary_ew(lhs, rhs, out, f);
             Ok(())
         })
