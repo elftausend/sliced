@@ -15,8 +15,11 @@ fn test_square() {
     {
         out.backward();
 
-        let grad = buf.grad();
-        assert_eq!(grad.read(), [2, 4, 6, 8, 10]);
+        let grad = buf.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [2, 4, 6, 8, 10]
+        );
     }
 }
 
@@ -36,8 +39,11 @@ fn test_square_cl() -> custos::Result<()> {
     {
         out.backward();
 
-        let grad = buf.grad();
-        assert_eq!(grad.read(), [2, 4, 6, 8, 10]);
+        let grad = buf.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [2, 4, 6, 8, 10]
+        );
     }
     Ok(())
 }

@@ -3,7 +3,7 @@ use std::ops::AddAssign;
 use custos::{
     opencl::{CLDevice, KernelLaunch},
     prelude::{Buffer, CLBuffer},
-    CDatatype, WrappedData, OpenCL,
+    CDatatype, OpenCL, WrappedData,
 };
 
 use crate::{MaxColsGrad, MaxRowsGrad};

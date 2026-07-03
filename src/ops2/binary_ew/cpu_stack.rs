@@ -1,11 +1,14 @@
-use std::ops::Deref;
+use core::ops::Deref;
 
 use custos::{
     impl_stack, AddOperation, AsNoId, Buffer, Device, Eval, MayToCLSource, Resolve, Retrieve,
-    Retriever, Shape, ToVal, CPU,
+    Retriever, Shape, ToVal,
 };
 
 use super::BinaryElementWise;
+
+#[cfg(feature = "cpu")]
+use custos::CPU;
 
 #[cfg(feature = "stack")]
 use custos::Stack;

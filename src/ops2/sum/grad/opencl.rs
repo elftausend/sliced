@@ -3,7 +3,7 @@ use std::ops::AddAssign;
 use custos::{
     opencl::{CLDevice, KernelLaunch},
     prelude::CLBuffer,
-    CDatatype, WrappedData, OpenCL, Shape,
+    CDatatype, OpenCL, Shape, WrappedData,
 };
 
 use crate::SumRowsGrad;

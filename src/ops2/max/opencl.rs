@@ -1,7 +1,7 @@
 use custos::{
     exec_on_cpu::cpu_exec_reduce_may_unified,
     prelude::{cpu_exec_unary_may_unified, Number},
-    Buffer, WrappedData, OpenCL, Retrieve, UnifiedMemChain,
+    Buffer, OpenCL, Retrieve, UnifiedMemChain, WrappedData,
 };
 
 use crate::{Max, MaxCols, MaxRows};

@@ -1,5 +1,8 @@
 use custos::{Alloc, Buffer, Device, OnNewBuffer, Shape, Unit};
 
+#[cfg(feature = "static-api")]
+use custos::{static_api::Mods, CPU};
+
 use crate::Matrix;
 
 impl<'a, T: Unit, D: Device, S: Shape> Matrix<'a, T, D, S> {
@@ -10,7 +13,9 @@ impl<'a, T: Unit, D: Device, S: Shape> Matrix<'a, T, D, S> {
     }
 }
 
-impl<'a, T: Unit, D: Device, S: Shape> From<(Buffer<'a, T, D, S>, usize, usize)> for Matrix<'a, T, D, S> {
+impl<'a, T: Unit, D: Device, S: Shape> From<(Buffer<'a, T, D, S>, usize, usize)>
+    for Matrix<'a, T, D, S>
+{
     #[inline]
     fn from((data, rows, cols): (Buffer<'a, T, D, S>, usize, usize)) -> Self {
         Matrix::from_data(data, rows, cols)
@@ -38,7 +43,7 @@ impl<'a, T: Unit + Copy, D: Alloc<T> + OnNewBuffer<'a, T, D, ()>, const N: usize
 }
 
 #[cfg(feature = "static-api")]
-impl<'a, T: Clone> From<(usize, usize, &[T])> for Matrix<'a, T> {
+impl<'a, T: Clone + 'static> From<(usize, usize, &[T])> for Matrix<'a, T, CPU<Mods<CPU>>> {
     #[inline]
     fn from((rows, cols, slice): (usize, usize, &[T])) -> Self {
         Matrix::from((Buffer::from(slice), rows, cols))
@@ -46,7 +51,9 @@ impl<'a, T: Clone> From<(usize, usize, &[T])> for Matrix<'a, T> {
 }
 
 #[cfg(feature = "static-api")]
-impl<'a, T: Clone, const N: usize> From<(usize, usize, [T; N])> for Matrix<'a, T> {
+impl<'a, T: Clone + 'static, const N: usize> From<(usize, usize, [T; N])>
+    for Matrix<'a, T, CPU<Mods<CPU>>>
+{
     #[inline]
     fn from((rows, cols, slice): (usize, usize, [T; N])) -> Self {
         Matrix::from((Buffer::from(slice), rows, cols))
@@ -54,11 +61,11 @@ impl<'a, T: Clone, const N: usize> From<(usize, usize, [T; N])> for Matrix<'a, T
 }
 
 // no tuple for dims
-#[cfg(not(feature = "no-std"))]
+#[cfg(feature = "std")]
 // FIXME: In this case, GraphReturn acts as an "IsDynamic" trait, as GraphReturn is not implemented for Stack
 // not anymore - but the message stays the same
-impl<'a, T: Unit + Copy, D: Alloc<T> + OnNewBuffer<'a, T, D, ()>> From<(&'a D, usize, usize, Vec<T>)>
-    for Matrix<'a, T, D>
+impl<'a, T: Unit + Copy, D: Alloc<T> + OnNewBuffer<'a, T, D, ()>>
+    From<(&'a D, usize, usize, Vec<T>)> for Matrix<'a, T, D>
 {
     fn from((device, rows, cols, data): (&'a D, usize, usize, Vec<T>)) -> Self {
         let data = Buffer::from((device, data));

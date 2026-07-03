@@ -1,11 +1,14 @@
-use std::ops::Deref;
+use core::ops::Deref;
 
 use custos::{
-    impl_stack, AddOperation, AsNoId, Buffer, Device, GenericBlas, WrappedData, Retrieve,
-    Retriever, Shape, CPU,
+    impl_stack, AddOperation, AsNoId, Buffer, Device, GenericBlas, Retrieve, Retriever, Shape,
+    WrappedData,
 };
 
 use super::Gemm;
+
+#[cfg(feature = "cpu")]
+use custos::CPU;
 
 #[cfg(feature = "stack")]
 use custos::Stack;
@@ -33,13 +36,10 @@ where
         rhs: &Buffer<T, D, RS>,
     ) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(m * n, (lhs, rhs)).unwrap();
-        self.add_op(
-            (lhs, rhs, &mut out),
-            move |(lhs, rhs, out), _| {
-                T::gemm(m, n, k, lhs, rhs, out);
-                Ok(())
-            },
-        )
+        self.add_op((lhs, rhs, &mut out), move |(lhs, rhs, out), _| {
+            T::gemm(m, n, k, lhs, rhs, out);
+            Ok(())
+        })
         .unwrap();
         out
     }
@@ -71,16 +71,17 @@ where
 
 #[cfg(not(feature = "matrixmultiply"))]
 #[cfg(not(feature = "blas"))]
-//#[impl_stack]
-impl<T, D, LS, RS, OS> Gemm<T, LS, RS, OS, D> for CPU
+#[impl_stack]
+impl<T, D, LS, RS, OS, Mods> Gemm<T, LS, RS, OS, D> for CPU<Mods>
 where
-    T: Default + Copy + core::ops::Mul<Output = T> + core::ops::AddAssign,
-    D: Device,
+    T: core::ops::AddAssign + core::ops::Mul<Output = T> + Default + Copy + 'static,
+    D: Device + 'static,
     D::Base<T, LS>: Deref<Target = [T]>,
     D::Base<T, RS>: Deref<Target = [T]>,
     LS: Shape,
     RS: Shape,
     OS: Shape,
+    Mods: Retrieve<Self, T, OS> + AddOperation + 'static,
 {
     #[inline]
     fn gemm(
@@ -91,12 +92,8 @@ where
         lhs: &custos::Buffer<T, D, LS>,
         rhs: &custos::Buffer<T, D, RS>,
     ) -> custos::Buffer<T, Self, OS> {
-        // compile_error!("Activate blas feature");
-
-        unimplemented!("This gemm isn't available. Please consider activating the 'blas' feature.")
-        /*let mut out = self.retrieve(m * n, (lhs, rhs));
-        crate::raw_ops::naive_gemm(m, k, n, lhs, rhs, &mut out);
-        (out, m, n).into()
-        */
+        let mut out = self.retrieve(m * n, (lhs, rhs)).unwrap();
+        rawsliced::naive_gemm(m, k, n, lhs, rhs, &mut out);
+        out
     }
 }

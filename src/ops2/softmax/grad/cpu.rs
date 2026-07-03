@@ -2,12 +2,12 @@ use std::{fmt::Display, ops::Deref};
 
 use crate::{BinaryElementWise, Diagflat, Gemm, SoftmaxGrad, Transpose};
 use custos::{
-    prelude::Number, Base, Buffer, Device, GenericBlas, WrappedData, Retrieve, Shape, CPU,
+    impl_stack, prelude::Number, Base, Buffer, Device, Retrieve, Shape, Stack, WrappedData, CPU,
 };
 
 impl<T, S, Mods: WrappedData + Retrieve<Self, T, ()>> SoftmaxGrad<T, S> for CPU<Mods>
 where
-    T: GenericBlas + Number,
+    T: Number,
     S: Shape,
     CPU: Gemm<T>, // for shape annotations
 {
@@ -50,14 +50,61 @@ where
                     &base_cpu.transpose(features, 1, &single_out),
                 ),
             );
-            T::gemm(
-                features,
-                1,
-                features,
-                &jacobian_matrix,
-                &single_grad,
-                &mut x_grad[index..index + features],
-            )
+            let single_x_grad: Buffer<T, _> =
+                base_cpu.gemm(features, features, 1, &jacobian_matrix, &single_grad);
+            x_grad[index..index + features].copy_from_slice(&single_x_grad);
+        }
+    }
+}
+
+impl<T, S, Mods: WrappedData + Retrieve<Self, T, ()>> SoftmaxGrad<T, S> for Stack<Mods>
+where
+    T: Number,
+    S: Shape,
+    CPU: Gemm<T>, // for shape annotations
+{
+    fn softmax_grad(
+        &self,
+        samples: usize,
+        features: usize,
+        x_grad: &mut Buffer<T, Self, S>,
+        out: &Buffer<T, Self, S>,
+        out_grad: &Buffer<T, Self, S>,
+    ) {
+        let base_cpu = CPU::<Base>::new();
+
+        for idx in 0..samples {
+            let index = idx * features;
+
+            // ensure that data is only read
+            let single_out: Buffer<T> = unsafe {
+                Buffer::from_raw_host((&out[index..index + features]).as_ptr() as *mut T, features)
+            };
+
+            // ensure that data is only read
+            let single_grad: Buffer<T> = unsafe {
+                Buffer::from_raw_host(
+                    (&out_grad[index..index + features]).as_ptr() as *mut T,
+                    features,
+                )
+            };
+
+            let diagflat: Buffer<T, _> = base_cpu.diagflat(&single_out);
+
+            // cols 1 x 1 cols
+            let jacobian_matrix: Buffer<T, _> = base_cpu.sub(
+                &diagflat,
+                &base_cpu.gemm(
+                    features,
+                    1,
+                    features,
+                    &single_out,
+                    &base_cpu.transpose(features, 1, &single_out),
+                ),
+            );
+            let single_x_grad: Buffer<T, _> =
+                base_cpu.gemm(features, features, 1, &jacobian_matrix, &single_grad);
+            x_grad[index..index + features].copy_from_slice(&single_x_grad);
         }
     }
 }

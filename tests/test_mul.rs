@@ -16,11 +16,17 @@ fn test_mul() {
     {
         out.backward();
 
-        let grad = lhs.grad();
-        assert_eq!(grad.read(), [6, 7, 8, 9, 10]);
+        let grad = lhs.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [6, 7, 8, 9, 10]
+        );
 
-        let grad = rhs.grad();
-        assert_eq!(grad.read(), [1, 2, 3, 4, 5]);
+        let grad = rhs.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [1, 2, 3, 4, 5]
+        );
     }
 }
 
@@ -41,11 +47,17 @@ fn test_mul_cl() -> custos::Result<()> {
     {
         out.backward();
 
-        let grad = lhs.grad();
-        assert_eq!(grad.read(), [6, 7, 8, 9, 10]);
+        let grad = lhs.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [6, 7, 8, 9, 10]
+        );
 
-        let grad = rhs.grad();
-        assert_eq!(grad.read(), [1, 2, 3, 4, 5]);
+        let grad = rhs.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [1, 2, 3, 4, 5]
+        );
     }
 
     Ok(())

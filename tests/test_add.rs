@@ -16,11 +16,17 @@ fn test_add() {
     {
         out.backward();
 
-        let grad = lhs.grad();
-        assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
+        let grad = lhs.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [1, 1, 1, 1, 1]
+        );
 
-        let grad = rhs.grad();
-        assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
+        let grad = rhs.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [1, 1, 1, 1, 1]
+        );
     }
 }
 
@@ -41,11 +47,17 @@ fn test_add_cl() -> custos::Result<()> {
     {
         out.backward();
 
-        let grad = lhs.grad();
-        assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
+        let grad = lhs.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [1, 1, 1, 1, 1]
+        );
 
-        let grad = rhs.grad();
-        assert_eq!(grad.read(), [1, 1, 1, 1, 1]);
+        let grad = rhs.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [1, 1, 1, 1, 1]
+        );
     }
     Ok(())
 }

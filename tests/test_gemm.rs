@@ -34,10 +34,10 @@ fn test_gemm_cpu() {
     {
         out.backward();
 
-        let lhs_grad = lhs.grad();
+        let lhs_grad = lhs.grad(&device);
         assert_eq!(&***lhs_grad, [6.0, 15.0, 6.0, 15.0, 6.0, 15.0, 6.0, 15.0]);
 
-        let rhs_grad = rhs.grad();
+        let rhs_grad = rhs.grad(&device);
         assert_eq!(&***rhs_grad, [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]);
     }
 }
@@ -76,14 +76,17 @@ fn test_gemm_cl() -> custos::Result<()> {
     {
         out.backward();
 
-        let lhs_grad = lhs.grad();
+        let lhs_grad = lhs.grad(&device);
         assert_eq!(
-            lhs_grad.read(),
+            sliced::test_utils::read_grad(&device, lhs_grad),
             [6.0, 15.0, 6.0, 15.0, 6.0, 15.0, 6.0, 15.0]
         );
 
-        let rhs_grad = rhs.grad();
-        assert_eq!(rhs_grad.read(), [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]);
+        let rhs_grad = rhs.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, rhs_grad),
+            [14.0, 14.0, 14.0, 16.0, 16.0, 16.0]
+        );
     }
 
     Ok(())

@@ -29,11 +29,14 @@ fn test_row_op_cpu() {
     {
         out.backward();
 
-        let row_add_grad = row_add.grad();
-        assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
+        let row_add_grad = row_add.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, row_add_grad),
+            [3, 3, 3, 3, 3]
+        );
 
-        let buf_grad = buf.grad();
-        assert_eq!(buf_grad.read(), [1; 3 * 5])
+        let buf_grad = buf.grad(&device);
+        assert_eq!(sliced::test_utils::read_grad(&device, buf_grad), [1; 3 * 5])
     }
 }
 
@@ -68,11 +71,14 @@ fn test_row_op_mut_cpu() {
     {
         buf.backward();
 
-        let row_add_grad = row_add.grad();
-        assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
+        let row_add_grad = row_add.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, row_add_grad),
+            [3, 3, 3, 3, 3]
+        );
 
-        let buf_grad = buf.grad();
-        assert_eq!(buf_grad.read(), [1; 3 * 5])
+        let buf_grad = buf.grad(&device);
+        assert_eq!(sliced::test_utils::read_grad(&device, buf_grad), [1; 3 * 5])
     }
 }
 
@@ -107,11 +113,11 @@ fn test_row_op_cl() -> custos::Result<()> {
 
     out.backward();
 
-    let row_add_grad = row_add.grad();
-    assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
+    let row_add_grad = row_add.grad(&device);
+    assert_eq!(sliced::test_utils::read_grad(&device, row_add_grad), [3, 3, 3, 3, 3]);
 
-    let buf_grad = buf.grad();
-    assert_eq!(buf_grad.read(), [1; 3*5]);
+    let buf_grad = buf.grad(&device);
+    assert_eq!(sliced::test_utils::read_grad(&device, buf_grad), [1; 3*5]);
 
     Ok(())
 }*/
@@ -147,11 +153,14 @@ fn test_row_op_mut_cl() -> custos::Result<()> {
     {
         buf.backward();
 
-        let row_add_grad = row_add.grad();
-        assert_eq!(row_add_grad.read(), [3, 3, 3, 3, 3]);
+        let row_add_grad = row_add.grad(&device);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, row_add_grad),
+            [3, 3, 3, 3, 3]
+        );
 
-        let buf_grad = buf.grad();
-        assert_eq!(buf_grad.read(), [1; 3 * 5]);
+        let buf_grad = buf.grad(&device);
+        assert_eq!(sliced::test_utils::read_grad(&device, buf_grad), [1; 3 * 5]);
     }
     Ok(())
 }

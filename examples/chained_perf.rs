@@ -5,7 +5,8 @@ use std::{
 };
 
 use custos::{
-    Alloc, Autograd, Base, Cached, Combiner, Cursor, Device, Dim1, Lazy, Resolve, Retriever, Run, Shape, Unit, WithShape
+    Alloc, Autograd, Base, Cached, Combiner, Cursor, Device, Dim1, Lazy, Resolve, Retriever, Run,
+    Shape, Unit, WithShape,
 };
 use sliced::{slice_binary_ew, BinaryOpsMayGrad, Buffer, SquareMayGrad, CPU};
 

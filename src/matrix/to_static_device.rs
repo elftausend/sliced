@@ -1,8 +1,11 @@
-use custos::{static_api::StaticDevice, Alloc};
+use custos::{
+    static_api::{Mods, StaticDevice},
+    Alloc, OnNewBuffer, CPU,
+};
 
 use crate::Matrix;
 
-impl<'a, T: Clone> Matrix<'a, T> {
+impl<'a, T: Clone + 'static> Matrix<'a, T, CPU<Mods<CPU>>> {
     /// Moves the `Matrix` to the static device of type `D`.
     /// # Example
     #[cfg_attr(not(feature = "opencl"), doc = "```ignore")]
@@ -14,7 +17,9 @@ impl<'a, T: Clone> Matrix<'a, T> {
     /// assert_eq!(a.read(), &[1, 2, 3, 4, 5, 6])
     ///
     /// ```
-    pub fn to_dev<D: StaticDevice + Alloc<'static, T> + 'static>(self) -> Matrix<'static, T, D> {
+    pub fn to_dev<D: StaticDevice + Alloc<T> + OnNewBuffer<'static, T, D, ()> + 'static>(
+        self,
+    ) -> Matrix<'static, T, D> {
         Matrix {
             rows: self.rows,
             cols: self.cols,

@@ -1,9 +1,10 @@
 use core::ops::{AddAssign, Mul};
 
-use custos::{prelude::One, Buffer, Retrieve, Shape, Unit, CPU};
+use custos::{impl_stack, prelude::One, Buffer, Retrieve, Shape, Stack, Unit, CPU};
 
 use crate::{slice_sum_rows, RowOpGrad};
 
+#[impl_stack]
 impl<T, LS, RS, Mods: Retrieve<Self, T>> RowOpGrad<T, LS, RS> for CPU<Mods>
 where
     T: Unit + Copy + AddAssign + One + Mul<Output = T>,

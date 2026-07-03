@@ -3,7 +3,9 @@ use std::{
     ops::{AddAssign, Deref},
 };
 
-use custos::{AddOperation, AsNoId, Buffer, Device, Retrieve, Retriever, Shape, Unit, WrappedData, CPU};
+use custos::{
+    AddOperation, AsNoId, Buffer, Device, Retrieve, Retriever, Shape, Unit, WrappedData, CPU,
+};
 
 use crate::{SumCols, SumRows};
 

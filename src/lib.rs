@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
 pub mod assign_or_set;
 #[cfg(feature = "matrix")]
 mod matrix;
@@ -43,5 +45,16 @@ pub mod test_utils {
                 )
             }
         }
+    }
+
+    /// Reads a (deviceless) gradient buffer.
+    /// `device.read(grad_buf)` alone is ambiguous for type inference, as `Read` is generic
+    /// over the buffer's `Shape`; fixing `S = ()` here via the signature resolves it.
+    pub fn read_grad<'a, T, D>(device: &'a D, buf: &'a custos::Buffer<'static, T, D>) -> D::Read<'a>
+    where
+        T: custos::Unit + Default + Clone,
+        D: custos::Read<T>,
+    {
+        device.read(buf)
     }
 }

@@ -13,6 +13,6 @@ fn test_softmax_with_matrix() {
 
         let expected_grad = [0.; 6];
 
-        sliced::test_utils::roughly_equals(&expected_grad, &*x.grad());
+        sliced::test_utils::roughly_equals(&expected_grad, &*x.grad(&device));
     }
 }

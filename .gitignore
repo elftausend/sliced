@@ -3,3 +3,4 @@
 .idea
 *.svg
 .DS_Store
+mnist_params.rs

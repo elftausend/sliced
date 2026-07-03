@@ -15,9 +15,12 @@ fn test_relu_cpu() {
     {
         out.backward();
 
-        let grad = buf.grad();
+        let grad = buf.grad(&device);
 
-        assert_eq!(grad.read(), [0., 0., 1., 1., 0.,]);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [0., 0., 1., 1., 0.,]
+        );
     }
 }
 
@@ -76,9 +79,12 @@ fn test_relu_cl() -> custos::Result<()> {
     {
         out.backward();
 
-        let grad = buf.grad();
+        let grad = buf.grad(&device);
 
-        assert_eq!(grad.read(), [0., 0., 1., 1., 0.,]);
+        assert_eq!(
+            sliced::test_utils::read_grad(&device, grad),
+            [0., 0., 1., 1., 0.,]
+        );
     }
 
     Ok(())

@@ -18,9 +18,9 @@ fn test_tanh_cpu() {
     {
         out.backward();
 
-        let grad = buf.grad();
+        let grad = buf.grad(&device);
         roughly_equals(
-            grad.read(),
+            sliced::test_utils::read_grad(&device, grad),
             &[
                 0.41997433,
                 0.009865999,

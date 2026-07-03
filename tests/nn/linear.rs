@@ -1,5 +1,6 @@
 use custos::{
-    prelude::Float, Alloc, Buffer, Device, IsShapeIndep, MayGradActions, OnNewBuffer, TapeActions, Unit, ZeroGrad
+    prelude::Float, Alloc, Buffer, Device, Dim2, IsShapeIndep, MayGradActions, OnNewBuffer,
+    TapeActions, Unit, ZeroGrad,
 };
 
 use sliced::{GemmMayGrad, Matrix, RandOp, RowOpMayGrad};
@@ -93,7 +94,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
         D: ZeroGrad<T> + MayGradActions + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
     {
         for param in params {
-            param.param.grad_mut().clear();
+            let device = param.param.device();
+            param.param.grad_mut(device).clear();
         }
     }
 
@@ -103,7 +105,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
         D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
-            let (data, grad) = unsafe { param.param.grad_self_mut() };
+            let device = param.param.device();
+            let (data, grad) = unsafe { param.param.grad_self_mut(device) };
             for (value, grad) in data.iter_mut().zip(grad.iter()) {
                 *value -= *grad * self.lr
             }

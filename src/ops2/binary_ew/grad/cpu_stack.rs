@@ -1,12 +1,15 @@
-use std::ops::{AddAssign, Deref, DerefMut, Mul};
+use core::ops::{AddAssign, Deref, DerefMut, Mul};
 
 use custos::{
-    impl_stack, Buffer, Device, Eval, MayToCLSource, WrappedData, Resolve, Shape, ToVal, Unit, CPU
+    impl_stack, Buffer, Device, Eval, MayToCLSource, Resolve, Shape, ToVal, Unit, WrappedData,
 };
 
 use crate::AddElementWiseGrad;
 
 use super::BinaryElementWiseGrad;
+
+#[cfg(feature = "cpu")]
+use custos::CPU;
 
 #[cfg(feature = "stack")]
 use custos::Stack;
@@ -59,6 +62,7 @@ pub fn slice_binary_grad<T, LO, RO>(
     }
 }
 
+#[cfg(feature = "cpu")]
 impl<T, S, D> AddElementWiseGrad<T, S, D> for CPU
 where
     T: Unit + Copy + AddAssign + Mul<Output = T>,

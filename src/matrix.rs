@@ -7,7 +7,10 @@ mod to_static_device;
 use std::{fmt::Display, ops::Mul};
 
 use custos::{
-    prelude::{Float, Number, Numeric, Two}, AddGradFn, Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep, MayGradActions, OnNewBuffer, Shape, TwoWay, UnaryElementWiseMayGrad, UnaryGrad, Unit, ZeroGrad, CPU
+    prelude::{Float, Number, Numeric, Two},
+    AddGradFn, Alloc, ApplyFunction, Buffer, CloneBuf, Combiner, Device, IsShapeIndep,
+    MayGradActions, OnNewBuffer, Shape, TwoWay, UnaryElementWiseMayGrad, UnaryGrad, Unit, ZeroGrad,
+    CPU,
 };
 
 use crate::{
@@ -23,7 +26,7 @@ pub struct Matrix<'a, T: Unit = f32, D: Device = CPU, S: Shape = ()> {
 }
 
 impl<'a, T: Unit, D: Device, S: Shape> Matrix<'a, T, D, S> {
-    #[inline]
+    #[inline(always)]
     pub fn new(device: &'a D, rows: usize, cols: usize) -> Matrix<'a, T, D, S>
     where
         D: Alloc<T> + OnNewBuffer<'a, T, D, S>,
@@ -180,8 +183,12 @@ impl<'a, T: Unit, D: Device, S: Shape> Matrix<'a, T, D, S> {
 
         self.device()
             .add_grad_fn((self.as_buf(), &mut out), |(lhs, out), dev| {
-               dev 
-                    .add_unary_grad(lhs, unsafe { lhs.grad_mut_unbound() }, out.grad(), |x| x.geq(T::zero()));
+                dev.add_unary_grad(
+                    lhs,
+                    unsafe { lhs.grad_mut_unbound(dev) },
+                    out.grad(dev),
+                    |x| x.geq(T::zero()),
+                );
                 Ok(())
             });
 
@@ -217,10 +224,12 @@ impl<'a, T: Unit, D: Device, S: Shape> Matrix<'a, T, D, S> {
 
         self.device()
             .add_grad_fn((self.as_buf(), &mut out), |(lhs, out), dev| {
-               dev 
-                    .add_unary_grad(lhs, unsafe { lhs.grad_mut_unbound() }, out.grad(), |x| {
-                        T::one().identity().sub(x.tanh().pow(T::two()))
-                    });
+                dev.add_unary_grad(
+                    lhs,
+                    unsafe { lhs.grad_mut_unbound(dev) },
+                    out.grad(dev),
+                    |x| T::one().identity().sub(x.tanh().pow(T::two())),
+                );
                 Ok(())
             });
 
@@ -249,10 +258,12 @@ impl<'a, T: Unit, D: Device, S: Shape> Matrix<'a, T, D, S> {
 
         self.device()
             .add_grad_fn((self.as_buf(), &mut out), |(lhs, out), dev| {
-                dev
-                    .add_unary_grad(lhs, unsafe { lhs.grad_mut_unbound() }, out.grad(), |x| {
-                        (x.neg().exp()).div((T::one().identity().add(x.neg().exp())).pow(T::two()))
-                    });
+                dev.add_unary_grad(
+                    lhs,
+                    unsafe { lhs.grad_mut_unbound(dev) },
+                    out.grad(dev),
+                    |x| (x.neg().exp()).div((T::one().identity().add(x.neg().exp())).pow(T::two())),
+                );
                 Ok(())
             });
 

@@ -1,8 +1,8 @@
 use std::ops::Deref;
 
 use custos::{
-    prelude::Number, AddOperation, AsNoId, Buffer, Device, WrappedData, Retrieve, Retriever,
-    Shape, CPU,
+    prelude::Number, AddOperation, AsNoId, Buffer, Device, Retrieve, Retriever, Shape, WrappedData,
+    CPU,
 };
 
 use crate::{Max, MaxCols, MaxRows};

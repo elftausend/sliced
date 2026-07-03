@@ -1,5 +1,5 @@
 mod grad;
-use std::ops::Add;
+use core::ops::Add;
 
 use custos::{Buffer, Device, Shape, Unit};
 pub use grad::*;

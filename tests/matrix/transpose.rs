@@ -18,6 +18,6 @@ fn test_transpose_matrix() {
 
         let expected_grad: Buffer<f64, _> = device.transpose(y.rows(), y.cols(), &y);
 
-        sliced::test_utils::roughly_equals(&expected_grad, &*x.grad());
+        sliced::test_utils::roughly_equals(&expected_grad, &*x.grad(&device));
     }
 }

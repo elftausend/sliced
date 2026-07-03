@@ -1,6 +1,9 @@
-use std::ops::Deref;
+use core::ops::Deref;
 
-use custos::{impl_stack, AddOperation, AsNoId, Buffer, Device, Retrieve, Retriever, Shape, CPU};
+use custos::{impl_stack, AddOperation, AsNoId, Buffer, Device, Retrieve, Retriever, Shape};
+
+#[cfg(feature = "cpu")]
+use custos::CPU;
 
 use crate::{
     assign_or_set::{AssignOrSet, Set},
@@ -40,13 +43,10 @@ where
 {
     fn transpose(&self, rows: usize, cols: usize, x: &Buffer<T, D, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(x.len(), x).unwrap();
-        self.add_op(
-            (x, &mut out),
-            move |(x, out), _| {
-                slice_transpose::<_, Set>(rows, cols, x, out);
-                Ok(())
-            },
-        )
+        self.add_op((x, &mut out), move |(x, out), _| {
+            slice_transpose::<_, Set>(rows, cols, x, out);
+            Ok(())
+        })
         .unwrap();
         out
     }

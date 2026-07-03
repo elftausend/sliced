@@ -1,4 +1,4 @@
-use custos::{ApplyFunction, Buffer, Combiner, OpenCL, CPU};
+use custos::{ApplyFunction, Buffer, ClearBuf, Combiner, OpenCL, CPU};
 use sliced::{BinaryOpsMayGrad, Matrix, SquareMayGrad};
 
 #[test]
@@ -15,10 +15,10 @@ fn test_comb() {
 
         squared.backward();
 
-        let mut x_grad = unsafe { x.grad_mut_unbound() };
+        let mut x_grad = unsafe { x.grad_mut_unbound(&device) };
         rawsliced::ew_assign_scalar(&mut x_grad, &0.1, |x, r| *x *= r);
         rawsliced::ew_assign_binary(&mut x, &x_grad, |x, y| *x -= y);
-        x_grad.clear();
+        device.clear(x_grad);
     }
 }
 
@@ -49,7 +49,7 @@ fn test_perf_min_this() {
 
             mul.backward();
 
-            //x.grad_mut().clear();
+            //x.grad_mut(&device).clear();
 
             // let mut x_grad = x.grad_mut();
             // x_grad.clear();
@@ -89,8 +89,8 @@ fn test_2perf_min_this() {
 
             out.backward();
 
-            x.grad_mut().clear();
-            b.grad_mut().clear();
+            device.clear(x.grad_mut(&device));
+            device.clear(b.grad_mut(&device));
 
             //sliced::ew_assign_scalar(&mut x_grad, &0.1, |x, r| *x *= r);
             //sliced::ew_assign_binary(&mut x, &x_grad, |x, y| *x -= y);
@@ -131,8 +131,8 @@ fn test_small_2perf_min_this() {
             //sliced::ew_assign_scalar(&mut x_grad, &0.1, |x, r| *x *= r);
             //sliced::ew_assign_binary(&mut x, &x_grad, |x, y| *x -= y);
 
-            x.grad_mut().clear();
-            b.grad_mut().clear();
+            device.clear(x.grad_mut(&device));
+            device.clear(b.grad_mut(&device));
         }
     }
 

@@ -2,7 +2,7 @@ use std::ops::{Add, AddAssign};
 
 use custos::{
     exec_on_cpu::cpu_exec_binary_may_unified, prelude::cpu_exec_binary_may_unified_mut, Buffer,
-    WrappedData, OpenCL, Retrieve, UnifiedMemChain,
+    OpenCL, Retrieve, UnifiedMemChain, WrappedData,
 };
 
 use crate::RowOp;

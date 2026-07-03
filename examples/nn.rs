@@ -1,7 +1,13 @@
-use std::time::{Duration, Instant};
+use std::{
+    any::type_name,
+    fmt::Debug,
+    time::{Duration, Instant},
+};
 
 use custos::{
-    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, Cached, Cursor, Device, HasId, IsShapeIndep, MayGradActions, MayToWgslSource, OnNewBuffer, OpenCL, TapeActions, Unit, ZeroGrad, CPU
+    prelude::Float, AddOperation, Alloc, Autograd, Base, Buffer, CDatatype, Cached, Cursor, Device,
+    HasId, IsShapeIndep, MayGradActions, MayToWgslSource, OnNewBuffer, Read, TapeActions, Unit,
+    ZeroGrad, CPU,
 };
 
 use graplot::Plot;
@@ -101,7 +107,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
         D: MayGradActions + ZeroGrad<T> + WriteBuf<T> + Alloc<T> + ClearBuf<T> + 'static,
     {
         for param in params {
-            param.param.grad_mut().clear();
+            let device = param.param.device();
+            device.clear(param.param.grad_mut(device));
         }
     }
 
@@ -111,7 +118,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static> SGD<T> {
         D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
-            let (data, grad) = unsafe { param.param.grad_self_mut() };
+            let device = param.param.device();
+            let (data, grad) = unsafe { param.param.grad_self_mut(device) };
             for (value, grad) in data.iter_mut().zip(grad.iter()) {
                 *value -= *grad * self.lr
             }
@@ -156,8 +164,8 @@ fn mnist() {
     let device = CPU::<Autograd<Cached<Base>>>::new();
     // let device = OpenCL::<Autograd<Base>>::new(0).unwrap();
 
-    let mut lin1 = Linear::<f32, _, { 28 * 28 }, 128>::new(&device);
-    let mut lin2 = Linear::<f32, _, 128, 10>::new(&device);
+    let mut lin1 = Linear::<f32, _, { 28 * 28 }, 38>::new(&device);
+    let mut lin2 = Linear::<f32, _, 38, 10>::new(&device);
     let mut lin3 = Linear::<f32, _, 10, 10>::new(&device);
 
     let loader = purpur::CSVLoader::new(true);
@@ -243,6 +251,43 @@ fn mnist() {
         }
     }
     println!("elapsed: {:?}", start.elapsed());
+
+    let static_param_declaration = [
+        string_rustify_param(1, ParamType::Weight, &lin1.weights),
+        string_rustify_param(1, ParamType::Bias, &lin1.bias),
+        string_rustify_param(2, ParamType::Weight, &lin2.weights),
+        string_rustify_param(2, ParamType::Bias, &lin2.bias),
+        string_rustify_param(3, ParamType::Weight, &lin3.weights),
+        string_rustify_param(3, ParamType::Bias, &lin3.bias),
+    ].into_iter().collect::<String>();
+    std::fs::write("./mnist_params.rs", static_param_declaration).unwrap();
+}
+
+enum ParamType {
+    Weight,
+    Bias,
+}
+impl ParamType {
+    fn as_str(&self) -> &str {
+        match self {
+            ParamType::Weight => "Weight",
+            ParamType::Bias => "Bias",
+        }
+    }
+}
+
+fn string_rustify_param<T: Unit + Default + Clone + Debug, D: Device + Read<T>>(
+    layer: u8,
+    ty: ParamType,
+    param: &Buffer<'_, T, D>,
+) -> String {
+    let data = param.read_to_vec();
+    let ty = ty.as_str().to_uppercase();
+
+    let type_name = type_name::<T>();
+    let count = data.len();
+
+    format!("pub const {ty}_{layer}: [{type_name}; {count}] = {data:?};")
 }
 
 fn main() {

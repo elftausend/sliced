@@ -1,5 +1,7 @@
 use custos::{
-    prelude::Float, AddOperation, Alloc, AsNoId, Autograd, Base, Buffer, Cached, Cursor, Device, ExecNow, HasId, IsShapeIndep, Lazy, MayGradActions, OnNewBuffer, Run, TapeActions, Unit, ZeroGrad
+    prelude::Float, AddOperation, Alloc, AsNoId, Autograd, Base, Buffer, Cached, Cursor, Device,
+    ExecNow, HasId, IsShapeIndep, Lazy, MayGradActions, OnNewBuffer, Run, TapeActions, Unit,
+    ZeroGrad,
 };
 
 use sliced::{GemmMayGrad, Matrix, Mean, RandOp, RowOpMayGrad};
@@ -97,7 +99,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static + std::fmt::Debug> SG
         D: MayGradActions + WriteBuf<T> + Alloc<T> + ZeroGrad<T> + ClearBuf<T> + 'static,
     {
         for param in params {
-            param.param.grad_mut().clear();
+            let device = param.param.device();
+            device.clear(param.param.grad_mut(device));
         }
     }
 
@@ -107,7 +110,8 @@ impl<T: Copy + One + Mul<Output = T> + SubAssign + 'static + std::fmt::Debug> SG
         D::Base<T, ()>: Deref<Target = [T]> + DerefMut,
     {
         for param in params {
-            let (data, grad) = unsafe { param.param.grad_self_mut() };
+            let device = param.param.device();
+            let (data, grad) = unsafe { param.param.grad_self_mut(device) };
             for (value, grad) in data.iter_mut().zip(grad.iter()) {
                 *value -= *grad * self.lr
             }

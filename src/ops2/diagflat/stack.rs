@@ -1,4 +1,4 @@
-use std::ops::AddAssign;
+use core::ops::AddAssign;
 
 use crate::{diagflat, diagflat_grad, Diagflat, DiagflatGrad};
 use custos::{Buffer, Device, Dim1, Dim2, Retriever, Stack, Unit};

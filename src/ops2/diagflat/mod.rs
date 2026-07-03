@@ -2,9 +2,9 @@ mod grad;
 use custos::{Buffer, Device, Shape, Unit};
 pub use grad::*;
 
-#[cfg(feature = "cpu")]
+#[cfg(any(feature = "cpu", feature = "stack"))]
 mod cpu;
-#[cfg(feature = "cpu")]
+#[cfg(any(feature = "cpu", feature = "stack"))]
 pub use cpu::*;
 
 #[cfg(feature = "stack")]

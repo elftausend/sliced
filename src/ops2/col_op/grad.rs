@@ -9,6 +9,7 @@ use custos::{Buffer, Device, Eval, Resolve, Shape, Unit};
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
+#[cfg(feature = "std")]
 pub trait ColOpGrad<T: Unit, LS: Shape = (), RS: Shape = (), D: Device = Self>: Device {
     fn row_op_grad<LhsGrad, RhsGrad>(
         &self,

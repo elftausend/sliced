@@ -1,8 +1,8 @@
 use custos::{
     opencl::{CLDevice, CLPtr},
     prelude::enqueue_kernel,
-    Buffer, CDatatype, Device, Eval, MayToCLSource, WrappedData, OpenCL, Resolve, Retrieve,
-    Retriever, Shape, ToMarker, UnifiedMemChain,
+    Buffer, CDatatype, Device, Eval, MayToCLSource, OpenCL, Resolve, Retrieve, Retriever, Shape,
+    ToMarker, UnifiedMemChain, WrappedData,
 };
 
 use super::BinaryElementWise;

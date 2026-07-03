@@ -1,8 +1,6 @@
 #[cfg(feature = "cpu")]
-#[cfg(feature = "blas")]
 mod cpu;
 #[cfg(feature = "cpu")]
-#[cfg(feature = "blas")]
 pub use cpu::*;
 
 #[cfg(feature = "opencl")]

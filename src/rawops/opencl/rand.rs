@@ -1,6 +1,6 @@
 use custos::{
     prelude::{cpu_exec_unary_may_unified_mut, Float},
-    Buffer, WrappedData, OpenCL,
+    Buffer, OpenCL, WrappedData,
 };
 
 use crate::RandOp;

@@ -25,13 +25,10 @@ where
     {
         let mut out = self.retrieve(lhs.len(), (lhs, rhs)).unwrap();
 
-        self.add_op(
-            (lhs, rhs, &mut out),
-            move |(lhs, rhs, out), _| {
-                slice_col_op(cols, lhs, rhs, out, f);
-                Ok(())
-            },
-        )
+        self.add_op((lhs, rhs, &mut out), move |(lhs, rhs, out), _| {
+            slice_col_op(cols, lhs, rhs, out, f);
+            Ok(())
+        })
         .unwrap();
         out
     }

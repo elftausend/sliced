@@ -18,7 +18,7 @@ fn test_transpose_cpu() {
     #[cfg(feature = "autograd")]
     {
         out.backward();
-        assert_eq!(&**x.grad(), [1, 1, 1, 1, 1, 1]);
+        assert_eq!(&**x.grad(&device), [1, 1, 1, 1, 1, 1]);
     }*/
 }
 

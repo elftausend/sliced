@@ -1,8 +1,10 @@
+#[cfg(feature = "cpu")]
 use crate::DiagflatGrad;
+use core::ops::AddAssign;
+#[cfg(feature = "cpu")]
 use custos::{Buffer, Shape, Unit, CPU};
-use std::ops::AddAssign;
 
-// TODO stack impl
+#[cfg(feature = "cpu")]
 impl<T: Unit + Copy + AddAssign, IS: Shape, OS: Shape> DiagflatGrad<T, IS, OS> for CPU {
     #[inline]
     fn diagflat_grad(&self, x_grad: &mut Buffer<T, Self, IS>, out_grad: &Buffer<T, Self, OS>) {

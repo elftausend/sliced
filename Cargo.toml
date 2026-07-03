@@ -8,27 +8,33 @@ edition = "2021"
 [dependencies]
 #custos = { git = "https://github.com/elftausend/custos", branch = "autograd" }
 #custos = {git = "https://github.com/elftausend/custos", branch = "autograd", default-features=false, features=["macro"]}
+rawsliced = { path = "../rawsliced", default-features = false }
 custos = {path = "../custos", default-features=false, features=["macro"]}
-fastrand = "1.8.0"
+fastrand = { version = "1.8.0", optional = true }
 
 [profile.release]
 debug = true
 
 [features]
-default = ["cpu",  "matrix", "opencl", "stack", "autograd", "blas"]
+default = ["no-std", "matrix", "half", "blas"]
+# default = ["cpu",  "matrix", "opencl", "stack", "autograd"]
 #default = ["blas", "stack", "cpu", "matrix", "opencl", "autograd"]
 #default = ["stack", "cpu", "opencl", "blas", "matrix", "static-api"]
-autograd = ["custos/autograd"]
-static-api = ["custos/static-api"]
+
+std = []
+no-std = ["stack", "custos/no-std"]
+
+autograd = ["custos/autograd", "std"]
+static-api = ["custos/static-api", "cpu"]
 stack = ["custos/stack"]
-cpu = ["custos/cpu"]
-opencl = ["custos/opencl", "cpu"]
+cpu = ["custos/cpu", "std", "dep:fastrand"]
+opencl = ["custos/opencl", "cpu", "std"]
 blas = ["custos/blas"]
-matrix = []
+half = ["custos/half"]
+matrix = ["cpu", "autograd"]
 #nnapi = ["custos/nnapi"]
 
 [dev-dependencies]
-rawsliced = { path = "../rawsliced" }
 graplot = "0.1.22"
 purpur = "0.1.0"
 

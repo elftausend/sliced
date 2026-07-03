@@ -1,10 +1,11 @@
-use std::{
+use core::{
     fmt::Display,
     ops::{Div, Sub},
 };
 
 use custos::{Buffer, Combiner, Device, Eval, MayDim2, Resolve, Shape, Unit};
 
+#[cfg(feature = "cpu")]
 mod cpu;
 
 #[cfg(feature = "cpu")]
@@ -21,6 +22,7 @@ mod opencl;
 #[cfg(feature = "opencl")]
 pub use opencl::*;
 
+#[cfg(feature = "std")]
 pub trait BinaryEWMayGrad<T: Unit, S: Shape = (), D: Device = Self>: Device {
     fn binary_ew_w_grad<FO, LO, RO>(
         &self,

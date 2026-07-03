@@ -1,7 +1,9 @@
+#[cfg(feature = "cpu")]
 use crate::Diagflat;
+#[cfg(feature = "cpu")]
 use custos::{Buffer, Device, Retriever, Shape, Unit, CPU};
 
-// TODO stack impl
+#[cfg(feature = "cpu")]
 impl<T: Unit + Copy, IS: Shape, OS: Shape> Diagflat<T, IS, OS> for CPU {
     fn diagflat(&self, x: &Buffer<T, Self, IS>) -> Buffer<T, Self, OS> {
         let mut out = self.retrieve(x.len() * x.len(), x).unwrap();
